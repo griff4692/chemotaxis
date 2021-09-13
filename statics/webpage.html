@@ -1,0 +1,713 @@
+<!DOCTYPE html>
+<html xmlns="http://www.w3.org/1999/xhtml" lang="" xml:lang="">
+  <head>
+    <title>PPS 2020 - Chemotaxis</title>
+
+    <style>
+      html, body {
+        width: 100%;
+        height: 100%;
+        margin: 0;
+        padding: 0;
+      }
+
+      body {
+        background-color: #8C92AC;
+        font-family: "American Typewriter";
+      }
+
+      h1 {
+        text-align: center;
+        color: white;
+        font-size: 128px;
+        margin: 10px;
+      }
+
+      h2 {
+        text-align: center;
+        color: white;
+        margin: 0;
+      }
+
+      /*img:hover {*/
+      /*  background-color: #000000;*/
+      /*}*/
+
+      .simulate {
+        background-color: white;
+        color: black;
+      }
+
+      #start-button-div {
+        width: 100%;
+        text-align: center;
+        font-size: 64px;
+        padding: 25px;
+      }
+
+      a {
+        text-decoration: none;
+        display: inline-block;
+        padding: 8px 16px;
+      }
+
+      a:hover {
+        background-color: #ddd;
+        color: black;
+        cursor: pointer;
+      }
+
+      #setup {
+        display: grid;
+        text-align: center;
+        grid-template-columns: 1fr 1fr 1fr; /* fraction*/
+      }
+
+      /*#start {*/
+      /*  font-size: 64px;*/
+      /*  padding: 25px;*/
+      /*}*/
+
+      #simulation {
+        display: grid;
+        padding: 50px;
+        max-width: 40%;
+        overflow: scroll;
+        grid-template-columns: repeat(var(--grid-rows), minmax(0, 1fr)); /* 3 columns */
+        grid-gap: 3px;
+        margin: auto;
+      }
+
+      #simulation>* {
+        aspect-ratio: 1 / 1; /* a square ratio */
+        box-shadow: 0px -1px 1px darkgrey;
+        /* center content */
+        display: flex;
+        align-items: center;
+        justify-content: center;
+        text-align: center;
+      }
+
+      #simulation img {
+        width: 80%;
+        height: 80%;
+        margin: auto;
+        display: block;
+      }
+
+      #simulationStats {
+        width: 50%;
+        margin: 10px;
+        font-size: 48px;
+        align-items: center;
+        justify-content: center;
+        display: flex;
+        margin: auto;
+      }
+
+      :root {
+        --grid-cols: 1;
+        --grid-rows: 1;
+      }
+
+      table {
+        font-size: 32px;
+        border-collapse: collapse;
+        width: 100%;
+        height: 100%;
+      }
+
+      td, th {
+        text-align: center;
+        padding: 20px;
+      }
+
+      tr:nth-child(even) {
+        background-color: darkgrey;
+        color: antiquewhite;
+        text-align: center;
+      }
+
+      tr:nth-child(odd) {
+        background-color: antiquewhite;
+        color: darkgrey;
+        text-align: center
+      }
+
+    </style>
+
+  </head>
+  <body>
+
+    <h1>PPS 2021 - Chemotaxis</h1>
+
+    <div id="setup">
+      <div id="g1">
+        <div style="color:black;font-size:32px">Turns: <input style="font-size:32px" type="text" id="turns" size="20" value="100"></div>
+        <br/>
+        <div style="color:black;font-size:32px">Budget: <input style="font-size:32px" type="text" id="budget" size="20" value="100"></div>
+        <br/>
+      </div>
+      <div id="g2">
+        <div style="color:black;font-size:32px">Seed: <input style="font-size:32px" type="text" id="seed" size="20" value="1992"></div>
+        <br/>
+        <div style="color:black;font-size:32px">FPM: <input style="font-size:32px" type="text" id="fpm" size="20" value="60"></div>
+        <br/>
+      </div>
+      <div id="g3">
+        <br>
+        <div style="color:black;font-size:32px">Spawn Rate: <input style="font-size:32px" type="text" id="spawnFreq" size="20" value="10"></div>
+        </br>
+        <div style="color:black;font-size:32px">Map: <input style="font-size:32px" type="file" value="~/coms4444-chemotaxis/src/maps/dummy/10x10FarTarget.map" id="map"></div>
+      </div>
+      <div>
+      </div>
+      <div id="start-button-div">
+        <div style="color:black;font-size:32px;padding-bottom:25px">(Fast Run only) Pause every "N" turns: <input style="font-size:32px" type="text" value="20" id="pauseEveryN"></div>
+        <a onClick='sendFields()' id='start' class='simulate'>Start Simulation</a>
+        <a onClick='sendFastFields()' class='simulate'>Fast Run</a>
+      </div>
+    </div>
+    <div id="simulationStats"></div>
+    <div id="simulation"></div>
+    <div id="control-buttons"></div>
+    <script>
+      var regexAlpha = /[^a-zA-Z]/g;
+      var regexNumeric = /[^0-9]/g;
+
+      var simulationStarted = false;
+      var shouldPause = false;
+      var pauseEveryN = 20;
+      var isFastGame = false;
+
+      function sortAlphaNumeric(a, b) {
+          var aAlpha = a.replace(regexAlpha, "");
+          var bAlpha = b.replace(regexAlpha, "");
+          if(aAlpha === bAlpha) {
+              var aNumeric = parseInt(a.replace(regexNumeric, ""), 10);
+              var bNumeric = parseInt(b.replace(regexNumeric, ""), 10);
+              return aNumeric === bNumeric ? 0 : aNumeric > bNumeric ? 1 : -1;
+          }
+          return aAlpha > bAlpha ? 1 : -1;
+      }
+
+      function sendFastFields() {
+        isFastGame = true;
+        var turns = document.getElementById("turns").value;
+        var budget = document.getElementById("budget").value;
+        var seed = document.getElementById("seed").value;
+        var fpm = document.getElementById("fpm").value;
+        var spawnFreq = document.getElementById("spawnFreq").value;
+        pauseEveryN = document.getElementById("pauseEveryN").value;
+        var map = document.getElementById("map").value.replace("C:\\fakepath\\", "");
+
+        if(!Number.isInteger(parseInt(turns)) || turns != parseInt(turns)) {
+          alert("The number of turns must be a valid integer!");
+          return;
+        }
+
+        if(!Number.isInteger(parseInt(pauseEveryN)) || pauseEveryN != parseInt(pauseEveryN)) {
+          alert("The pause every N parameter must be a valid integer!");
+          return;
+        }
+
+        if(!Number.isInteger(parseInt(budget)) || budget != parseInt(budget)) {
+          alert("The budget must be a valid integer!");
+          return;
+        }
+
+        if(!Number.isInteger(parseInt(seed)) || seed != parseInt(seed)) {
+          alert("The random seed must be a valid integer!");
+          return;
+        }
+
+        if(!Number.isInteger(parseInt(fpm)) || fpm != parseInt(fpm)) {
+          alert("The frames per minute must be a valid integer!");
+          return;
+        }
+
+        if(!Number.isInteger(parseInt(spawnFreq)) || spawnFreq != parseInt(spawnFreq)) {
+          alert("The Respawn Frequency must be a valid integer!");
+          return;
+        }
+
+        if(map == "") {
+          alert("You must choose a map!");
+          return;
+        }
+
+        console.log("Turns: " + turns);
+        console.log("Budget: " + budget);
+        console.log("Seed: " + seed);
+        console.log("FPM: " + fpm);
+        console.log("Spawn Frequency: " + spawnFreq);
+        console.log("Pause Every N: " + pauseEveryN);
+        console.log("Map: " + map);
+
+        var url = `parameters.txt?turns=${turns}&budget=${budget}&seed=${seed}&fpm=${fpm}&map=${map}&spawnFreq=${spawnFreq}`;
+
+        var parametersContainer = document.getElementById("setup");
+        parametersContainer.innerHTML = "";
+
+        var xhttp = new XMLHttpRequest();
+        xhttp.open("GET", url, true);
+        xhttp.send();
+
+        recurringFastAjax(latest_version + 1, 10, 100);
+      }
+
+      function sendFields() {
+          var turns = document.getElementById("turns").value;
+          var budget = document.getElementById("budget").value;
+          var seed = document.getElementById("seed").value;
+          var fpm = document.getElementById("fpm").value;
+          var spawnFreq = document.getElementById("spawnFreq").value;
+          var map = document.getElementById("map").value.replace("C:\\fakepath\\", "");
+
+          if(!Number.isInteger(parseInt(turns)) || turns != parseInt(turns)) {
+              alert("The number of turns must be a valid integer!");
+              return;
+          }
+
+          if(!Number.isInteger(parseInt(budget)) || budget != parseInt(budget)) {
+              alert("The budget must be a valid integer!");
+              return;
+          }
+
+          if(!Number.isInteger(parseInt(seed)) || seed != parseInt(seed)) {
+              alert("The random seed must be a valid integer!");
+              return;
+          }
+
+          if(!Number.isInteger(parseInt(fpm)) || fpm != parseInt(fpm)) {
+              alert("The frames per minute must be a valid integer!");
+              return;
+          }
+
+        if(!Number.isInteger(parseInt(spawnFreq)) || spawnFreq != parseInt(spawnFreq)) {
+          alert("The Respawn Frequency must be a valid integer!");
+          return;
+        }
+
+          if(map == "") {
+              alert("You must choose a map!");
+              return;
+          }
+
+          console.log("Turns: " + turns);
+          console.log("Budget: " + budget);
+          console.log("Seed: " + seed);
+          console.log("FPM: " + fpm);
+          console.log("Spawn Frequency: " + spawnFreq);
+          console.log("Map: " + map);
+
+          var url = `parameters.txt?turns=${turns}&budget=${budget}&seed=${seed}&fpm=${fpm}&map=${map}&spawnFreq=${spawnFreq}`;
+
+          var parametersContainer = document.getElementById("setup");
+          parametersContainer.innerHTML = "";
+
+          var xhttp = new XMLHttpRequest();
+          xhttp.open("GET", url, true);
+          xhttp.send();
+
+          recurringAjax(latest_version + 1, 10, 100);
+      }
+
+      function setSimulationStats(result) {
+          var container = document.getElementById("simulationStats");
+
+          var locations = result.agentLocations;
+          var chemicalsRemaining = simulationStarted ? result.chemicalsRemaining : 0;
+          var redsUsed = simulationStarted ? result.chemicalsUsed["RED"] : 0;
+          var bluesUsed = simulationStarted ? result.chemicalsUsed["BLUE"] : 0;
+          var greensUsed = simulationStarted ? result.chemicalsUsed["GREEN"] : 0;
+          var budget = simulationStarted ? result.budget : 0;
+          var map = simulationStarted || result.mapName !== undefined ? result.mapName : "";
+          var seed = simulationStarted ? result.seed : 0;
+          var targetRow = result.targetLocation.row;
+          var targetCol = result.targetLocation.column;
+          var spawnFreq = result.spawnFreq;
+
+          var currentTurn = simulationStarted ? result.currentTurn : 0;
+          var totalTurns = simulationStarted ? result.totalTurns : 0;
+
+          var numAgents = locations.length;
+          var numSucceeded = 0;
+          for(var i = 0; i < numAgents; i++) {
+            if(locations[i].row === targetRow && locations[i].column === targetCol) {
+                numSucceeded += 1;
+            }
+          }
+
+          container.innerHTML = `
+              <table style="font-size:32px">
+                  <tr>
+                      <th>Agents @ Target</th>
+                      <th>Turns Used</th>
+                      <th>Reds Used</th>
+                      <th>Blues Used</th>
+                      <th >Greens Used</th>
+                      <th style="border-right:5px solid darkslategrey;">Remaining Chemicals</th>
+                      <th>Budget</th>
+                      <th>Map</th>
+                      <th>Seed</th>
+                      <th>Spawn Rate</th>
+                  </tr>
+                  <tr>
+                      <td>${numSucceeded} / ${numAgents}</td>
+                      <td>${currentTurn} / ${totalTurns}</td>
+                      <td>${redsUsed}</td>
+                      <td>${bluesUsed}</td>
+                      <td>${greensUsed}</td>
+                      <td style="border-right:5px solid darkslategrey;">${chemicalsRemaining}</td>
+                      <td>${budget}</td>
+                      <td>${map}</td>
+                      <td>${seed}</td>
+                      <td>${spawnFreq}</td>
+                  </tr>
+              </table>`;
+      }
+
+      function agentOccupiedCell(row, col, agentLocations) {
+          var occupied = false;
+          for(var i = 0; i < agentLocations.length; i++) {
+              if(agentLocations[i].row === row && agentLocations[i].column === col) {
+                  occupied = true;
+                  break;
+            }
+          }
+          return occupied;
+      }
+
+      function pause(result) {
+        var container = document.getElementById("control-buttons");
+        if (shouldPause) {
+          shouldPause = false;
+          if(isFastGame) {
+            recurringFastAjax(latest_version + 1, 10, 100);
+          } else {
+            recurringAjax(latest_version + 1, 10, 100);
+          }
+          container.innerHTML = `
+          <div id="start-button-div">
+            <a onClick='pause()' id='pause' class='simulate'>Pause</a>
+          </div>
+           `;
+        } else {
+          shouldPause = true;
+          container.innerHTML = `
+          <div id="start-button-div">
+            <a onClick='pause()' id='pause' class='simulate'>Resume</a>
+          </div>
+           `;
+        }
+      }
+
+      function setControlButtons(result) {
+        var container = document.getElementById("control-buttons");
+        var text = shouldPause ? "Resume" : "Pause";
+        container.innerHTML = `
+          <div id="start-button-div">
+            <a onClick='pause()' id='pause' class='simulate'>${text}</a>
+          </div>
+           `;
+      }
+
+      function setSimulationGrid(result) {
+          var container = document.getElementById("simulation");
+          container.innerHTML = "";
+
+          container.style.setProperty('--grid-rows', result.size);
+          container.style.setProperty('--grid-cols', result.size);
+
+          var grid = result.grid;
+          var start = result.startLocation;
+          var target = result.targetLocation;
+          var agents = result.agentLocations;
+          for(var i = 0; i < result.size; i++) {
+              for(var j = 0; j < result.size; j++) {
+                  var gridElement = grid[i][j];
+
+                  var cell = document.createElement("div");
+
+                  if(gridElement.blocked) {
+                      var img = document.createElement('img');
+                      img.src = "roadblock.png";
+                      img.style.mixBlendMode = "darken";
+                      img.width = "100%";
+                      img.height = "100%";
+                      cell.style.backgroundColor = `#ffffff`;
+                      cell.appendChild(img);
+                  }
+                  else if(target.row === (i + 1) && target.column === (j + 1)) {
+                    var img = document.createElement('img');
+                    img.src = "finish.png";
+                    img.width = "100px";
+                    img.height = "100px";
+                    cell.appendChild(img);
+                  }
+                  else if(agentOccupiedCell(i + 1, j + 1, agents)) {
+                      var img = document.createElement('img');
+                      img.src = "agent.png";
+                      img.width = "100px";
+                      img.height = "100px";
+                      cell.appendChild(img);
+                      updateCell(cell, gridElement);
+                  }
+                  else if(start.row == (i + 1) && start.column == (j + 1)) {
+                      var img = document.createElement('img');
+                      img.src = "start.png";
+                      img.width = "100px";
+                      img.height = "100px";
+                      cell.appendChild(img);
+                  }
+                  else
+                      updateCell(cell, gridElement);
+
+                  // cell.style.width = cellWidth;
+                  // cell.style.height = cellHeight;
+                  cell.title = `Location: (${i + 1}, ${j + 1})\nRed: ${gridElement.chemicals["RED"]}\nGreen: ${gridElement.chemicals["GREEN"]}\nBlue: ${gridElement.chemicals["BLUE"]}`;
+                  container.appendChild(cell);
+              }
+          }
+      }
+
+      function updateCell(cell, gridElement) {
+          var redHex = getHexColorFromFraction(gridElement.chemicals["RED"]);
+          var greenHex = getHexColorFromFraction(gridElement.chemicals["GREEN"]);
+          var blueHex = getHexColorFromFraction(gridElement.chemicals["BLUE"]);
+          cell.style.backgroundColor = `#${redHex}${greenHex}${blueHex}`;
+      }
+
+      function getHexColorFromFraction(fraction) {
+          var decimalValue = Math.round(Math.sqrt(Math.sqrt(fraction)) * 255);
+          var hexTensDigit = Math.floor(decimalValue / 16);
+          switch(hexTensDigit) {
+              case 10:
+                  hexTensDigit = "A";
+                  break;
+              case 11:
+                  hexTensDigit = "B";
+                  break;
+              case 12:
+                  hexTensDigit = "C";
+                  break;
+              case 13:
+                  hexTensDigit = "D";
+                  break;
+              case 14:
+                  hexTensDigit = "E";
+                  break;
+              case 15:
+                  hexTensDigit = "F";
+                  break;
+          }
+          var hexOnesDigit = decimalValue % 16;
+          switch(hexOnesDigit) {
+              case 10:
+                  hexOnesDigit = "A";
+                  break;
+              case 11:
+                  hexOnesDigit = "B";
+                  break;
+              case 12:
+                  hexOnesDigit = "C";
+                  break;
+              case 13:
+                  hexOnesDigit = "D";
+                  break;
+              case 14:
+                  hexOnesDigit = "E";
+                  break;
+              case 15:
+                  hexOnesDigit = "F";
+                  break;
+          }
+          return `${hexTensDigit}${hexOnesDigit}`;
+      }
+
+      function processFast(data) {
+        var result = JSON.parse(data);
+        var refresh = parseFloat(result.refresh);
+
+        if(result.simulation)
+          simulationStarted = true;
+
+        if(!result.validMap)
+          alert("The map is invalid!");
+        else if(result.simulation) {
+          setSimulationStats(result);
+          setControlButtons(result);
+          var currentTurn = simulationStarted ? result.currentTurn : 0;
+          if(currentTurn > 0 && currentTurn % pauseEveryN == 0) {
+            shouldPause = true;
+            var container = document.getElementById("control-buttons");
+            container.innerHTML = `
+          <div id="start-button-div">
+            <a onClick='pause()' id='pause' class='simulate'>Resume</a>
+          </div>
+           `;
+            setSimulationGrid(result);
+          }
+        }
+        else if(result.turnsRemaining == 0) {
+          setSimulationGrid(result);
+        }
+        return refresh;
+      }
+
+      function process(data) {
+          var result = JSON.parse(data);
+          console.log(result);
+          var refresh = parseFloat(result.refresh);
+
+          if(result.simulation)
+              simulationStarted = true;
+
+          if(!result.validMap)
+              alert("The map is invalid!");            
+          else if(result.simulation && simulationStarted) {
+              setSimulationStats(result);
+
+              if(simulationStarted) {
+                  setSimulationGrid(result);
+                  setControlButtons(result);
+              }
+          }
+          // else if(result.turnsRemaining == 0)
+          //     alert("The controller ran out of time!");
+          // else if(result.agentReached)
+          //     alert("Congratulations, the agent reached the target!");
+
+          return refresh;
+      }
+
+      var latest_version = -1;
+      var xhttp = new XMLHttpRequest();
+
+      function recurringFastAjax(version, retries, timeout) {
+        // console.log("Doing a recurring ajax, version " + version);
+        xhttp = new XMLHttpRequest();
+        xhttp.onload = (function() {
+          var refresh = -1;
+          try {
+            if(xhttp.readyState != 4)
+              throw "Incomplete HTTP request: " + xhttp.readyState;
+            if(xhttp.status != 200)
+              throw "Invalid HTTP status: " + xhttp.status;
+
+            // console.log(`LV: ${latest_version}, V: ${version}, R: ${refresh};
+            refresh = processFast(xhttp.responseText);
+            if(latest_version < version)
+              latest_version = version;
+            else
+              refresh = -1;
+            // }
+          } catch(message) {
+            alert(message);
+          }
+
+          refresh /= 100;
+
+          if(refresh >= 0)
+            setTimeout(function() { recurringFastAjax(version + 1, retries, timeout); }, refresh);
+        });
+        xhttp.onabort = (function() {});
+        xhttp.onerror = (function() {});
+        xhttp.ontimeout = (function() {
+          if(version <= latest_version)
+            console.log("AJAX timeout (version " + version + " <= " + latest_version + ")");
+          else if(retries == 0)
+            location.reload(true);
+          else {
+            console.log("AJAX timeout (version " + version + ", retries: " + retries + ")");
+            recurringFastAjax(version, retries - 1, timeout * 2);
+          }
+        });
+        if (! shouldPause) {
+          xhttp.open("GET", "data.txt", true);
+          xhttp.responseType = "text";
+          xhttp.send();
+        }
+      }
+
+      function recurringAjax(version, retries, timeout) {
+          xhttp = new XMLHttpRequest();
+          xhttp.onload = (function() {
+              var refresh = -1;
+              try {
+                  if(xhttp.readyState != 4)   
+                      throw "Incomplete HTTP request: " + xhttp.readyState;
+                  if(xhttp.status != 200)
+                      throw "Invalid HTTP status: " + xhttp.status;
+
+                    refresh = process(xhttp.responseText);
+                    if(latest_version < version)
+                        latest_version = version;
+                    else
+                        refresh = -1;
+                  // }
+              } catch(message) {
+                  alert(message);
+              }
+
+              if(refresh >= 0)
+                  setTimeout(function() { recurringAjax(version + 1, retries, timeout); }, refresh);
+          });
+          xhttp.onabort = (function() {});
+          xhttp.onerror = (function() {});
+          xhttp.ontimeout = (function() {
+              if(version <= latest_version)
+                  console.log("AJAX timeout (version " + version + " <= " + latest_version + ")");
+              else if(retries == 0)
+                  location.reload(true);
+              else {
+                  console.log("AJAX timeout (version " + version + ", retries: " + retries + ")");
+                  recurringAjax(version, retries - 1, timeout * 2);
+              }
+          });
+          if (! shouldPause) {
+            xhttp.open("GET", "data.txt", true);
+            xhttp.responseType = "text";
+            xhttp.send();
+          }
+      }
+
+      function guiStartAjax(version, retries, timeout) {
+          xhttp = new XMLHttpRequest();
+          xhttp.onload = (function() {
+              var refresh = -1;
+              try {
+                  if(xhttp.readyState != 4)   
+                      throw "Incomplete HTTP request: " + xhttp.readyState;
+                  if(xhttp.status != 200)
+                      throw "Invalid HTTP status: " + xhttp.status;
+
+                  refresh = process(xhttp.responseText);
+                  if(latest_version < version)
+                      latest_version = version;
+                  else
+                      refresh = -1;
+              } catch(message) {
+                  alert(message);
+              }
+          });
+          xhttp.onabort = (function() {});
+          xhttp.onerror = (function() {});
+          xhttp.ontimeout = (function() {
+              if(version <= latest_version)
+                  console.log("AJAX timeout (version " + version + " <= " + latest_version + ")");
+              else if(retries == 0)
+                  location.reload(true);
+              else {
+                  console.log("AJAX timeout (version " + version + ", retries: " + retries + ")");
+                  guiStartAjax(version, retries - 1, timeout * 2);
+              }
+          });
+          xhttp.open("GET", "start.txt", true);
+          xhttp.responseType = "text";
+          xhttp.send();
+      }
+    </script>
+  </body>
+</html>
