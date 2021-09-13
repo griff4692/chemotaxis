@@ -61,7 +61,7 @@ public class Controller extends chemotaxis.sim.Controller {
     *
     */
    @Override
-   public ChemicalPlacement applyChemicals(Integer currentTurn, Integer chemicalsRemaining, Point currentLocation, ChemicalCell[][] grid) {
+   public ChemicalPlacement applyChemicals(Integer currentTurn, Integer chemicalsRemaining, ArrayList<Point> locations, ChemicalCell[][] grid) {
       // TODO add your code here to apply chemicals
 
       return null; // TODO modify the return statement to return your chemical placement
