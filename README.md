@@ -3,17 +3,19 @@
 
 ## Course Summary
 
-Course: COMS 4444 Programming and Problem Solving (Fall 2020)  
+Course: COMS 4444 Programming and Problem Solving (Fall 2021)  
 Website: http://www.cs.columbia.edu/~kar/4444f20  
 University: Columbia University  
 Instructor: Prof. Kenneth Ross  
-TA: Aditya Sridhar
+TA: Griffin Adams
 
 ## Project Description
 
 Chemotaxis involves following a gradient in chemical signal concentrations toward reaching a target. Given a set of three chemicals (red, green, and blue), a controller applies chemicals to the map, and an agent moves in response to chemical stimuli. These chemicals diffuse throughout the grid over time. Further, there may be blocked cells in the grid that agents must move around. Your objective is to move your agent through the map to reach a target location as quickly as possible.
 
 ## Implementation
+
+This code was heavily adapted from the previous year's version of [Chemotaxis](https://github.com/adilovesgh/coms4444-chemotaxis).
 
 Along with designing some maps for the project, you will be creating your own controller and agent that extend the simulator's abstract controller and agent, respectively. Please follow these steps to begin your implementation:
 1.  Enter the `coms4444-chemotaxis/src/maps` directory, and create a folder called "g*x*" (where *x* is the number of your team). For example, if you are team "g5," please create a folder called "g5" in the `maps` directory.
@@ -53,7 +55,7 @@ public class Controller extends chemotaxis.sim.Controller {
     *
     * @param currentTurn         current turn in the simulation
     * @param chemicalsRemaining  number of chemicals remaining
-    * @param currentLocation     current location of the agent
+    * @param locations           current locations of the agents
     * @param grid                game grid/map
     * @return                    a cell location and list of chemicals to apply
     *
@@ -151,6 +153,8 @@ In order to improve performance and readability of code during simulations, we w
 
 > **[-f | --fpm]**: speed (frames per minute) of GUI when continuous GUI is enabled (default = 15)
 
+> **[-r | --spawnFreq]**: Spawn Frequency of new Agents (default behavior is that once every 10 turns a new agent is spawned)
+
 
 ## Map Configuration
 
@@ -200,7 +204,7 @@ Classes that are used by the simulator include:
 6. `Timer`: basic functionality for imposing timeouts.
 
 ## Piazza
-If you have any questions about the project, please post them in the [Piazza forum](https://piazza.com/class/kdjd7v2b8925zz?cid=8) for the course, and an instructor will reply to them as soon as possible. Any updates to the project itself will be available in Piazza.
+If you have any questions about the project, please post them in [Ed](https://edstem.org/us/courses/12432/discussion/)
 
 
 ## Disclaimer
