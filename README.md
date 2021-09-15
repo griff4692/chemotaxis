@@ -112,11 +112,8 @@ public class Agent extends chemotaxis.sim.Agent {
 
 
 ## Submission
-For the first deliverable, you will be submitting the directory containing your designed map configurations; this directory should be located inside the `coms4444-chemotaxis/src/maps` directory. As with the previous assignment, please submit a pull request. 
 
-In successive deliverables, you will be submitting your implemented `Controller` class, `Agent` class, and any other helper classes you create inside your `coms4444-chemotaxis/src/maps` directory. We ask that you please do not modify any code in the `sim` or `dummy` directories, especially the simulator, when you submit your code. This makes it easier for us to merge in your code.
-
-To submit your code for each class and for the final deliverable of the project, you will create a pull request to merge your forked repository's *master* branch into the TA's base repository's *master* branch. The TA will merge the commits from the pull request after the deliverable deadline has passed. The base repository will be updated before the start of the next class meeting.
+To submit your code for each class and for the final deliverable of the project, you will create a pull request to merge your branch into the *master* branch. The TA will merge the commits from the pull request after the deliverable deadline has passed. The base repository will be updated before the start of the next class meeting.
 
 In order to improve performance and readability of code during simulations, we would like to prevent flooding the console with print statements. Therefore, we have provided a printer called `SimPrinter` to allow for toggled printing to the console. When adding print statements for testing/debugging in your code, please make sure to use the methods in `SimPrinter` (instance available in `Player`) rather than use `System.out` statements directly. Additionally, please set the `enablePrints` default variable in `Simulator` to *true* in order to enable printing. This also allows us to not require that you comment out any print statements in your code submissions.
 

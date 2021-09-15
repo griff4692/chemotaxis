@@ -66,7 +66,7 @@ public class Simulator {
 
 	private static void setup() {
 		projectPath = new File(".").getAbsolutePath().substring(0, 
-				new File(".").getAbsolutePath().indexOf("coms4444-chemotaxis") + "coms4444-chemotaxis".length());
+				new File(".").getAbsolutePath().indexOf("chemotaxis") + "chemotaxis".length());
 		sourcePath = projectPath + File.separator + "src";
 		staticsPath = projectPath + File.separator + "statics";
 	}
@@ -435,6 +435,7 @@ public class Simulator {
 
 		boolean noChemicalsLeft = false;
 		currentTurn = 0;
+		int numReached = 0;
 	
 		updateGUI(server, getGUIState(currentTurn, true));
 		
@@ -490,11 +491,15 @@ public class Simulator {
 							random.nextInt(), previousStates.get(agentId),
 							deepClone(adjustedGrid[agentLocation.x - 1][agentLocation.y - 1]), deepClone(neighborMap));
 
-//					int firstX = agentLocation.x;
-//					int firstY = agentLocation.y;
 					moveAgent(move.directionType, agentLocation);
 					previousStates.put(agentId, move.currentState);
-//					System.out.println(move.directionType + " -> " + firstX + "-" + firstY + " -> " + agentLocations.get(agentId).x + "-" + agentLocations.get(agentId).y);
+					int firstX = agentLocation.x;
+					int firstY = agentLocation.y;
+					Log.writeToLogFile("Agent " + agentId + " moved " + move.directionType + " -> " + firstX + "-" + firstY + " -> " + agentLocations.get(agentId).x + "-" + agentLocations.get(agentId).y);
+					if (agentAtTarget(agentLocations.get(agentId))) {
+						Log.writeToLogFile("Agent " + agentId + " reached the target");
+						numReached ++;
+					}
 				}
 			
 			} catch (Exception e) {
@@ -515,29 +520,25 @@ public class Simulator {
 				}
 
 				if(! targetOccupied) {
-					System.out.println("Spawning another agent after Turn " + currentTurn);
+					Log.writeToLogFile("Spawning another agent after Turn " + currentTurn);
 					agentLocations.put(Collections.max(agentLocations.keySet()) + 1, deepClone(start));
 				} else {
-					System.out.println("Can\'t spawn another agent after Turn " + currentTurn + " because start cell is occupied by another agent");
+					Log.writeToLogFile("Can\'t spawn another agent after Turn " + currentTurn + " because start cell is occupied by another agent");
 				}
 			}
 		}
 
 		updateGUI(server, getGUIState(currentTurn, false));
-		
-		if(allAgentsAtTarget())
-			Log.writeToLogFile("All agents successfully reached the target (" + target.x + ", " + target.y +
-					") from (" + start.x + ", " + start.y + ") in " + currentTurn + " turns!");
-		else if(noChemicalsLeft)
-			Log.writeToLogFile("The controller ran out of chemicals!");
-		else
-			Log.writeToLogFile("The agent failed to reach the target (" + target.x + ", " + target.y + 
-					") from (" + start.x + ", " + start.y + ") in the allotted time.");		
-		Log.writeToLogFile("");
+
+		Log.writeToLogFile("Experiment Information...");
 		Log.writeToLogFile("Budget: " + budget);
+		Log.writeToLogFile("Spawn Frequency: " + spawnFreq);
 		Log.writeToLogFile("Seed: " + seed);
 		Log.writeToLogFile("Map: " + mapName);
-		Log.writeToLogFile("Chemicals Left: " + chemicalsRemaining);
+		Log.writeToLogFile("Results...");
+		int chemsUsed = budget - chemicalsRemaining;
+		Log.writeToLogFile("Chemicals Used: " + chemsUsed + " / " + budget);
+		Log.writeToLogFile("Spawned " + agentLocations.size() + " agents. " + numReached + " reached.");
 		Log.writeToLogFile("Final time: " + currentTurn + "/" + turns);
 		
 		if(!showGUI)
