@@ -40,7 +40,7 @@ public abstract class Controller {
      *
      * @param currentTurn         current turn in the simulation
      * @param chemicalsRemaining  number of chemicals remaining
-     * @param currentLocations    current location of the agents
+     * @param locations    current location of the agents
      * @param grid                game grid/map
      * @return                    a cell location and list of chemicals to apply
      *

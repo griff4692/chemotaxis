@@ -124,7 +124,7 @@ In order to improve performance and readability of code during simulations, we w
 ## Simulator
 
 #### Steps to run the simulator:
-1.  On your command line, *fork* the Git repository, and then clone the forked version. Do NOT clone the original repository.
+1.  On your command line, clone the git repository.
 2.  Enter `cd coms4444-chemotaxis/src` to enter the source folder of the repository.
 3.  Run `make clean` and `make compile` to clean and compile the code.
 4.  Run one of the following:
@@ -203,7 +203,7 @@ Classes that are used by the simulator include:
 5. `Simulator`: the simulator and entry point for the project; manages the agent and controller, wrapper, logging, server, and GUI state.
 6. `Timer`: basic functionality for imposing timeouts.
 
-## Piazza
+## Ed
 If you have any questions about the project, please post them in [Ed](https://edstem.org/us/courses/12432/discussion/)
 
 
