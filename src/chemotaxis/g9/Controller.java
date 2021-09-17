@@ -3,6 +3,8 @@ package chemotaxis.g9;
 import java.awt.Point;
 import java.util.List;
 import java.util.ArrayList;
+import java.util.Collections;
+import java.util.Comparator;
 
 import chemotaxis.sim.ChemicalPlacement;
 import chemotaxis.sim.ChemicalCell;
@@ -55,25 +57,83 @@ public class Controller extends chemotaxis.sim.Controller {
  	@Override
 	public ChemicalPlacement applyChemicals(Integer currentTurn, Integer chemicalsRemaining, ArrayList<Point> locations, ChemicalCell[][] grid) {
 		ChemicalPlacement chemicalPlacement = new ChemicalPlacement();
-		int closestIdx = this.closestToTarget(locations);
- 		Point currentLocation = locations.get(closestIdx);
-		int currentX = currentLocation.x;
-		int currentY = currentLocation.y;
-
-		int leftEdgeX = Math.max(1, currentX - 5);
-		int rightEdgeX = Math.min(size, currentX + 5);
-		int topEdgeY = Math.max(1, currentY - 5);
-		int bottomEdgeY = Math.min(size, currentY + 5);
-
-		int randomX = this.random.nextInt(rightEdgeX - leftEdgeX + 1) + leftEdgeX;
-		int randomY = this.random.nextInt(bottomEdgeY - topEdgeY + 1) + topEdgeY ;
-
 		List<ChemicalType> chemicals = new ArrayList<>();
-		chemicals.add(ChemicalType.BLUE);
 
-		chemicalPlacement.location = new Point(randomX, randomY);
+//		ArrayList<Point> bestPath = shortestPath(grid);
+//		Integer midPoint = bestPath.size() / 2;
+
+		if (currentTurn % 2 == 1) {
+			chemicals.add(ChemicalType.BLUE);
+//			chemicalPlacement.location = bestPath.get(bestPath.size()-1);
+			chemicalPlacement.location = this.target;
+		} else {
+			chemicals.add(ChemicalType.GREEN);
+//			chemicalPlacement.location = bestPath.get(bestPath.size() / 2);
+
+			Point midPoint = findValidMidpoint(grid);
+			Point adjustedMidpoint = new Point(midPoint.x + 1, midPoint.y + 1);
+			chemicalPlacement.location  = adjustedMidpoint;
+		}
+
 		chemicalPlacement.chemicals = chemicals;
 
 		return chemicalPlacement;
+	}
+
+	public Point findValidMidpoint(ChemicalCell[][] grid) {
+		 Point midpoint = new Point((this.start.x + this.target.x) / 2, (this.start.y + this.target.y ) / 2);
+		 ArrayList<Point> cellList =  new ArrayList<>();
+
+		 for (int i = 0; i < this.size; i ++) {
+			 for (int j = 0; j < this.size; j ++) {
+				 if (!grid[i][j].isBlocked()) {
+					 cellList.add(new Point(i,j));
+				 }
+			 }
+		 }
+
+		 Collections.sort(cellList, new Comparator<Point>() {
+			 @Override
+			 public int compare(Point lhs, Point rhs) {
+				 int lhsDistance = Math.abs(lhs.x - midpoint.x) + Math.abs(lhs.y - midpoint.y);
+				 int rhsDistance = Math.abs(rhs.x - midpoint.x) + Math.abs(rhs.y - midpoint.y);
+				 if (lhsDistance == rhsDistance) {
+					 return 0;
+				 }
+				return lhsDistance > rhsDistance ? 1 : -1;
+			 }
+		 });
+		 return cellList.get(0);
+	}
+
+	public ArrayList<Point> shortestPath(ChemicalCell[][] grid) {
+		 ArrayList<ArrayList> queue = new ArrayList<>();
+		 ArrayList<Point> start = new ArrayList<>();
+		 start.add(this.start);
+		 queue.add(start);
+
+		 while (queue.size() > 0) {
+			 ArrayList<Point> curPath = queue.remove(0);
+			 Point endOfPath = curPath.get(curPath.size() - 1);
+			 for(int i = -1; i < 2; i += 2) {
+				 for (int j = -1; j < 2; j += 2) {
+					 Point neighbor = new Point(endOfPath.x + i, endOfPath.y + j);
+					 ArrayList<Point> newPath = new ArrayList<>(curPath);
+					 newPath.add(neighbor);
+//					 System.out.println(newPath.size());
+					 if (neighbor.equals(this.target)) {
+						 return newPath;
+					 }
+					 if (neighbor.x >= 0 && neighbor.x < this.size && neighbor.y >= 0 && neighbor.y < this.size) {
+						 if (!grid[neighbor.x][neighbor.y].isBlocked()) {
+							 if (!curPath.contains(neighbor)) {
+								 queue.add(newPath);
+							 }
+						 }
+					 }
+				 }
+			 }
+		 }
+		 throw new Error("shouldn't get here");
 	}
 }
