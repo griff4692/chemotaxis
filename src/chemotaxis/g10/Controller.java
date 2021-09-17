@@ -1,4 +1,4 @@
-package chemotaxis.gx; // TODO modify the package name to reflect your team
+package chemotaxis.g10; // TODO modify the package name to reflect your team
 
 import java.awt.Point;
 
