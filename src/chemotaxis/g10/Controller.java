@@ -1,10 +1,11 @@
-package chemotaxis.gx; // TODO modify the package name to reflect your team
+package chemotaxis.g10; // TODO modify the package name to reflect your team
 
 import java.awt.Point;
 
 import chemotaxis.sim.ChemicalPlacement;
 import chemotaxis.sim.ChemicalCell;
 import chemotaxis.sim.SimPrinter;
+import java.util.ArrayList;
 
 public class Controller extends chemotaxis.sim.Controller {
 
@@ -34,9 +35,18 @@ public class Controller extends chemotaxis.sim.Controller {
     * @return                    a cell location and list of chemicals to apply
     *
     */
+
+
+
+
+
    @Override
    public ChemicalPlacement applyChemicals(Integer currentTurn, Integer chemicalsRemaining, ArrayList<Point> locations, ChemicalCell[][] grid) {
       // TODO add your code here to apply chemicals
+
+
+
+
 
       return null; // TODO modify the return statement to return your chemical placement
    }
