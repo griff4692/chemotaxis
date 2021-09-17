@@ -1,10 +1,9 @@
-package chemotaxis.g9;
+package chemotaxis.g9; // TODO modify the package name to reflect your team
 
 import java.util.Map;
 
 import chemotaxis.sim.DirectionType;
 import chemotaxis.sim.ChemicalCell;
-import chemotaxis.sim.ChemicalCell.ChemicalType;
 import chemotaxis.sim.Move;
 import chemotaxis.sim.SimPrinter;
 
@@ -16,9 +15,9 @@ public class Agent extends chemotaxis.sim.Agent {
      * @param simPrinter  simulation printer
      *
      */
-	public Agent(SimPrinter simPrinter) {
-		super(simPrinter);
-	}
+    public Agent(SimPrinter simPrinter) {
+        super(simPrinter);
+    }
 
     /**
      * Move agent
@@ -30,19 +29,39 @@ public class Agent extends chemotaxis.sim.Agent {
      * @return                 agent move
      *
      */
-	@Override
-	public Move makeMove(Integer randomNum, Byte previousState, ChemicalCell currentCell, Map<DirectionType, ChemicalCell> neighborMap) {
-		Move move = new Move();
+    @Override
+    public Move makeMove(Integer randomNum, Byte previousState, ChemicalCell currentCell, Map<DirectionType, ChemicalCell> neighborMap) {
+        // TODO add your code here to move the agent
+        Move move = new Move();
 
-		ChemicalType chosenChemicalType = ChemicalType.BLUE;
+        // blue the best, green helps, hate red
+        ChemicalCell.ChemicalType highPriority = ChemicalCell.ChemicalType.BLUE;
+        ChemicalCell.ChemicalType medPriority = ChemicalCell.ChemicalType.GREEN;
 
-		double highestConcentration = currentCell.getConcentration(chosenChemicalType);
-		for (DirectionType directionType : neighborMap.keySet()) {
-			if (highestConcentration <= neighborMap.get(directionType).getConcentration(chosenChemicalType)) {
-				highestConcentration = neighborMap.get(directionType).getConcentration(chosenChemicalType);
-				move.directionType = directionType;
-			}
-		}
-		return move;
-	}
+        // if green and no blue, follow green
+        // green and blue, go to blue
+        double highestGreen = currentCell.getConcentration(medPriority);
+        DirectionType highestGreenDirection = DirectionType.SOUTH;
+        double highestBlue = currentCell.getConcentration(highPriority);
+        DirectionType highestBlueDirection = null;
+
+        for (DirectionType directionType : neighborMap.keySet()) {
+            if (highestGreen <= neighborMap.get(directionType).getConcentration(medPriority)) {
+                highestGreen = neighborMap.get(directionType).getConcentration(medPriority);
+                highestGreenDirection = directionType;
+            }
+            if (highestBlue <= neighborMap.get(directionType).getConcentration(highPriority)) {
+                highestBlue = neighborMap.get(directionType).getConcentration(highPriority);
+                highestBlueDirection = directionType;
+            }
+        }
+
+        if (highestBlue != 0) {
+            move.directionType = highestBlueDirection;
+        } else {
+            move.directionType = highestGreenDirection;
+        }
+
+        return move; // TODO modify the return statement to return your agent move
+    }
 }
