@@ -1,10 +1,12 @@
 package chemotaxis.g11;
+package chemotaxis.dummy;
 
 import java.util.Map;
 import java.util.HashMap;
 
 import chemotaxis.sim.DirectionType;
 import chemotaxis.sim.ChemicalCell;
+import chemotaxis.sim.ChemicalCell.ChemicalType;
 import chemotaxis.sim.Move;
 import chemotaxis.sim.SimPrinter;
 import chemotaxis.sim.ChemicalCell.ChemicalType;
@@ -18,9 +20,9 @@ public class Agent extends chemotaxis.sim.Agent {
      * @param simPrinter  simulation printer
      *
      */
-    public Agent(SimPrinter simPrinter) {
-        super(simPrinter);
-    }
+	public Agent(SimPrinter simPrinter) {
+		super(simPrinter);
+	}
 
     /**
      * Move agent
