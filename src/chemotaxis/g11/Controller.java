@@ -125,11 +125,12 @@ public class Controller extends chemotaxis.sim.Controller {
 
         if (locations.contains(target)) {
             agents.remove(target);
+            locations.remove(target);
         }
 
         Point wrongDirectionAgent = null;
         for (Point p: locations) {
-            if (agents.get(p) != directionMap[p.x - 1][p.y - 1]) {
+            if (!p.equals(target) && agents.get(p) != directionMap[p.x - 1][p.y - 1]) {
                 wrongDirectionAgent = p;
                 break;
             }
@@ -168,10 +169,10 @@ public class Controller extends chemotaxis.sim.Controller {
             else if (currentDirection == DirectionType.SOUTH) {
                 newAgents.put(new Point(p.x + 1, p.y), DirectionType.SOUTH);
             }
-            if (currentDirection == DirectionType.WEST) {
+            else if (currentDirection == DirectionType.WEST) {
                 newAgents.put(new Point(p.x, p.y - 1), DirectionType.WEST);
             }
-            if (currentDirection == DirectionType.EAST) {
+            else if (currentDirection == DirectionType.EAST) {
                 newAgents.put(new Point(p.x, p.y + 1), DirectionType.EAST);
             }
             else {
