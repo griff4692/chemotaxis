@@ -1,14 +1,17 @@
 package chemotaxis.g11;
 
 import java.awt.Point;
+import java.util.LinkedList;
 import java.util.ArrayList;
 import java.util.List;
+import java.util.Queue;
 
 import chemotaxis.sim.ChemicalPlacement;
 import chemotaxis.sim.ChemicalCell;
 import chemotaxis.sim.SimPrinter;
 
 public class Controller extends chemotaxis.sim.Controller {
+    char[][] directionMap;
 
     /**
      * Controller constructor
@@ -22,8 +25,48 @@ public class Controller extends chemotaxis.sim.Controller {
      * @param simPrinter  simulation printer
      *
      */
-    public Controller(Point start, Point target, Integer size, Integer simTime, Integer budget, Integer seed, SimPrinter simPrinter) {
-        super(start, target, size, simTime, budget, seed, simPrinter);
+    public Controller(Point start, Point target, Integer size, ChemicalCell[][] grid, Integer simTime, Integer budget, Integer seed, SimPrinter simPrinter) {
+        super(start, target, size, grid, simTime, budget, seed, simPrinter);
+        int endX = target.x - 1;
+        int endY = target.y - 1;
+        boolean[][] visited = new boolean[size][size];
+        directionMap = new char[size][size];
+        for (int r = 0; r < size; r++) {
+            for (int c = 0; c < size; c++) {
+                visited[r][c] = false;
+                directionMap[r][c] = '#';
+            }
+        }
+        Queue<Point> queue = new LinkedList<Point>();
+        queue.add(new Point(endX, endY));
+        directionMap[endX][endY] = 'E';
+
+        while (!queue.isEmpty()) {
+            Point curr = queue.remove();
+            int x = curr.x;
+            int y = curr.y;
+            visited[x][y] = true;
+            if (x - 1 >= 0 && grid[x - 1][y].isOpen() && !visited[x - 1][y]) {
+                queue.add(new Point(x - 1, y));
+                directionMap[x - 1][y] = 'D';
+            }
+
+            if (y - 1 >= 0 && grid[x][y - 1].isOpen() && !visited[x][y - 1]) {
+                queue.add(new Point(x, y - 1));
+                directionMap[x][y - 1] = 'R';
+            }
+
+            if (x + 1 < size && grid[x + 1][y].isOpen() && !visited[x + 1][y]) {
+                queue.add(new Point(x + 1, y));
+                directionMap[x + 1][y] = 'U';
+            }
+
+            if (y + 1 < size && grid[x][y + 1].isOpen() && !visited[x][y + 1]) {
+                queue.add(new Point(x, y + 1));
+                directionMap[x][y + 1] = 'L';
+            }
+        }
+
     }
 
     public int closestToTarget(ArrayList<Point> locations) {

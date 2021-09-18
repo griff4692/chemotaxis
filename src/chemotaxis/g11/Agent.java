@@ -1,5 +1,4 @@
 package chemotaxis.g11;
-package chemotaxis.dummy;
 
 import java.util.Map;
 import java.util.HashMap;
