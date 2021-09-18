@@ -52,8 +52,7 @@ public class Agent extends chemotaxis.sim.Agent {
         ChemicalType chosenChemicalType = ChemicalType.BLUE;
 
         for (DirectionType directionType : neighborMap.keySet()) {
-            if (neighborMap.get(directionType).getConcentration(chosenChemicalType)==1.0)
-            {
+            if (neighborMap.get(directionType).getConcentration(chosenChemicalType) >= 0.99) {
                 move.directionType = directionType;
                 move.currentState = (byte) (bitDirectionMap.get(move.directionType) | previousState);
             }
@@ -64,12 +63,12 @@ public class Agent extends chemotaxis.sim.Agent {
             if ( previousDirection == 0)
             { move.directionType = DirectionType.SOUTH; }
             else if (previousDirection == 1)
-            {move.directionType = DirectionType. EAST; }
+            {move.directionType = DirectionType.EAST; }
             else if (previousDirection == 2)
             {move.directionType = DirectionType.WEST; }
             else { move.directionType = DirectionType.NORTH; }
         }
 
-        return null;
+        return move;
     }
 }
