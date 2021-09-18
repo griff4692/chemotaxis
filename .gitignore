@@ -40,3 +40,7 @@ src/Makefile
 hs_err_pid*
 out
 coms4444-chemotaxis.iml
+
+.vscode/
+*.DS_Store
+.metadata/
