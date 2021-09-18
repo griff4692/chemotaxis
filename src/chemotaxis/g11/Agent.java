@@ -46,9 +46,10 @@ public class Agent extends chemotaxis.sim.Agent {
         bitDirectionMap.put(DirectionType.NORTH, 0b11);
         bitDirectionMap.put(DirectionType.SOUTH, 0b00);
         bitDirectionMap.put(DirectionType.WEST, 0b10);
-        bitDirectionMap.put(DirectionType.EAST, 0b11);
+        bitDirectionMap.put(DirectionType.EAST, 0b01);
 
         Move move = new Move();
+        move.currentState = previousState;
         ChemicalType chosenChemicalType = ChemicalType.BLUE;
 
         for (DirectionType directionType : neighborMap.keySet()) {

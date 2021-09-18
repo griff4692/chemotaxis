@@ -16,6 +16,7 @@ public class Controller extends chemotaxis.sim.Controller {
     DirectionType[][] directionMap;
     HashMap<Point, DirectionType> agents;
     Point start;
+    Point target;
 
     /**
      * Controller constructor
@@ -33,6 +34,7 @@ public class Controller extends chemotaxis.sim.Controller {
         super(start, target, size, grid, simTime, budget, seed, simPrinter);
         agents = new HashMap<>();
         this.start = start;
+        this.target = target;
         int endX = target.x - 1;
         int endY = target.y - 1;
         boolean[][] visited = new boolean[size][size];
@@ -72,6 +74,21 @@ public class Controller extends chemotaxis.sim.Controller {
             }
         }
 
+        /* Prints the map that is made
+        HashMap<DirectionType, Character> debugging = new HashMap<>();
+        debugging.put(DirectionType.NORTH, 'N');
+        debugging.put(DirectionType.SOUTH, 'S');
+        debugging.put(DirectionType.EAST, 'E');
+        debugging.put(DirectionType.WEST, 'W');
+        debugging.put(DirectionType.CURRENT, 'C');
+        for (int r = 0; r < size; r++) {
+            for (int c = 0; c < size; c++) {
+                System.out.print(debugging.get(directionMap[r][c]));
+            }
+            System.out.println();
+        }
+        */
+
     }
 
     public int closestToTarget(ArrayList<Point> locations) {
@@ -104,6 +121,10 @@ public class Controller extends chemotaxis.sim.Controller {
         ChemicalPlacement chemicalPlacement = new ChemicalPlacement();
         if (locations.contains(start)) {
             agents.put(start, DirectionType.SOUTH);
+        }
+
+        if (locations.contains(target)) {
+            agents.remove(target);
         }
 
         Point wrongDirectionAgent = null;
