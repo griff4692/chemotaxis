@@ -1,8 +1,7 @@
 package chemotaxis.g6;
 
 import java.awt.Point;
-import java.util.List;
-import java.util.ArrayList;
+import java.util.*;
 
 import chemotaxis.sim.ChemicalPlacement;
 import chemotaxis.sim.ChemicalCell;
@@ -10,7 +9,8 @@ import chemotaxis.sim.ChemicalCell.ChemicalType;
 import chemotaxis.sim.SimPrinter;
 
 public class Controller extends chemotaxis.sim.Controller {
-	
+
+	ArrayList<Point> path = null;
     /**
      * Controller constructor
      *
@@ -43,6 +43,47 @@ public class Controller extends chemotaxis.sim.Controller {
 		return closestIdx;
 	}
 
+	Boolean pointInBounds(Integer length, Point p){
+		if(p.x >= 1 && p.x <= length && p.y >= 1 && p.y <= length){
+			return true;
+		}
+		return false;
+	}
+	ArrayList<Point> getPath(ChemicalCell[][] grid){
+		int length = grid.length;
+
+		ArrayList<Point> path = new ArrayList<Point>();
+		path.add(start);
+
+		Queue<ArrayList<Point>> q = new LinkedList<>();
+		q.add(path);
+
+		Set<Point> reached = new HashSet<Point>();
+
+		while(true) {
+			path = q.remove();
+			Point p = path.get(path.size() - 1);
+			if(p.x == target.x && p.y == target.y){
+				return path;
+			}
+
+			ArrayList<Point> neighbors = new ArrayList<Point>();
+			neighbors.add(new Point(p.x, p.y + 1));
+			neighbors.add(new Point(p.x, p.y - 1));
+			neighbors.add(new Point(p.x + 1, p.y));
+			neighbors.add(new Point(p.x - 1, p.y));
+
+			for(Point neighbor: neighbors){
+				if(pointInBounds(length, neighbor) && !reached.contains(neighbor) && grid[neighbor.x - 1][neighbor.y - 1].isOpen()){
+					ArrayList<Point> newPath = new ArrayList<Point>(path);
+					newPath.add(neighbor);
+					q.add(newPath);
+					reached.add(neighbor);
+				}
+			}
+		}
+	}
+
     /**
      * Apply chemicals to the map
      *
@@ -56,7 +97,17 @@ public class Controller extends chemotaxis.sim.Controller {
  	@Override
 	public ChemicalPlacement applyChemicals(Integer currentTurn, Integer chemicalsRemaining, ArrayList<Point> locations, ChemicalCell[][] grid) {
 		ChemicalPlacement chemicalPlacement = new ChemicalPlacement();
-		
+
+
+		simPrinter = new SimPrinter(true);
+
+		if(path == null){
+			simPrinter.println("creating path");
+			path = getPath(grid);
+		}
+
+
+
 		if(currentTurn%10 == 1){
 			List<ChemicalType> chemicals = new ArrayList<>();
 			chemicals.add(ChemicalType.RED);
