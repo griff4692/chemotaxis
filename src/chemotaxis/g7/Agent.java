@@ -178,15 +178,28 @@ public class Agent extends chemotaxis.sim.Agent {
         }
     }
 
-    //private DirectionType randomStep(Byte previousState, ChemicalCell currentCell, Map<DirectionType, ChemicalCell> neighborMap) {
+    private DirectionType randomStep(Integer randomNum, Byte previousState, ChemicalCell currentCell, Map<DirectionType, ChemicalCell> neighborMap) {
         /**
          * randomly chooses the direction the agent should go if he needs to do a random step
+         * - if the agent can move only to one direction then by default moves to that direction
+         * - if there are more directions then we exclude the opposite of the previous direciton so that the agent
+         *   won't make a "circle" and then we use the random number to generate a random idex for the direction
+         *   the agent should move to
          */
-      //  DirectionType previousDirection = getPrevDirection(previousState);
-      //  List<DirectionType> possibleDirections = getPossibleDirections(neighborMap);
-        //if (possibleDirections.size() == 1
-
-    //}
+        DirectionType previousDirection = getPrevDirection(previousState);
+        List<DirectionType> possibleDirections = getPossibleDirections(neighborMap);
+        if (possibleDirections.size() == 1) {
+            return possibleDirections.get(0);
+        }
+        else {
+            if (possibleDirections.contains(getOtherDirectionList(previousDirection).get(2))) {
+                possibleDirections.remove(getOtherDirectionList(previousDirection).get(2));
+            }
+            Random rand = new Random(randomNum);
+            int randomIndex = rand.nextInt(possibleDirections.size());
+            return possibleDirections.get(randomIndex);
+        }
+    }
 
     @Override
     public Move makeMove(Integer randomNum, Byte previousState, ChemicalCell currentCell, Map<DirectionType, ChemicalCell> neighborMap) {
@@ -234,7 +247,7 @@ public class Agent extends chemotaxis.sim.Agent {
         if (sensedChemical == false) {
             int rounds = getRoundsCounter(previousState);
             if (rounds == 0) {
-                //random walk
+                move.directionType = randomStep(randomNum, previousState, currentCell, neighborMap);
             }
             else if (rounds <= 31) {
                 ChemicalCell nextChemicalCell = neighborMap.get(previousDirection);
