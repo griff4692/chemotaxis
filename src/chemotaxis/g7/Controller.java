@@ -5,6 +5,8 @@ import java.util.List;
 import java.util.ArrayList;
 import java.util.Queue;
 import java.util.LinkedList;
+import java.util.Map;
+import java.util.HashMap;
 
 import chemotaxis.sim.ChemicalPlacement;
 import chemotaxis.sim.ChemicalCell;
@@ -22,6 +24,14 @@ public class Controller extends chemotaxis.sim.Controller {
         directions.add(new MoveDirection(0, -1, DirectionType.SOUTH));
     }
 
+    public static final Map<String, Integer> turnDirections = new HashMap<>();
+    static {
+        turnDirections.put("LEFT", 0);
+        turnDirections.put("RIGHT", 0);
+        turnDirections.put("ATTRACT", 0);
+    }
+
+    ArrayList<Point> previousLocations = new ArrayList<Point>();
     /**
      * Controller constructor
      *
@@ -39,11 +49,63 @@ public class Controller extends chemotaxis.sim.Controller {
         super(start, target, size, grid, simTime, budget, seed, simPrinter);
     }
 
-    // TODO: weigh the points, not must be the closest point to the target, we can give this function another name like chooseOnePoint
+    // weigh the points, not must be the closest point to the target
     // I think for now we can just choose the point which is the closest of all the points that need to turn
     // and maybe in the future:
     // we can use two chemicals at the same point to guide many agents
     // we can take chemicals diffusion into consideration
+    public ArrayList<Integer> chooseOnePointNeedToTurn(ArrayList<Point> locations, ChemicalCell[][] grid) {
+        int chooseIdx = -1;
+        int distance = Integer.MAX_VALUE;
+        int turnDirection = -1;
+        int nextX = -1;
+        int nextY = -1;
+
+        ArrayList<Integer> result = new ArrayList<Integer>();
+
+        for (int i = 0; i < locations.size(); i ++) {
+            Point location = locations.get(i);
+            if (location == target)
+                continue;
+
+            DirectionType beforeDirection = DirectionType.CURRENT;
+            if (location != start) {
+                // debug
+                if (i >= previousLocations.size()) {
+                    System.out.println(i);
+                    System.out.println(previousLocations);
+                    System.out.println(locations);
+                } else {
+                    Point previousLocation = previousLocations.get(i);
+                    beforeDirection = this.getMoveDirections(previousLocation, location);
+                }
+            }
+
+            // get the shortest path and the next node position
+            Node node = this.getShortestPathLeastTurns(location, grid);
+            ArrayList<Point> path = node.getPath();
+            Point nextPosition = path.get(1);
+            DirectionType nowDirection = this.getMoveDirections(location, nextPosition);
+            if (nowDirection != beforeDirection) {
+                if (distance > path.size() - 1) {
+                    distance = path.size() - 1;
+                    chooseIdx = i;
+                    turnDirection = this.getChemicalType(beforeDirection, nowDirection);
+                    nextX = nextPosition.x;
+                    nextY = nextPosition.y;
+                }
+            }
+        }
+        if (chooseIdx != -1) {
+            result.add(chooseIdx);
+            result.add(turnDirection);
+            result.add(nextX);
+            result.add(nextY);
+        }
+        return result;
+    }
+
+
     public int closestToTarget(ArrayList<Point> locations) {
         int closestDistance = 9999999;
         int closestIdx = 0;
@@ -69,7 +131,7 @@ public class Controller extends chemotaxis.sim.Controller {
      * @return                    a cell location and list of chemicals to apply
      *
      */
-    // TODO choose one point and put the chemicals(G:left, R:right, B:attract) to guide it
+    // choose one point and put the chemicals(G:left, R:right, B:attract) to guide it
     // In the beginning, we use blue to guide the agent in the right direction, in the further process, we use G/R to guide it
     // As a result, for the agent which is at the start point, the priority is B > G = R
     // in the afterwards, the priority is G = R > B
@@ -77,26 +139,38 @@ public class Controller extends chemotaxis.sim.Controller {
     public ChemicalPlacement applyChemicals(Integer currentTurn, Integer chemicalsRemaining, ArrayList<Point> locations, ChemicalCell[][] grid) {
         ChemicalPlacement chemicalPlacement = new ChemicalPlacement();
         // choose a point that needs to turn and apply the chemicals
-        int closestIdx = this.closestToTarget(locations);
-        Point currentLocation = locations.get(closestIdx);
-        int currentX = currentLocation.x;
-        int currentY = currentLocation.y;
+        ArrayList<Integer> result = this.chooseOnePointNeedToTurn(locations, grid);
+        System.out.println("the result of applyChemicals are" + result.toString());
+        if (result.isEmpty()) {
+            previousLocations = locations;
+            return chemicalPlacement;
+        }
 
-        int leftEdgeX = Math.max(1, currentX - 5);
-        int rightEdgeX = Math.min(size, currentX + 5);
-        int topEdgeY = Math.max(1, currentY - 5);
-        int bottomEdgeY = Math.min(size, currentY + 5);
+        int chooseIdx = result.get(0);
+        int turnDirection = result.get(1);
+        int nextX = result.get(2);
+        int nextY = result.get(3);
+        Point nowLocation = locations.get(chooseIdx);
 
-        int randomX = this.random.nextInt(rightEdgeX - leftEdgeX + 1) + leftEdgeX;
-        int randomY = this.random.nextInt(bottomEdgeY - topEdgeY + 1) + topEdgeY ;
+        List<ChemicalCell.ChemicalType> chemicals = new ArrayList<>();
 
-        List<ChemicalType> chemicals = new ArrayList<>();
+        switch (turnDirection) {
+            case 1 -> {
+                chemicals.add(ChemicalCell.ChemicalType.GREEN);
+                chemicalPlacement.location = new Point(nowLocation.x, nowLocation.y);
+            }
+            case 2 -> {
+                chemicals.add(ChemicalCell.ChemicalType.RED);
+                chemicalPlacement.location = new Point(nowLocation.x, nowLocation.y);
+            }
+            case 3 -> {
+                chemicals.add(ChemicalCell.ChemicalType.BLUE);
+                chemicalPlacement.location = new Point(nextX, nextY);
+            }
+        }
 
-        chemicals.add(ChemicalType.BLUE);
-
-        chemicalPlacement.location = new Point(randomX, randomY);
         chemicalPlacement.chemicals = chemicals;
-
+        previousLocations = locations;
         return chemicalPlacement;
     }
 
@@ -135,13 +209,13 @@ public class Controller extends chemotaxis.sim.Controller {
             for (MoveDirection direction : directions) {
                 int new_x = currentPosition.x + direction.dx;
                 int new_y = currentPosition.y + direction.dy;
-                if (validCell(new_x, new_y, visited, grid)) {
+                if (this.validCell(new_x, new_y, visited, grid)) {
                     visited[new_x][new_y] = true;
                     Point newPosition = new Point(new_x, new_y);
                     ArrayList<Point> newPath = node.getPath();
                     int turns = node.getTurns();
                     newPath.add(newPosition);
-                    if (node.directionType != DirectionType.CURRENT && node.directionType!= direction.directionType) {
+                    if (node.directionType != DirectionType.CURRENT && node.directionType != direction.directionType) {
                         turns += 1;
                     }
                     Node neighbor = new Node(newPosition, newPath, direction.directionType, turns);
@@ -229,6 +303,66 @@ public class Controller extends chemotaxis.sim.Controller {
             this.dy = dy;
             this.directionType = directionType;
         }
+    }
+
+    public DirectionType getMoveDirections(Point previousLocation, Point currentLocation) {
+        for (MoveDirection moveDirection: directions) {
+            int dx = moveDirection.dx;
+            int dy = moveDirection.dy;
+            if (currentLocation.x - previousLocation.x == dx && currentLocation.y - previousLocation.y == dy) {
+                return moveDirection.directionType;
+            }
+        }
+        // used to debug
+        if (previousLocation.x != currentLocation.x || previousLocation.y != currentLocation.y) {
+            System.out.println(previousLocation);
+            System.out.println(currentLocation);
+        }
+        return DirectionType.CURRENT;
+    }
+
+    // Green: left: 0, Red: right: 1, Blue: attract : 2
+    public int getChemicalType(DirectionType previousDirection, DirectionType nowDirection) {
+        if (previousDirection == DirectionType.NORTH && nowDirection == DirectionType.WEST)
+            return turnDirections.get("LEFT");
+
+        if (previousDirection == DirectionType.WEST && nowDirection == DirectionType.SOUTH)
+            return turnDirections.get("LEFT");
+
+        if (previousDirection == DirectionType.SOUTH && nowDirection == DirectionType.EAST)
+            return turnDirections.get("LEFT");
+
+        if (previousDirection == DirectionType.EAST && nowDirection == DirectionType.NORTH)
+            return turnDirections.get("LEFT");
+
+        if (previousDirection == DirectionType.NORTH && nowDirection == DirectionType.EAST)
+            return turnDirections.get("RIGHT");
+
+        if (previousDirection == DirectionType.EAST && nowDirection == DirectionType.SOUTH)
+            return turnDirections.get("RIGHT");
+
+        if (previousDirection == DirectionType.SOUTH && nowDirection == DirectionType.WEST)
+            return turnDirections.get("RIGHT");
+
+        if (previousDirection == DirectionType.WEST && nowDirection == DirectionType.NORTH)
+            return turnDirections.get("RIGHT");
+
+        if (previousDirection == DirectionType.EAST && nowDirection == DirectionType.WEST)
+            return turnDirections.get("ATTRACT");
+
+        if (previousDirection == DirectionType.WEST && nowDirection == DirectionType.EAST)
+            return turnDirections.get("ATTRACT");
+
+        if (previousDirection == DirectionType.SOUTH && nowDirection == DirectionType.NORTH)
+            return turnDirections.get("ATTRACT");
+
+        if (previousDirection == DirectionType.NORTH && nowDirection == DirectionType.SOUTH)
+            return turnDirections.get("ATTRACT");
+
+        if (previousDirection == DirectionType.CURRENT && nowDirection != DirectionType.CURRENT)
+            return turnDirections.get("ATTRACT");
+
+        return 0;
     }
 }
 
