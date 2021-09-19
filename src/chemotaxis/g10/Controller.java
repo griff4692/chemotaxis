@@ -88,7 +88,7 @@ public class Controller extends chemotaxis.sim.Controller {
    public ChemicalPlacement applyChemicals(Integer currentTurn, Integer chemicalsRemaining, ArrayList<Point> locations, ChemicalCell[][] grid) {
       ChemicalPlacement chemPlacement = null;
       if (chemicalsRemaining > 0) {
-         for (int i = locations.size() - 1; i >= 0; i--) {
+         for (int i = 0; i < locations.size(); i++) {
             Point agentLocation = locations.get(i);
             if (agentLocation.x != target.x || agentLocation.y != target.y) {
                TurnGridNode agentTurnGridNode = turnGrid[agentLocation.x - 1][agentLocation.y - 1];
