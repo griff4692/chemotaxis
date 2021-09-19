@@ -93,7 +93,7 @@ public class Controller extends chemotaxis.sim.Controller {
             if (agentLocation.x != target.x || agentLocation.y != target.y) {
                TurnGridNode agentTurnGridNode = turnGrid[agentLocation.x - 1][agentLocation.y - 1];
                if (agentLastNumTurns.size() != locations.size()) {
-                  agentLastNumTurns.add(0, agentTurnGridNode.getTurns());
+                  agentLastNumTurns.add(agentTurnGridNode.getTurns());
                }
 
                if ((agentLocation.x == start.x && agentLocation.y == start.y) || agentTurnGridNode.getTurns() != agentLastNumTurns.get(i)) {
