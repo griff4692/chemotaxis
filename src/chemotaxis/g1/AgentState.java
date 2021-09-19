@@ -1,5 +1,7 @@
 package chemotaxis.g1;
 
+import chemotaxis.sim.DirectionType;
+
 public class AgentState {
     // State is represented as a single byte of memory
     private byte state;
@@ -11,13 +13,6 @@ public class AgentState {
 
     // First two bits are used for direction
     private static final byte DIRECTION_MASK = 0x3;
-
-    public enum Direction {
-        NORTH,
-        EAST,
-        SOUTH,
-        WEST
-    }
 
     public AgentState() {
         this.state = 0x0;
@@ -41,7 +36,11 @@ public class AgentState {
      *
      * @param dir Direction the agent just moved
      */
-    public void setDirection(Direction dir) {
+    public void setDirection(DirectionType dir) {
+        if (dir == DirectionType.CURRENT) {
+            return;
+        }
+
         this.state &= ~DIRECTION_MASK;
         switch (dir) {
             case NORTH:
@@ -66,16 +65,16 @@ public class AgentState {
      *
      * @return The previous direction the agent moved
      */
-    public Direction getDirection() {
+    public DirectionType getDirection() {
         switch (this.state & DIRECTION_MASK) {
             case NORTH_BITS:
-                return Direction.NORTH;
+                return DirectionType.NORTH;
             case EAST_BITS:
-                return Direction.EAST;
+                return DirectionType.EAST;
             case WEST_BITS:
-                return Direction.WEST;
+                return DirectionType.WEST;
             case SOUTH_BITS:
-                return Direction.SOUTH;
+                return DirectionType.SOUTH;
         }
         throw new RuntimeException("unreachable direction state");
     }
