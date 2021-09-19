@@ -31,6 +31,22 @@ public class AgentState {
         return this.state;
     }
 
+    public CardinalDirection asCardinalDir(DirectionType dir) {
+        switch (dir) {
+            case NORTH:
+                return CardinalDirection.NORTH;
+            case SOUTH:
+                return CardinalDirection.SOUTH;
+            case EAST:
+                return CardinalDirection.EAST;
+            case WEST:
+                return CardinalDirection.WEST;
+            case CURRENT:
+                return this.getDirection();
+        }
+        throw new RuntimeException("unreachable");
+    }
+
     /**
      * setDirection - Set the direction the agent just moved
      *
@@ -40,7 +56,10 @@ public class AgentState {
         if (dir == DirectionType.CURRENT) {
             return;
         }
+        setDirection(this.asCardinalDir(dir));
+    }
 
+    public void setDirection(CardinalDirection dir) {
         this.state &= ~DIRECTION_MASK;
         switch (dir) {
             case NORTH:
@@ -65,17 +84,18 @@ public class AgentState {
      *
      * @return The previous direction the agent moved
      */
-    public DirectionType getDirection() {
+    public CardinalDirection getDirection() {
         switch (this.state & DIRECTION_MASK) {
             case NORTH_BITS:
-                return DirectionType.NORTH;
+                return CardinalDirection.NORTH;
             case EAST_BITS:
-                return DirectionType.EAST;
+                return CardinalDirection.EAST;
             case WEST_BITS:
-                return DirectionType.WEST;
+                return CardinalDirection.WEST;
             case SOUTH_BITS:
-                return DirectionType.SOUTH;
+                return CardinalDirection.SOUTH;
         }
         throw new RuntimeException("unreachable direction state");
     }
+
 }
