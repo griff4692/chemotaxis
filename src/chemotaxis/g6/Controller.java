@@ -1,6 +1,8 @@
 package chemotaxis.g6; // TODO modify the package name to reflect your team
 
 import java.awt.Point;
+import java.util.List;
+import java.util.ArrayList;
 
 import chemotaxis.sim.ChemicalPlacement;
 import chemotaxis.sim.ChemicalCell;
