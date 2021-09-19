@@ -3,6 +3,7 @@ package chemotaxis.g7;
 import java.util.ArrayList;
 import java.util.List;
 import java.util.Map;
+import java.util.Random;
 
 import chemotaxis.sim.DirectionType;
 import chemotaxis.sim.ChemicalCell;
@@ -97,6 +98,9 @@ public class Agent extends chemotaxis.sim.Agent {
     }
 
     private byte setDirectionBitsInCurrentState(Byte previousState, DirectionType newDirection) {
+        /**
+         * update last 2 bits of the state to indicate the new direction of the agent
+         */
         byte previousDirectionBits = (byte) (previousState % 4);
         byte newDirectionBits = 0;
         if (newDirection == DirectionType.NORTH) {
@@ -116,54 +120,132 @@ public class Agent extends chemotaxis.sim.Agent {
     }
 
     private byte setCounterInCurrentState(Byte previousState, boolean increase) {
+        /**
+         * update the counter stored in the state to indicate to keep track of the #rounds the agent hasn't sensed
+         * chemicals
+         */
         int previousCounter = getRoundsCounter(previousState);
         byte newState = previousState;
         if (increase) {
-            newState = (byte) (previousState + 4);
+            if (previousState < 31) {
+                newState = (byte) (previousState + 4);
+            }
+            else {
+                newState = 0;
+            }
         }
         else {
-            newState = (byte) (previousState - (previousCounter * 4));
+            newState = (byte) (previousState + 4 - (byte) (previousCounter * 4));
         }
         return newState;
     }
 
+    private List<DirectionType> getPossibleDirections(Map<DirectionType, ChemicalCell> neighborMap) {
+        /**
+         * return all possible directions (the ones that aren't blocked)
+         */
+        List<DirectionType> possibleDirections = new ArrayList<>();
+        for (Map.Entry<DirectionType, ChemicalCell> neighborCell: neighborMap.entrySet()) {
+            ChemicalCell cell = neighborCell.getValue();
+            if (cell.isOpen()) {
+                possibleDirections.add(neighborCell.getKey());
+            }
+        }
+        return possibleDirections;
+    }
+
+    private DirectionType circumventBlocks(Byte previousState, ChemicalCell currentCell, Map<DirectionType, ChemicalCell> neighborMap) {
+        /**
+         * indicates which direction the agent should go in case he meets a block
+         */
+        DirectionType previousDirection = getPrevDirection(previousState);
+
+        DirectionType rightDirection = getOtherDirectionList(previousDirection).get(0);
+        ChemicalCell rightCell = neighborMap.get(rightDirection);
+        DirectionType leftDirection = getOtherDirectionList(previousDirection).get(1);
+        ChemicalCell leftCell = neighborMap.get(leftDirection);
+        DirectionType oppositeDirection = getOtherDirectionList(previousDirection).get(2);
+        ChemicalCell oppositeCell = neighborMap.get(oppositeDirection);
+
+        if (!(rightCell.isBlocked())) {
+            return rightDirection;
+        }
+        else if (!(leftCell.isBlocked())) {
+            return leftDirection;
+        }
+        else {
+            return oppositeDirection;
+        }
+    }
+
+    //private DirectionType randomStep(Byte previousState, ChemicalCell currentCell, Map<DirectionType, ChemicalCell> neighborMap) {
+        /**
+         * randomly chooses the direction the agent should go if he needs to do a random step
+         */
+      //  DirectionType previousDirection = getPrevDirection(previousState);
+      //  List<DirectionType> possibleDirections = getPossibleDirections(neighborMap);
+        //if (possibleDirections.size() == 1
+
+    //}
+
     @Override
     public Move makeMove(Integer randomNum, Byte previousState, ChemicalCell currentCell, Map<DirectionType, ChemicalCell> neighborMap) {
+        /**
+         * Next move functionality (order indicates priority of each scenario):
+         * - if there is red chemical in the current block then turn right
+         * - if there is green chemical in the current block then turn left
+         * - if there is blue chemical in one of the neighboring cells then move to that direction
+         * - if there is no chemical continue moving to the same direction unless
+         *      1) the next cell is blocked, in that case use default behavior to circumvent blocks
+         *      2) the agent hasn't sensed any chemical in 31 rounds, in that case the agent should do random steps till
+         *         he senses a chemical
+         */
+
         Move move = new Move();
+        DirectionType previousDirection = getPrevDirection(previousState);
 
         boolean sensedChemical = false;
 
         if (currentCell.getConcentration(ChemicalType.RED) == 1.0) {
-            DirectionType newDirection = getOtherDirectionList(getPrevDirection(previousState)).get(0);
-            move.currentState = setDirectionBitsInCurrentState(previousState, newDirection);
+            DirectionType newDirection = getOtherDirectionList(previousDirection).get(0);
+            move.currentState = setCounterInCurrentState(previousState, false);
+            move.currentState = setDirectionBitsInCurrentState(move.currentState, newDirection);
             move.directionType = newDirection;
             sensedChemical = true;
         }
         else if (currentCell.getConcentration(ChemicalType.GREEN) == 1.0) {
-            DirectionType newDirection = getOtherDirectionList(getPrevDirection(previousState)).get(1);
-            move.currentState = setDirectionBitsInCurrentState(previousState, newDirection);
+            DirectionType newDirection = getOtherDirectionList(previousDirection).get(1);
+            move.currentState = setCounterInCurrentState(previousState, false);
+            move.currentState = setDirectionBitsInCurrentState(move.currentState, newDirection);
             move.directionType = newDirection;
             sensedChemical = true;
         }
         else if (sensedChemical == false) {
             for (DirectionType directionType : neighborMap.keySet()) {
                 if (neighborMap.get(directionType).getConcentration(ChemicalType.BLUE) == 1.0) {
-                    move.currentState = setDirectionBitsInCurrentState(previousState, directionType);
+                    move.currentState = setCounterInCurrentState(previousState, false);
+                    move.currentState = setDirectionBitsInCurrentState(move.currentState, directionType);
                     move.directionType = directionType;
                     sensedChemical = true;
                 }
             }
         }
 
-        // TO DO: if counter = 31 then random step, else if not blocked move to the previous direction and increase counter. if blocked default behavior
         if (sensedChemical == false) {
             int rounds = getRoundsCounter(previousState);
-            if (rounds < 31) {
-                // TO DO: check if blocked
-                // increase counter
+            if (rounds == 0) {
+                //random walk
             }
-            else {
-                // random walk
+            else if (rounds <= 31) {
+                ChemicalCell nextChemicalCell = neighborMap.get(previousDirection);
+                if (nextChemicalCell.isBlocked()) {
+                    move.directionType = circumventBlocks(previousState, currentCell, neighborMap);
+                }
+                else {
+                    move.directionType = previousDirection;
+                }
+                move.currentState = setCounterInCurrentState(previousState, true);
+                move.currentState = setDirectionBitsInCurrentState(move.currentState, move.directionType);
             }
 
         }
