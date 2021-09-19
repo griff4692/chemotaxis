@@ -136,7 +136,7 @@ public class Controller extends chemotaxis.sim.Controller {
                     ArrayList<Point> newPath = node.getPath();
                     int turns = node.getTurns();
                     newPath.add(newPosition);
-                    if (node.directionType!= direction.directionType) {
+                    if (node.directionType != DirectionType.CURRENT && node.directionType!= direction.directionType) {
                         turns += 1;
                     }
                     Node neighbor = new Node(newPosition, newPath, direction.directionType, turns);
