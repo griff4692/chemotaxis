@@ -134,7 +134,7 @@ In order to improve performance and readability of code during simulations, we w
 
 > **[-t | --team]**: team/player
 
-> **[-b | --budget]**: chemical budget (default = 50)
+> **[-b | --budget]**: chemical budget (default = 100)
 
 > **[-c | --check]**: verify map validity when a map is specified
 
@@ -147,6 +147,8 @@ In order to improve performance and readability of code during simulations, we w
 > **[-v | --verbose]**: record verbose log when logging is enabled (default = false)
 
 > **[-g | --gui]**: enable GUI (default = false)
+ 
+> **[-a | --agentGoal]**: number of agents needed to reach target to "win" (default = 3)
 
 > **[-f | --fpm]**: speed (frames per minute) of GUI when continuous GUI is enabled (default = 15)
 
