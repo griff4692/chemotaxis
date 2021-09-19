@@ -19,6 +19,46 @@ public class Agent extends chemotaxis.sim.Agent {
       super(simPrinter);
    }
 
+   private DirectionType getDirectionFromState(Byte previousState){
+      if (previousState == null){
+         return DirectionType.CURRENT;
+      }
+
+      if (previousState == 1){
+         return DirectionType.EAST;
+      }
+      else if (previousState == 2){
+         return DirectionType.WEST;
+      }
+      else if (previousState == 3){
+         return DirectionType.NORTH;
+      }
+      else if (previousState == 4){
+         return DirectionType.SOUTH;
+      }
+      else {
+         return DirectionType.CURRENT;
+      }
+   }
+
+   private Byte getStateFromDirection(DirectionType direction){
+      if (direction == DirectionType.CURRENT){
+         return 0;
+      }
+      else if (direction == DirectionType.EAST){
+         return 1;
+      }
+      else if (direction == DirectionType.WEST){
+         return 2;
+      }
+      else if (direction == DirectionType.NORTH){
+         return 3;
+      }
+      else {
+         return 4;
+      }
+   }
+
    /**
     * Move agent
     *
@@ -31,8 +71,21 @@ public class Agent extends chemotaxis.sim.Agent {
     */
    @Override
    public Move makeMove(Integer randomNum, Byte previousState, ChemicalCell currentCell, Map<DirectionType, ChemicalCell> neighborMap) {
-      // TODO add your code here to move the agent
 
-      return null; // TODO modify the return statement to return your agent move
+      Move move = new Move();
+      ChemicalCell.ChemicalType chosenChemicalType = ChemicalCell.ChemicalType.RED;
+      DirectionType directionToMove = getDirectionFromState(previousState);
+      Byte newState = previousState;
+
+      for (DirectionType directionType : neighborMap.keySet()) {
+         if(neighborMap.get(directionType).getConcentration(chosenChemicalType) == 1.0){
+            directionToMove = directionType;
+            newState = getStateFromDirection(directionToMove);
+         }
+      }
+      move.directionType = directionToMove;
+      move.currentState = newState;
+
+      return move;
    }
 }

@@ -3,14 +3,17 @@ package chemotaxis.g10;
 import java.awt.Point;
 import java.util.ArrayList;
 import java.util.PriorityQueue;
+import java.util.List;
 
 import chemotaxis.sim.ChemicalPlacement;
 import chemotaxis.sim.ChemicalCell;
+import chemotaxis.sim.Log;
 import chemotaxis.sim.SimPrinter;
 
 public class Controller extends chemotaxis.sim.Controller {
 
    private TurnGridNode [][] turnGrid;
+   private ArrayList<Integer> agentLastNumTurns;
 
    /**
     * Controller constructor
@@ -29,6 +32,7 @@ public class Controller extends chemotaxis.sim.Controller {
       super(start, target, size, grid, simTime, budget, seed, simPrinter);
 
       computeTurnGrid(grid);
+      agentLastNumTurns = new ArrayList<>();
    }
 
    /**
@@ -82,8 +86,33 @@ public class Controller extends chemotaxis.sim.Controller {
     */
    @Override
    public ChemicalPlacement applyChemicals(Integer currentTurn, Integer chemicalsRemaining, ArrayList<Point> locations, ChemicalCell[][] grid) {
-      // TODO add your code here to apply chemicals
+      ChemicalPlacement chemPlacement = null;
+      if (chemicalsRemaining > 0) {
+         for (int i = locations.size() - 1; i >= 0; i--) {
+            Point agentLocation = locations.get(i);
+            if (agentLocation.x != target.x || agentLocation.y != target.y) {
+               TurnGridNode agentTurnGridNode = turnGrid[agentLocation.x - 1][agentLocation.y - 1];
+               if (agentLastNumTurns.size() != locations.size()) {
+                  agentLastNumTurns.add(0, agentTurnGridNode.getTurns());
+               }
 
-      return null; // TODO modify the return statement to return your chemical placement
+               if ((agentLocation.x == start.x && agentLocation.y == start.y) || agentTurnGridNode.getTurns() != agentLastNumTurns.get(i)) {
+                  chemPlacement = new ChemicalPlacement();
+                  Point parentPoint = agentTurnGridNode.getParentPoint();
+                  if (parentPoint.x + 1 == agentLocation.x) {
+                     chemPlacement.location = new Point(agentLocation.x, (parentPoint.y > agentLocation.y - 1) ? (agentLocation.y + 1) : (agentLocation.y - 1));
+                  } else if (parentPoint.y + 1 == agentLocation.y) {
+                     chemPlacement.location = new Point( (parentPoint.x > agentLocation.x - 1) ? (agentLocation.x + 1) : (agentLocation.x - 1) , agentLocation.y);
+                  }
+
+                  chemPlacement.chemicals.add(ChemicalCell.ChemicalType.RED);
+                  agentLastNumTurns.set(i, agentTurnGridNode.getTurns());
+                  return chemPlacement;
+               }
+            }
+         }
+      }
+
+      return new ChemicalPlacement();
    }
 }
