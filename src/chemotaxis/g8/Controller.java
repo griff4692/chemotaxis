@@ -29,9 +29,8 @@ public class Controller extends chemotaxis.sim.Controller {
 	static int[][] DIR = {{1, 0}, {-1, 0}, {0, 1}, {0, -1}};
 	ArrayList<Point> shortestPath;
 	ArrayList<Point> selectedCells;
-	int shift;
-	static int INTERVAL = 4;
-	static double THRESHOLD = 0.02;
+	static int INTERVAL = 4;  // drop chemical for every INTERVAL steps in the shortest path
+	int offset;  // the start turn number of current round of dropping chemicals over the shortest path
 	Point start, target;
 
 	static private ArrayList<Point> generateShortestPath(Point start, Point target, Integer size, ChemicalCell[][] grid) {
@@ -81,7 +80,7 @@ public class Controller extends chemotaxis.sim.Controller {
 		shortestPath = generateShortestPath(start, target, size, grid);
 		selectedCells = selectCells(shortestPath, INTERVAL);
 
-		shift = 1;
+		offset = 1;
 		this.start = start;
 		this.target = target;
 	}
@@ -101,14 +100,15 @@ public class Controller extends chemotaxis.sim.Controller {
 		ChemicalPlacement res = new ChemicalPlacement();
 		res.chemicals.add(ChemicalType.BLUE);
 
-		if (currentTurn > INTERVAL * selectedCells.size() + shift) {
+		// start a new round when previous one is over
+		if (currentTurn > INTERVAL * selectedCells.size() + offset) {
 			if (locations.contains(start)) {
-				shift = currentTurn;
+				offset = currentTurn;
 			}
 		}
 
-		if ((currentTurn - shift) % INTERVAL == 0) {
-			int d = (currentTurn - shift) / INTERVAL;
+		if ((currentTurn - offset) % INTERVAL == 0) {
+			int d = (currentTurn - offset) / INTERVAL;
 			if (d < selectedCells.size()) {
 				res.location = selectedCells.get(d);
 				return res;
