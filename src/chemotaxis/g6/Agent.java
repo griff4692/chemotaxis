@@ -32,7 +32,17 @@ public class Agent extends chemotaxis.sim.Agent {
     @Override
     public Move makeMove(Integer randomNum, Byte previousState, ChemicalCell currentCell, Map<DirectionType, ChemicalCell> neighborMap) {
         // TODO add your code here to move the agent
+        Move move = new Move();
 
-        return null; // TODO modify the return statement to return your agent move
+        ChemicalCell.ChemicalType chosenChemicalType = ChemicalCell.ChemicalType.BLUE;
+
+        double highestConcentration = currentCell.getConcentration(chosenChemicalType);
+        for (DirectionType directionType : neighborMap.keySet()) {
+            if (highestConcentration <= neighborMap.get(directionType).getConcentration(chosenChemicalType)) {
+                highestConcentration = neighborMap.get(directionType).getConcentration(chosenChemicalType);
+                move.directionType = directionType;
+            }
+        }
+        return move;
     }
 }

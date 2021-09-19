@@ -26,6 +26,22 @@ public class Controller extends chemotaxis.sim.Controller {
         super(start, target, size, grid, simTime, budget, seed, simPrinter);
     }
 
+
+    public int closestToTarget(ArrayList<Point> locations) {
+        int closestDistance = 9999999;
+        int closestIdx = 0;
+        for(int i = 0; i < locations.size(); i++) {
+            int x = locations.get(i).x;
+            int y = locations.get(i).y;
+            int distance = Math.abs(x - this.target.x) + Math.abs(y - this.target.y);
+            if(distance > 0 && distance < closestDistance) {
+                closestIdx = i;
+                closestDistance = distance;
+            }
+        }
+        return closestIdx;
+    }
+
     /**
      * Apply chemicals to the map
      *
@@ -40,6 +56,27 @@ public class Controller extends chemotaxis.sim.Controller {
     public ChemicalPlacement applyChemicals(Integer currentTurn, Integer chemicalsRemaining, ArrayList<Point> locations, ChemicalCell[][] grid) {
         // TODO add your code here to apply chemicals
 
-        return null; // TODO modify the return statement to return your chemical placement
+        System.out.println("Using g6 controller chemical placement");
+        ChemicalPlacement chemicalPlacement = new ChemicalPlacement();
+        int closestIdx = this.closestToTarget(locations);
+        Point currentLocation = locations.get(closestIdx);
+        int currentX = currentLocation.x;
+        int currentY = currentLocation.y;
+
+        int leftEdgeX = Math.max(1, currentX - 5);
+        int rightEdgeX = Math.min(size, currentX + 5);
+        int topEdgeY = Math.max(1, currentY - 5);
+        int bottomEdgeY = Math.min(size, currentY + 5);
+
+        int randomX = this.random.nextInt(rightEdgeX - leftEdgeX + 1) + leftEdgeX;
+        int randomY = this.random.nextInt(bottomEdgeY - topEdgeY + 1) + topEdgeY ;
+
+        List<ChemicalCell.ChemicalType> chemicals = new ArrayList<>();
+        chemicals.add(ChemicalCell.ChemicalType.BLUE);
+
+        chemicalPlacement.location = new Point(randomX, randomY);
+        chemicalPlacement.chemicals = chemicals;
+
+        return chemicalPlacement;
     }
 }
