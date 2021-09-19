@@ -41,7 +41,9 @@ public class Controller extends chemotaxis.sim.Controller {
 
     // TODO: weigh the points, not must be the closest point to the target, we can give this function another name like chooseOnePoint
     // I think for now we can just choose the point which is the closest of all the points that need to turn
-    // and maybe in the future, we can take chemicals diffusion into consideration
+    // and maybe in the future:
+    // we can use two chemicals at the same point to guide many agents
+    // we can take chemicals diffusion into consideration
     public int closestToTarget(ArrayList<Point> locations) {
         int closestDistance = 9999999;
         int closestIdx = 0;
@@ -68,6 +70,9 @@ public class Controller extends chemotaxis.sim.Controller {
      *
      */
     // TODO choose one point and put the chemicals(G:left, R:right, B:attract) to guide it
+    // In the beginning, we use blue to guide the agent in the right direction, in the further process, we use G/R to guide it
+    // As a result, for the agent which is at the start point, the priority is B > G = R
+    // in the afterwards, the priority is G = R > B
     @Override
     public ChemicalPlacement applyChemicals(Integer currentTurn, Integer chemicalsRemaining, ArrayList<Point> locations, ChemicalCell[][] grid) {
         ChemicalPlacement chemicalPlacement = new ChemicalPlacement();
@@ -86,7 +91,7 @@ public class Controller extends chemotaxis.sim.Controller {
         int randomY = this.random.nextInt(bottomEdgeY - topEdgeY + 1) + topEdgeY ;
 
         List<ChemicalType> chemicals = new ArrayList<>();
-        // TODO: now we only use BLUE which means attracting, maybe in the future, we can use different types
+
         chemicals.add(ChemicalType.BLUE);
 
         chemicalPlacement.location = new Point(randomX, randomY);
@@ -95,8 +100,8 @@ public class Controller extends chemotaxis.sim.Controller {
         return chemicalPlacement;
     }
 
-    // use queue to do DFS shortest path search
-    // search from current position to Controller.target, select a path which has the least turns
+    // use queue to do DFS to find the shortest path from current position to the target
+    // and if the length of the path is the same , we select a path which has the least turns
     private Node getShortestPathLeastTurns(Point start, ChemicalCell[][] grid) {
         Queue<Node> deque = new LinkedList<>();
         int m = grid.length;
