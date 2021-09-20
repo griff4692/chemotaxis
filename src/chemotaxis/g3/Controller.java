@@ -1,4 +1,4 @@
-package chemotaxis.dummy;
+package chemotaxis.g3;
 
 import java.awt.Point;
 import java.util.List;
@@ -55,25 +55,22 @@ public class Controller extends chemotaxis.sim.Controller {
      */
  	@Override
 	public ChemicalPlacement applyChemicals(Integer currentTurn, Integer chemicalsRemaining, ArrayList<Point> locations, ChemicalCell[][] grid) {
+		/* Inspired by Nikhilesh Belulkar's idea from class discussion:
+		“Build a gradient of chemicals to guide the agent towards the
+		goal block (have higher concentrations near the goal block,
+		lower concentrations nearer to the spawn block)“
+		 */
 		ChemicalPlacement chemicalPlacement = new ChemicalPlacement();
-		int closestIdx = this.closestToTarget(locations);
- 		Point currentLocation = locations.get(closestIdx);
-		int currentX = currentLocation.x;
-		int currentY = currentLocation.y;
 
-		int leftEdgeX = Math.max(1, currentX - 5);
-		int rightEdgeX = Math.min(size, currentX + 5);
-		int topEdgeY = Math.max(1, currentY - 5);
-		int bottomEdgeY = Math.min(size, currentY + 5);
+		if (currentTurn%5 == 1) {
+			List<ChemicalType> chemicals = new ArrayList<>();
+			chemicals.add(ChemicalType.BLUE);
+			chemicalPlacement.location = new Point(this.target.x, this.target.y);
+			chemicalPlacement.chemicals = chemicals;
 
-		int randomX = this.random.nextInt(rightEdgeX - leftEdgeX + 1) + leftEdgeX;
-		int randomY = this.random.nextInt(bottomEdgeY - topEdgeY + 1) + topEdgeY ;
+		}
 
-		List<ChemicalType> chemicals = new ArrayList<>();
-		chemicals.add(ChemicalType.BLUE);
 
-		chemicalPlacement.location = new Point(randomX, randomY);
-		chemicalPlacement.chemicals = chemicals;
 
 		return chemicalPlacement;
 	}

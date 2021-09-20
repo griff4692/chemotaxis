@@ -17,6 +17,7 @@ public class Controller extends chemotaxis.sim.Controller {
      * @param start       start cell coordinates
      * @param target      target cell coordinates
      * @param size     	  grid/map size
+     * @param grid        game grid/map
      * @param simTime     simulation time
      * @param budget      chemical budget
      * @param seed        random seed
