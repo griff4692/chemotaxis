@@ -6,7 +6,7 @@
 
 #### Controller
 
-
+---
 
 
 #### Agent
@@ -32,3 +32,29 @@ Circumvent block startegy - indicates which direction the agent should go when t
 - if the right cell isn't blocked then the agent moves to the right cell
 - if the left cell isn't blocked then the agent moves to the left cell
 - if the rear cell isn't blocked then the agent moves to the rear cell
+
+---
+
+### map_generator
+
+The map_generator script can help us parse txt map generated from the website to the required format of our system.
+
+To use the generator:
+
+1. Draw a map on the website:https://campaignwiki.org/gridmapper.svg
+2. down load it and save as txt format in a fold with the script file.
+3. run the command 
+
+```shell
+python map_generate.py --size sizeOfMap --input nameOfOriginalFile --output nameOfMapGenerated
+```
+
+Attention Please, when you are drawing a map, use:
+
+- b on the keyboard as start
+- t on the keyboard as target
+- p on the keyboard as blocks
+- f on the keyboard as normal road
+
+
+
