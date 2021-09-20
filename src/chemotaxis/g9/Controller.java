@@ -12,21 +12,22 @@ import chemotaxis.sim.ChemicalCell.ChemicalType;
 import chemotaxis.sim.SimPrinter;
 
 public class Controller extends chemotaxis.sim.Controller {
-	
-    /**
-     * Controller constructor
-     *
-     * @param start       start cell coordinates
-     * @param target      target cell coordinates
-     * @param size     	  grid/map size
-     * @param simTime     simulation time
-     * @param budget      chemical budget
-     * @param seed        random seed
-     * @param simPrinter  simulation printer
-     *
-     */
-	public Controller(Point start, Point target, Integer size, Integer simTime, Integer budget, Integer seed, SimPrinter simPrinter) {
-		super(start, target, size, simTime, budget, seed, simPrinter);
+
+	/**
+	 * Controller constructor
+	 *
+	 * @param start       start cell coordinates
+	 * @param target      target cell coordinates
+	 * @param size     	  grid/map size
+	 * @param grid        game grid/map
+	 * @param simTime     simulation time
+	 * @param budget      chemical budget
+	 * @param seed        random seed
+	 * @param simPrinter  simulation printer
+	 *
+	 */
+	public Controller(Point start, Point target, Integer size, ChemicalCell[][] grid, Integer simTime, Integer budget, Integer seed, SimPrinter simPrinter) {
+		super(start, target, size, grid, simTime, budget, seed, simPrinter);
 	}
 
 	public int closestToTarget(ArrayList<Point> locations) {
