@@ -49,9 +49,9 @@ public class Controller extends chemotaxis.sim.Controller {
 		private Node prev;
 
 		public Node(int x, int y) {
-      			this.x = x;
+			this.x = x;
 			this.y = y;
-   		}
+		}
 
 		public Node getPrev(){
 			return this.prev;
@@ -60,23 +60,24 @@ public class Controller extends chemotaxis.sim.Controller {
 		public int getX(){
 			return this.x;
 		}
-		
 		public int getY(){
 			return this.y;
 		}
 
 	}
 
-	private List<Point> getShortestPath(Point p, Point target, ChemicalCell[][] grid,) {
+	private List<Point> getShortestPath(Point p, Point target, ChemicalCell[][] grid) {
 		Queue<Node> queue = new LinkedList<Node>();
 		boolean[][] visited = new boolean[grid.length][grid[0].length];
 		Node start = new Node((int) p.getX(), (int) p.getY());
 		queue.add(start);
 		List<Point> path = new ArrayList<Point>();
-
+		int targetX = (int)target.getX();
+		int targetY = (int)target.getY();
 		while (!queue.isEmpty()) {
 			Node curNode = queue.poll();
-			if (curNode.getX() == target.getX() && curNode.getY() == target.getY()) {
+			System.out.println("Cur node: " + curNode.getX() + " and " + curNode.getY());
+			if (curNode.getX() == targetX && curNode.getY() == targetY) {
 				while (curNode != null) {
 					path.add(new Point(curNode.getX(), curNode.getY()));
 					curNode = curNode.prev;
@@ -85,34 +86,39 @@ public class Controller extends chemotaxis.sim.Controller {
 				break;
 			}
 			for (Node nei : getNeighbors(curNode, grid, visited)){
- 				visited[nei.getX()][nei.getY()] = true;
+				visited[nei.getX()][nei.getY()] = true;
 				queue.add(nei);
 			}
 		}
-
 		return path;
 	}
-	
 	
 	private List<Node> getNeighbors(Node n, ChemicalCell grid[][], boolean[][] visited){
 		List<Node> neighbors = new ArrayList<Node>();
 		int x = n.getX();
 		int y = n.getY();
-		if (isCellValid(grid, visited, x - 1, y - 1)){
-			neighbors.add(new Node(x - 1, y - 1));
+		if (isCellValid(grid, visited, x - 1, y)){
+			Node next = new Node(x - 1, y);
+			next.prev = n;
+			neighbors.add(next);
 		}
-		if (isCellValid(grid, visited, x + 1, y + 1)){
-			neighbors.add(new Node(x + 1, y + 1));
+		if (isCellValid(grid, visited, x + 1, y )){
+			Node next = new Node(x + 1, y );
+			next.prev = n;
+			neighbors.add(next);
 		}
-		if (isCellValid(grid, visited, x + 1, y - 1)){
-			neighbors.add(new Node(x + 1, y - 1));
+		if (isCellValid(grid, visited, x , y - 1)){
+			Node next = new Node(x , y - 1);
+			next.prev = n;
+			neighbors.add(next);
 		}
-		if (isCellValid(grid, visited, x - 1, y + 1)){
-			neighbors.add(new Node(x - 1, y + 1));
+		if (isCellValid(grid, visited, x , y + 1)){
+			Node next = new Node(x , y + 1);
+			next.prev = n;
+			neighbors.add(next);
 		}
 		return neighbors;
 	}
-	
 	
 	private boolean isCellValid(ChemicalCell grid[][], boolean visited[][], int x, int y) {
 		return (x >= 0) && (x < grid.length) && (y >= 0) && (y < grid[0].length) && grid[x][y].isOpen() && !visited[x][y];
@@ -130,24 +136,27 @@ public class Controller extends chemotaxis.sim.Controller {
      */
  	@Override
 	public ChemicalPlacement applyChemicals(Integer currentTurn, Integer chemicalsRemaining, ArrayList<Point> locations, ChemicalCell[][] grid) {
+
+		List<Point> path = new ArrayList<Point>();
+
+		path = this.getShortestPath(start, target, grid);
+
 		ChemicalPlacement chemicalPlacement = new ChemicalPlacement();
-		int closestIdx = this.closestToTarget(locations);
- 		Point currentLocation = locations.get(closestIdx);
-		int currentX = currentLocation.x;
-		int currentY = currentLocation.y;
-
-		int leftEdgeX = Math.max(1, currentX - 5);
-		int rightEdgeX = Math.min(size, currentX + 5);
-		int topEdgeY = Math.max(1, currentY - 5);
-		int bottomEdgeY = Math.min(size, currentY + 5);
-
-		int randomX = this.random.nextInt(rightEdgeX - leftEdgeX + 1) + leftEdgeX;
-		int randomY = this.random.nextInt(bottomEdgeY - topEdgeY + 1) + topEdgeY ;
+		int pathLength = path.size();
+		int tempTurn;
+		if ( currentTurn <= pathLength) {
+			tempTurn = currentTurn -1;
+		} else {
+			tempTurn = (currentTurn -1) % pathLength;
+		}
+		tempTurn = tempTurn -1;
+		int newX = path.get(tempTurn).x;
+		int newY = path.get(tempTurn).y;
 
 		List<ChemicalType> chemicals = new ArrayList<>();
 		chemicals.add(ChemicalType.BLUE);
 
-		chemicalPlacement.location = new Point(randomX, randomY);
+		chemicalPlacement.location = new Point(newX, newY);
 		chemicalPlacement.chemicals = chemicals;
 
 		return chemicalPlacement;
