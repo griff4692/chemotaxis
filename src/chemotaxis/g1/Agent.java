@@ -78,6 +78,7 @@ public class Agent extends chemotaxis.sim.Agent {
      * @return new direction to take
      */
     private DirectionType handleWall(Move nextMove, final Map<DirectionType, ChemicalCell> neighborMap, final AgentState prevState) {
+        // Use prevState to decode `nextMode.directionType` in case it is the `CURRENT` variant
         CardinalDirection nextDirection = prevState.asCardinalDir(nextMove.directionType);
 
         if (neighborMap.get(nextDirection.asDirectionType()).isBlocked()) {
@@ -92,8 +93,8 @@ public class Agent extends chemotaxis.sim.Agent {
                 return nextDirection.reverseOf().asDirectionType();
             }
         }
-        // TODO : Evan could you look at this, I'm not confident what to return here
-        return nextDirection.asDirectionType();
+        // Not blocked, return direction the agent wanted to go in
+        return nextMove.directionType;
     }
 
     /**
