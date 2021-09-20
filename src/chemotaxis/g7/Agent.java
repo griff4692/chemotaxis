@@ -93,8 +93,6 @@ public class Agent extends chemotaxis.sim.Agent {
          * get the number of rounds the agent hasn't been guided by the controller
          */
         int previousRoundsCounter = (previousState / 4) % 32;
-        System.out.println("Round");
-        System.out.println(previousRoundsCounter);
         return previousRoundsCounter;
     }
 
@@ -145,10 +143,12 @@ public class Agent extends chemotaxis.sim.Agent {
          * return all possible directions (the ones that aren't blocked)
          */
         List<DirectionType> possibleDirections = new ArrayList<>();
+        System.out.println("find possibleDirections");
         for (Map.Entry<DirectionType, ChemicalCell> neighborCell: neighborMap.entrySet()) {
             ChemicalCell cell = neighborCell.getValue();
             if (cell.isOpen()) {
                 possibleDirections.add(neighborCell.getKey());
+                System.out.println(possibleDirections);
             }
         }
         return possibleDirections;
@@ -189,11 +189,17 @@ public class Agent extends chemotaxis.sim.Agent {
         DirectionType previousDirection = getPrevDirection(previousState);
         List<DirectionType> possibleDirections = getPossibleDirections(neighborMap);
         if (possibleDirections.size() == 1) {
+            System.out.println("possibleDirections");
+            System.out.println(possibleDirections);
             return possibleDirections.get(0);
         }
         else {
             if (possibleDirections.contains(getOtherDirectionList(previousDirection).get(2))) {
+                System.out.println("previous Direction");
+                System.out.println(previousDirection);
+                System.out.println("contains");
                 possibleDirections.remove(getOtherDirectionList(previousDirection).get(2));
+                System.out.println(possibleDirections);
             }
             Random rand = new Random(randomNum);
             int randomIndex = rand.nextInt(possibleDirections.size());
@@ -248,6 +254,7 @@ public class Agent extends chemotaxis.sim.Agent {
             int rounds = getRoundsCounter(previousState);
             if (rounds == 0) {
                 move.directionType = randomStep(randomNum, previousState, currentCell, neighborMap);
+                move.currentState = setDirectionBitsInCurrentState(previousState, move.directionType);
             }
             else if (rounds <= 31) {
                 ChemicalCell nextChemicalCell = neighborMap.get(previousDirection);
