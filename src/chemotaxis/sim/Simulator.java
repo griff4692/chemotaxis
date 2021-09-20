@@ -609,13 +609,11 @@ public class Simulator {
             throw new IOException("Cannot find the Java class loader!");
 
         @SuppressWarnings("rawtypes")
-        Class rawClass = loader.loadClass("chemotaxis." + teamName + ".Controller");
-    
+        Class rawClass = loader.loadClass("chemotaxis." + teamName + ".Controller");  
         Class[] classArgs = new Class[]{Point.class, Point.class, Integer.class, ChemicalCell[][].class, Integer.class, Integer.class, Integer.class, SimPrinter.class};
 
         return (Controller) rawClass.getDeclaredConstructor(classArgs).newInstance(start, target, mapSize, grid, turns, budget, seed, new SimPrinter(enableControllerPrints));
     }
-
 
 	private static AgentWrapper loadAgentWrapper() throws Exception {
 
