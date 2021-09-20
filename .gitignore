@@ -44,4 +44,7 @@ hs_err_pid*
 out
 coms4444-chemotaxis.iml
 
-.DS_Store
+.vscode/
+*.DS_Store
+.metadata/
+
