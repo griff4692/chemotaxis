@@ -20,15 +20,15 @@ public class Agent extends chemotaxis.sim.Agent {
 
     public Move makeMove(Integer randomNum, Byte previousState, ChemicalCell currentCell, Map<DirectionType, ChemicalCell> neighborMap) {
         Move move = new Move();
-​
+
 		ChemicalType chosenChemicalType = ChemicalType.GREEN;
         ChemicalType repulseChemicalType = ChemicalType.RED;
         //DirectionType repulseDirection = DirectionType.NORTH;
-​
+
 		//double highestConcentration = 0;
         //double repulseConcentration = 0;
         double highestNetAttraction = 0;
-​
+
         for (DirectionType directionType : neighborMap.keySet()) {
 			double net = neighborMap.get(directionType).getConcentration(chosenChemicalType) - neighborMap.get(directionType).getConcentration((repulseChemicalType));
             if(net > highestNetAttraction) {
@@ -53,7 +53,7 @@ public class Agent extends chemotaxis.sim.Agent {
                  move.directionType = neighborMap.keySet().iterator().next();
              }
         }
-​
+
         switch(move.directionType){
             case NORTH:
                 move.currentState = 1;
