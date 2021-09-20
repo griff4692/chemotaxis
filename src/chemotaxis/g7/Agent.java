@@ -27,7 +27,7 @@ public class Agent extends chemotaxis.sim.Agent {
      * Move agent
      *
      * @param randomNum        random number available for agents
-     * @param previousState    byte of previous state, bits 2-6 are a counter of the #rounds
+     * @param previousState    byte of previous state, bits 2-5 are a counter of the #rounds
      *                         the agent hasn't seen a 1.0 chemical in his cell, last 2 bits store the previous
      *                         direction (00: NORTH, 01: EAST, 10: SOUTH, 11: WEST)
      * @param currentCell      current cell
@@ -41,7 +41,6 @@ public class Agent extends chemotaxis.sim.Agent {
          * get previous direction from the stored byte
          */
         int previousDirectionBits = previousState % 4;
-        System.out.println(previousDirectionBits);
         if (previousDirectionBits == 0) {
             return DirectionType.NORTH;
         }
@@ -143,12 +142,10 @@ public class Agent extends chemotaxis.sim.Agent {
          * return all possible directions (the ones that aren't blocked)
          */
         List<DirectionType> possibleDirections = new ArrayList<>();
-        System.out.println("find possibleDirections");
         for (Map.Entry<DirectionType, ChemicalCell> neighborCell: neighborMap.entrySet()) {
             ChemicalCell cell = neighborCell.getValue();
             if (cell.isOpen()) {
                 possibleDirections.add(neighborCell.getKey());
-                System.out.println(possibleDirections);
             }
         }
         return possibleDirections;
@@ -189,17 +186,11 @@ public class Agent extends chemotaxis.sim.Agent {
         DirectionType previousDirection = getPrevDirection(previousState);
         List<DirectionType> possibleDirections = getPossibleDirections(neighborMap);
         if (possibleDirections.size() == 1) {
-            System.out.println("possibleDirections");
-            System.out.println(possibleDirections);
             return possibleDirections.get(0);
         }
         else {
             if (possibleDirections.contains(getOtherDirectionList(previousDirection).get(2))) {
-                System.out.println("previous Direction");
-                System.out.println(previousDirection);
-                System.out.println("contains");
                 possibleDirections.remove(getOtherDirectionList(previousDirection).get(2));
-                System.out.println(possibleDirections);
             }
             Random rand = new Random(randomNum);
             int randomIndex = rand.nextInt(possibleDirections.size());
