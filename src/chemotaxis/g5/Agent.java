@@ -18,7 +18,58 @@ public class Agent extends chemotaxis.sim.Agent {
         super(var1);
     }
 
-    public Move makeMove(Integer var1, Byte var2, ChemicalCell var3, Map<DirectionType, ChemicalCell> var4) {
+    public Move makeMove(Integer randomNum, Byte previousState, ChemicalCell currentCell, Map<DirectionType, ChemicalCell> neighborMap) {
+        Move move = new Move();
+​
+		ChemicalType chosenChemicalType = ChemicalType.GREEN;
+        ChemicalType repulseChemicalType = ChemicalType.RED;
+        //DirectionType repulseDirection = DirectionType.NORTH;
+​
+		//double highestConcentration = 0;
+        //double repulseConcentration = 0;
+        double highestNetAttraction = 0;
+​
+        for (DirectionType directionType : neighborMap.keySet()) {
+			double net = neighborMap.get(directionType).getConcentration(chosenChemicalType) - neighborMap.get(directionType).getConcentration((repulseChemicalType));
+            if(net > highestNetAttraction) {
+                highestNetAttraction = net;
+                move.directionType = directionType;
+            }
+		}
+        if (highestNetAttraction == 0){
+             switch(previousState){
+                 case 1:
+                     move.directionType = DirectionType.NORTH;
+                 case 2:
+                     move.directionType = DirectionType.SOUTH;
+                 case 3:
+                     move.directionType = DirectionType.EAST;
+                 case 4:
+                     move.directionType = DirectionType.WEST;
+                 case 0:
+                     move.directionType = DirectionType.NORTH;
+             }
+             if(!neighborMap.keySet().contains(move.directionType)){
+                 move.directionType = neighborMap.keySet().iterator().next();
+             }
+        }
+​
+        switch(move.directionType){
+            case NORTH:
+                move.currentState = 1;
+            case SOUTH:
+                move.currentState = 2;
+            case EAST:
+                move.currentState = 3;
+            case WEST:
+                move.currentState = 4;
+            case CURRENT:
+                move.currentState = 0;
+        }
+		return move;
+   }
+
+    /*public Move makeMove(Integer var1, Byte var2, ChemicalCell var3, Map<DirectionType, ChemicalCell> var4) {
         Move var5 = new Move();
         ChemicalType var6 = ChemicalType.BLUE;
         double var7 = var3.getConcentration(var6);
@@ -33,5 +84,5 @@ public class Agent extends chemotaxis.sim.Agent {
         }
 
         return var5;
-    }
+    }*/
 }
