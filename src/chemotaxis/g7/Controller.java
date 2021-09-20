@@ -156,18 +156,19 @@ public class Controller extends chemotaxis.sim.Controller {
         List<ChemicalCell.ChemicalType> chemicals = new ArrayList<>();
 
         switch (turnDirection) {
-            case 1 -> {
+            case 1:
                 chemicals.add(ChemicalCell.ChemicalType.GREEN);
                 chemicalPlacement.location = new Point(nowLocation.x, nowLocation.y);
-            }
-            case 2 -> {
+                break;
+            case 2:
                 chemicals.add(ChemicalCell.ChemicalType.RED);
                 chemicalPlacement.location = new Point(nowLocation.x, nowLocation.y);
-            }
-            case 3 -> {
+                break;
+
+            case 3:
                 chemicals.add(ChemicalCell.ChemicalType.BLUE);
                 chemicalPlacement.location = new Point(nextX, nextY);
-            }
+                break;
         }
 
         chemicalPlacement.chemicals = chemicals;
