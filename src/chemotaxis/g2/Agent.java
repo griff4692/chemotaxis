@@ -45,7 +45,9 @@ public class Agent extends chemotaxis.sim.Agent {
 		
 		boolean arr[] = {false, false, false, false, false};
 		int i = 0;
-		
+
+		move.directionType = DirectionType.SOUTH;
+
 		for (DirectionType directionType : neighborMap.keySet()) {
 			if (highestConcentration < neighborMap.get(directionType).getConcentration(chosenChemicalType)) {
 				highestConcentration = neighborMap.get(directionType).getConcentration(chosenChemicalType);
