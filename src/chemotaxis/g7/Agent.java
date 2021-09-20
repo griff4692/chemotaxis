@@ -93,6 +93,7 @@ public class Agent extends chemotaxis.sim.Agent {
          * get the number of rounds the agent hasn't been guided by the controller
          */
         int previousRoundsCounter = (previousState / 4) % 32;
+        System.out.println("Round");
         System.out.println(previousRoundsCounter);
         return previousRoundsCounter;
     }
@@ -121,13 +122,12 @@ public class Agent extends chemotaxis.sim.Agent {
 
     private byte setCounterInCurrentState(Byte previousState, boolean increase) {
         /**
-         * update the counter stored in the state to indicate to keep track of the #rounds the agent hasn't sensed
-         * chemicals
+         * update the counter stored in the state to keep track of the #rounds the agent hasn't sensed chemicals
          */
         int previousCounter = getRoundsCounter(previousState);
         byte newState = previousState;
         if (increase) {
-            if (previousState < 31) {
+            if (previousCounter < 31) {
                 newState = (byte) (previousState + 4);
             }
             else {
