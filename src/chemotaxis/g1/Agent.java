@@ -31,6 +31,7 @@ public class Agent extends chemotaxis.sim.Agent {
     @Override
     public Move makeMove(Integer randomNum, Byte previousState, ChemicalCell currentCell, Map<DirectionType, ChemicalCell> neighborMap) {
         final AgentState prevState = new AgentState(previousState);
+        AgentState newState = new AgentState(prevState);
         DirectionType previousDirection = prevState.getDirection().asDirectionType();
         Move move = new Move();
 
@@ -49,6 +50,8 @@ public class Agent extends chemotaxis.sim.Agent {
             newDirection = handleWall(move, neighborMap, prevState);
 
         move.directionType = newDirection;
+        newState.setDirection(newDirection);
+        move.currentState = newState.serialize();
         return move;
     }
 
@@ -104,12 +107,12 @@ public class Agent extends chemotaxis.sim.Agent {
      * 2. If the highest concentration is 0 (i.e. no chemical of that color is present in the neighbourhood), then the
      * function will just return the previous direction
      *
-     * @param neighborMap Map of agent's immediate surroundings.
-     * @param chemicalType Color of the chemical whose highest concentration direction is to be calculated
+     * @param neighborMap       Map of agent's immediate surroundings.
+     * @param chemicalType      Color of the chemical whose highest concentration direction is to be calculated
      * @param previousDirection Agent's previous direction
      * @return new direction to take
      */
-    public DirectionType getHighestConcentrationDirection(Map<DirectionType, ChemicalCell> neighborMap, ChemicalType chemicalType, DirectionType previousDirection){
+    public DirectionType getHighestConcentrationDirection(Map<DirectionType, ChemicalCell> neighborMap, ChemicalType chemicalType, DirectionType previousDirection) {
         DirectionType newDirection = previousDirection;
         double highestConcentration = 0;
 

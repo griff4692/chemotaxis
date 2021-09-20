@@ -21,10 +21,14 @@ public class AgentState {
     /**
      * Initialize the agent with a prior serialized state
      *
-     * @param prior_state Byte serialization of the agent's prior state
+     * @param prevState Byte serialization of the agent's prior state
      */
-    public AgentState(Byte prior_state) {
-        this.state = prior_state;
+    public AgentState(Byte prevState) {
+        this.state = prevState;
+    }
+
+    public AgentState(AgentState prevState) {
+        this.state = prevState.state;
     }
 
     public Byte serialize() {
