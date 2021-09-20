@@ -31,17 +31,24 @@ public class Agent extends chemotaxis.sim.Agent {
     @Override
     public Move makeMove(Integer randomNum, Byte previousState, ChemicalCell currentCell, Map<DirectionType, ChemicalCell> neighborMap) {
         final AgentState prevState = new AgentState(previousState);
+        DirectionType previousDirection = prevState.getDirection().asDirectionType();
         Move move = new Move();
 
-        ChemicalType chosenChemicalType = ChemicalType.BLUE;
+        // Get new direction indicated through RED chemical
+        DirectionType newDirection = getHighestConcentrationDirection(neighborMap, ChemicalType.RED, previousDirection);
 
-        double highestConcentration = currentCell.getConcentration(chosenChemicalType);
-        for (DirectionType directionType : neighborMap.keySet()) {
-            if (highestConcentration <= neighborMap.get(directionType).getConcentration(chosenChemicalType)) {
-                highestConcentration = neighborMap.get(directionType).getConcentration(chosenChemicalType);
-                move.directionType = directionType;
-            }
+        // If RED doesn't indicate a new direction, check direction indicated through blue chemical
+        if (newDirection == previousDirection) {
+            newDirection = getHighestConcentrationDirection(neighborMap, ChemicalType.BLUE, previousDirection);
         }
+
+        // Get the neighbouring cell to which the agent is trying to go
+        ChemicalCell nextCell = neighborMap.get(newDirection);
+        // If it is blocked, use handleWall to find new direction
+        if (nextCell.isBlocked())
+            newDirection = handleWall(move, neighborMap, prevState);
+
+        move.directionType = newDirection;
         return move;
     }
 
@@ -68,9 +75,9 @@ public class Agent extends chemotaxis.sim.Agent {
      * @param nextMove    Desired next move corresponding AgentState as a byte.
      * @param neighborMap Map of agent's immediate surroundings.
      * @param prevState   Agent's previous state. Used to decode "current" to a cardinal direction
-     * @return
+     * @return new direction to take
      */
-    private Move handleWall(Move nextMove, final Map<DirectionType, ChemicalCell> neighborMap, final AgentState prevState) {
+    private DirectionType handleWall(Move nextMove, final Map<DirectionType, ChemicalCell> neighborMap, final AgentState prevState) {
         CardinalDirection nextDirection = prevState.asCardinalDir(nextMove.directionType);
 
         if (neighborMap.get(nextDirection.asDirectionType()).isBlocked()) {
@@ -78,13 +85,54 @@ public class Agent extends chemotaxis.sim.Agent {
             DirectionType right = nextDirection.rightOf().asDirectionType();
             DirectionType left = nextDirection.leftOf().asDirectionType();
             if (neighborMap.get(right).isOpen()) {
-                nextMove.directionType = right;
+                return right;
             } else if (neighborMap.get(left).isOpen()) {
-                nextMove.directionType = left;
+                return left;
             } else {
-                nextMove.directionType = nextDirection.reverseOf().asDirectionType();
+                return nextDirection.reverseOf().asDirectionType();
             }
         }
-        return nextMove;
+        // TODO : Evan could you look at this, I'm not confident what to return here
+        return nextDirection.asDirectionType();
+    }
+
+    /**
+     * Gets the direction of highest concentration of a particular chemical in the agent's surroundings
+     * <p>
+     * 1. If the highest concentration is in two different directions, then the function just returns the previous direction
+     * 2. If the highest concentration is 0 (i.e. no chemical of that color is present in the neighbourhood), then the
+     * function will just return the previous direction
+     *
+     * @param neighborMap Map of agent's immediate surroundings.
+     * @param chemicalType Color of the chemical whose highest concentration direction is to be calculated
+     * @param previousDirection Agent's previous direction
+     * @return new direction to take
+     */
+    public DirectionType getHighestConcentrationDirection(Map<DirectionType, ChemicalCell> neighborMap, ChemicalType chemicalType, DirectionType previousDirection){
+        DirectionType newDirection = previousDirection;
+        double highestConcentration = 0;
+
+        // Get absolute highest value of concentration of particular chemical nearby
+        for (DirectionType directionType : neighborMap.keySet()) {
+            double temp = neighborMap.get(directionType).getConcentration(chemicalType);
+            if (highestConcentration < temp) {
+                highestConcentration = temp;
+                newDirection = directionType;
+            }
+        }
+
+        // Check if the same highest is present in two different directions, in which case move same way as previous
+        if (newDirection != previousDirection) {
+            for (DirectionType directionType : neighborMap.keySet()) {
+                double temp = neighborMap.get(directionType).getConcentration(chemicalType);
+                if (highestConcentration == temp && newDirection != directionType)
+                    newDirection = previousDirection;
+            }
+        }
+
+        // If there is no chemical, move same way as previous
+        if (highestConcentration == 0)
+            newDirection = previousDirection;
+        return newDirection;
     }
 }
