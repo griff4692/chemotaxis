@@ -42,6 +42,81 @@ public class Controller extends chemotaxis.sim.Controller {
 		}
 		return closestIdx;
 	}
+	
+	private class Node {
+		private int x = 0;
+		private int y = 0;
+		private Node prev;
+
+		public Node(int x, int y) {
+      			this.x = x;
+			this.y = y;
+   		}
+
+		public Node getPrev(){
+			return this.prev;
+		}
+
+		public int getX(){
+			return this.x;
+		}
+		
+		public int getY(){
+			return this.y;
+		}
+
+	}
+
+	private List<Point> getShortestPath(Point p, Point target, ChemicalCell[][] grid,) {
+		Queue<Node> queue = new LinkedList<Node>();
+		boolean[][] visited = new boolean[grid.length][grid[0].length];
+		Node start = new Node((int) p.getX(), (int) p.getY());
+		queue.add(start);
+		List<Point> path = new ArrayList<Point>();
+
+		while (!queue.isEmpty()) {
+			Node curNode = queue.poll();
+			if (curNode.getX() == target.getX() && curNode.getY() == target.getY()) {
+				while (curNode != null) {
+					path.add(new Point(curNode.getX(), curNode.getY()));
+					curNode = curNode.prev;
+				}
+				Collections.reverse(path);
+				break;
+			}
+			for (Node nei : getNeighbors(curNode, grid, visited)){
+ 				visited[nei.getX()][nei.getY()] = true;
+				queue.add(nei);
+			}
+		}
+
+		return path;
+	}
+	
+	
+	private List<Node> getNeighbors(Node n, ChemicalCell grid[][], boolean[][] visited){
+		List<Node> neighbors = new ArrayList<Node>();
+		int x = n.getX();
+		int y = n.getY();
+		if (isCellValid(grid, visited, x - 1, y - 1)){
+			neighbors.add(new Node(x - 1, y - 1));
+		}
+		if (isCellValid(grid, visited, x + 1, y + 1)){
+			neighbors.add(new Node(x + 1, y + 1));
+		}
+		if (isCellValid(grid, visited, x + 1, y - 1)){
+			neighbors.add(new Node(x + 1, y - 1));
+		}
+		if (isCellValid(grid, visited, x - 1, y + 1)){
+			neighbors.add(new Node(x - 1, y + 1));
+		}
+		return neighbors;
+	}
+	
+	
+	private boolean isCellValid(ChemicalCell grid[][], boolean visited[][], int x, int y) {
+		return (x >= 0) && (x < grid.length) && (y >= 0) && (y < grid[0].length) && grid[x][y].isOpen() && !visited[x][y];
+	}
 
     /**
      * Apply chemicals to the map
