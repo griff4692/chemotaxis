@@ -37,12 +37,38 @@ public class Agent extends chemotaxis.sim.Agent {
 		ChemicalType chosenChemicalType = ChemicalType.BLUE;
 
 		double highestConcentration = currentCell.getConcentration(chosenChemicalType);
+		double currentConcentration = highestConcentration;
+		double result;
+		double minDetectableConcentration = 0.001;	/* Would have done a #define, but can't. CAUTION! Change if minimum detectable concentration changes. */
+		
 		for (DirectionType directionType : neighborMap.keySet()) {
-			if (highestConcentration <= neighborMap.get(directionType).getConcentration(chosenChemicalType)) {
+			if (highestConcentration < neighborMap.get(directionType).getConcentration(chosenChemicalType)) {
 				highestConcentration = neighborMap.get(directionType).getConcentration(chosenChemicalType);
 				move.directionType = directionType;
 			}
 		}
+		
+		result = highestConcentration - currentConcentration;
+		if (result < minDetectableConcentration)
+			/* Then all squares have ~equal concentration. Choose a random move. */
+			switch (randomNum % 5){
+				case 0:
+					move.directionType = DirectionType.EAST;
+					break;
+				case 1:
+					move.directionType = DirectionType.WEST;
+					break;
+				case 2:
+					move.directionType = DirectionType.NORTH;
+					break;
+				case 3:
+					move.directionType = DirectionType.SOUTH;
+					break;
+				case 4:
+					move.directionType = DirectionType.CURRENT;
+					break;
+			}
+
 		return move;
 	}
 }
