@@ -3,6 +3,10 @@ package chemotaxis.g2;
 import java.awt.Point;
 import java.util.List;
 import java.util.ArrayList;
+import java.util.Queue;
+import java.util.Collections;
+import java.util.LinkedList;
+
 
 import chemotaxis.sim.ChemicalPlacement;
 import chemotaxis.sim.ChemicalCell;
