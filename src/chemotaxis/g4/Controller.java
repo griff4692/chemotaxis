@@ -1,4 +1,4 @@
-package chemotaxis.g6;
+package chemotaxis.g4;
 
 import java.awt.Point;
 import java.util.*;
@@ -98,15 +98,12 @@ public class Controller extends chemotaxis.sim.Controller {
 	public ChemicalPlacement applyChemicals(Integer currentTurn, Integer chemicalsRemaining, ArrayList<Point> locations, ChemicalCell[][] grid) {
 		ChemicalPlacement chemicalPlacement = new ChemicalPlacement();
 
-
 		simPrinter = new SimPrinter(true);
 
 		if(path == null){
 			simPrinter.println("creating path");
 			path = getPath(grid);
 		}
-
-
 
 		if(currentTurn%10 == 1){
 			List<ChemicalType> chemicals = new ArrayList<>();

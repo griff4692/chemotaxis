@@ -1,4 +1,4 @@
-package chemotaxis.g6;
+package chemotaxis.g4;
 
 import java.util.Map;
 
