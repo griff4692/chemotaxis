@@ -100,12 +100,40 @@ public class Controller extends chemotaxis.sim.Controller {
 		ChemicalPlacement res = new ChemicalPlacement();
 		res.chemicals.add(ChemicalType.BLUE);
 
+		// this should check to make sure all agents are on right path
+		for (int i=0; i<locations.size(); i++) {
+			Point agent_location = locations.get(i);
+			if (!shortestPath.contains(agent_location)){
+				Point above = new Point(agent_location.x, agent_location.y - 1);
+				Point below = new Point(agent_location.x, agent_location.y + 1);
+				Point right = new Point(agent_location.x + 1, agent_location.y);
+				Point left = new Point(agent_location.x - 1, agent_location.y);
+				if (shortestPath.contains(above)) {
+					res.location = above;
+					return res;
+				}
+				if (shortestPath.contains(below)) {
+					res.location = below;
+					return res;
+				}
+				if (shortestPath.contains(right)) {
+					res.location = right;
+					return res;
+				}
+				if (shortestPath.contains(left)) {
+					res.location = left;
+					return res;
+				}
+			}
+		}
+
 		// start a new round when previous one is over
 		if (currentTurn > INTERVAL * selectedCells.size() + offset) {
 			if (locations.contains(start)) {
 				offset = currentTurn;
 			}
 		}
+
 
 		if ((currentTurn - offset) % INTERVAL == 0) {
 			int d = (currentTurn - offset) / INTERVAL;

@@ -75,8 +75,8 @@ public class Agent extends chemotaxis.sim.Agent {
 			double multiplier = 1.0;
 			if (last.isPresent() && directionType.equals(DirectionType.CURRENT)) multiplier = 0.1;
 			if (last.isPresent() && last.get() == opposite(directionType)) multiplier = 0;
-			if (last.isPresent() && last.get() == directionType) multiplier = 1.5;
-			if (last2.isPresent() && last2.get() == opposite(directionType)) multiplier = 0.5;
+			if (last.isPresent() && last.get() == directionType) multiplier = 1.0;
+			if (last2.isPresent() && last2.get() == opposite(directionType)) multiplier = 1.0;
 			double value = (neighborMap.get(directionType).getConcentration(chosenChemicalType) + 0.001) * multiplier;
 			if (highestConcentration <= value) {
 				highestConcentration = value;
