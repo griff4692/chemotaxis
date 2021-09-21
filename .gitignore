@@ -2,6 +2,7 @@
 .idea/
 .idea*
 *.im
+classes
 
 # Class files
 *.class
@@ -40,3 +41,6 @@ src/Makefile
 hs_err_pid*
 out
 coms4444-chemotaxis.iml
+
+# MacOS junk
+*.DS_Store

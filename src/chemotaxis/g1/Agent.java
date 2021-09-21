@@ -19,6 +19,7 @@ public class Agent extends chemotaxis.sim.Agent {
         super(simPrinter);
     }
 
+
     /**
      * Move agent
      *
