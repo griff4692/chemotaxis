@@ -10,6 +10,7 @@ import chemotaxis.sim.*;
 public class Controller extends chemotaxis.sim.Controller {
 
    private TurnGridNode [][] turnGrid;
+   private ArrayList<Integer> agentsLastNumTurns;
    private ArrayList<Point> agentsLastLocation;
    private ArrayList<DirectionType> agentsLastDir;
 
@@ -30,6 +31,7 @@ public class Controller extends chemotaxis.sim.Controller {
       super(start, target, size, grid, simTime, budget, seed, simPrinter);
 
       computeTurnGrid(grid);
+      agentsLastNumTurns = new ArrayList<>();
       agentsLastLocation = new ArrayList<>();
       agentsLastDir = new ArrayList<>();
    }
@@ -92,6 +94,7 @@ public class Controller extends chemotaxis.sim.Controller {
             TurnGridNode agentTurnGridNode = turnGrid[agentLocation.x - 1][agentLocation.y - 1];
 
             if (agentsLastLocation.size() != locations.size()) {
+               agentsLastNumTurns.add(agentTurnGridNode.getTurns());
                agentsLastLocation.add(agentLocation);
                agentsLastDir.add(DirectionType.CURRENT);
             }
@@ -102,7 +105,8 @@ public class Controller extends chemotaxis.sim.Controller {
             if (grid.length > agentLocation.x + 1 && grid[agentLocation.x + 1][agentLocation.y].isBlocked()) numNeighborsBlocked++;
             if (grid[0].length > agentLocation.y + 1 && grid[agentLocation.x][agentLocation.y + 1].isBlocked()) numNeighborsBlocked++;
 
-            if ((agentLocation.x != target.x || agentLocation.y != target.y) && (numNeighborsBlocked < 2 || (numNeighborsBlocked == 2 && getAgentDirection(agentsLastLocation.get(i), agentLocation) == getOppositeDirection(agentsLastDir.get(i)))) && ((agentLocation.x == start.x && agentLocation.y == start.y) || agentsLastDir.get(i) != getAgentDirection(agentsLastLocation.get(i), agentLocation))) {
+            // agentsLastDir.get(i) != getAgentDirection(agentsLastLocation.get(i), agentLocation)
+            if ((agentLocation.x != target.x || agentLocation.y != target.y) && (numNeighborsBlocked < 2 || (numNeighborsBlocked == 2 && getAgentDirection(agentsLastLocation.get(i), agentLocation) == getOppositeDirection(agentsLastDir.get(i)))) && ((agentLocation.x == start.x && agentLocation.y == start.y) || agentTurnGridNode.getTurns() != agentsLastNumTurns.get(i))) {
                chemPlacement = new ChemicalPlacement();
                Point parentPoint = agentTurnGridNode.getParentPoint();
                if (parentPoint.x + 1 == agentLocation.x) {
@@ -112,8 +116,10 @@ public class Controller extends chemotaxis.sim.Controller {
                }
 
                chemPlacement.chemicals.add(ChemicalCell.ChemicalType.RED);
+               agentsLastNumTurns.set(i, agentTurnGridNode.getTurns());
                return chemPlacement;
             }
+            agentsLastDir.set(i, getAgentDirection(agentsLastLocation.get(i), agentLocation));
             agentsLastLocation.set(i, agentLocation);
          }
       }
@@ -136,7 +142,7 @@ public class Controller extends chemotaxis.sim.Controller {
       } else if (lastPoint.y == currentPoint.y) {
          return (lastPoint.x < currentPoint.x) ? DirectionType.SOUTH : DirectionType.NORTH;
       }
-      return DirectionType.CURRENT;
+      return null;
    }
 
    /**
