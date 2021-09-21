@@ -13,6 +13,15 @@ import chemotaxis.sim.SimPrinter;
 public class Controller extends chemotaxis.sim.Controller {
 
 	ArrayList<Point> path = null;
+	ArrayList<Point> placementCells = null;
+	ArrayList<ChemicalType> colorPath = null;
+	Integer index = 0;
+
+
+	Integer time_interval = 4;
+	Integer path_interval = 5;
+	Integer chemical_color = 0;
+
     /**
      * Controller constructor
      *
@@ -105,23 +114,38 @@ public class Controller extends chemotaxis.sim.Controller {
 		if(path == null){
 			simPrinter.println("creating path");
 			path = getPath(grid);
+
+			placementCells = new ArrayList<Point>();
+			for (int i=1; i<path.size(); i++){
+				if(i%path_interval == 0){
+					placementCells.add(path.get(i));
+				}
+			}
+			if(path.size()%4!=0){
+				placementCells.add(path.get(path.size()-1));
+			}
+
+			colorPath = new ArrayList<ChemicalType>();
+			for (int i=0; i<placementCells.size(); i++) {
+				if (i % 3 == 0) {
+					colorPath.add(ChemicalType.RED);
+				} else if (i % 3 == 1) {
+					colorPath.add(ChemicalType.GREEN);
+				} else {
+					colorPath.add(ChemicalType.BLUE);
+				}
+			}
 		}
 
-		if(currentTurn%10 == 1){
-			List<ChemicalType> chemicals = new ArrayList<>();
-			chemicals.add(ChemicalType.RED);
-	
-			chemicalPlacement.location = new Point(4, 4);
-			chemicalPlacement.chemicals = chemicals;	
-		}
-		else if(currentTurn%10 == 5){
-			List<ChemicalType> chemicals = new ArrayList<>();
-			chemicals.add(ChemicalType.GREEN);
-	
-			chemicalPlacement.location = new Point(8, 8);
-			chemicalPlacement.chemicals = chemicals;	
-		}
-		
+
+		Point currentLocation = placementCells.get(index%placementCells.size());
+		chemicalPlacement.location = currentLocation;
+		ArrayList<ChemicalType> chemicals = new ArrayList<>();
+		chemicals.add(colorPath.get(index%colorPath.size()));
+		chemicalPlacement.chemicals = chemicals;
+		index = index + 1;
+
+
 		return chemicalPlacement;
 	}
 }
