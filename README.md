@@ -1,6 +1,6 @@
 
 # Project 2: Chemotaxis
-#Test
+
 ## Course Summary
 
 Course: COMS 4444 Programming and Problem Solving (Fall 2021)  
