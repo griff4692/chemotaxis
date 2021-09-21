@@ -1,9 +1,9 @@
 package chemotaxis.g4;
 
 import java.awt.Point;
-// import java.util.*;
-import java.util.List;
-import java.util.ArrayList;
+import java.util.*;
+// import java.util.List;
+// import java.util.ArrayList;
 
 import chemotaxis.sim.ChemicalPlacement;
 import chemotaxis.sim.ChemicalCell;
