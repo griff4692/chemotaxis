@@ -1,6 +1,8 @@
 package chemotaxis.g3;
 
 import java.awt.Point;
+import java.util.Dictionary;
+import java.util.Hashtable;
 import java.util.List;
 import java.util.ArrayList;
 
@@ -10,7 +12,9 @@ import chemotaxis.sim.ChemicalCell.ChemicalType;
 import chemotaxis.sim.SimPrinter;
 
 public class Controller extends chemotaxis.sim.Controller {
-	
+	ArrayList<Integer> shortest_path;
+	Hashtable<Integer, Point> node_to_point;
+	Hashtable<Point, Integer> point_to_node;
     /**
      * Controller constructor
      *
@@ -26,7 +30,32 @@ public class Controller extends chemotaxis.sim.Controller {
      */
 	public Controller(Point start, Point target, Integer size, ChemicalCell[][] grid, Integer simTime, Integer budget, Integer seed, SimPrinter simPrinter) {
 		super(start, target, size, grid, simTime, budget, seed, simPrinter);
+		// dijkestra: https://www.geeksforgeeks.org/dijkstras-shortest-path-algorithm-greedy-algo-7/
+		shortest_path = new ArrayList<Integer>();
+		node_to_point = new Hashtable<Integer, Point>();
+		point_to_node = new Hashtable<Point, Integer>();
+
+
+		int k = 0;
+		for (int i = 0; i < grid.length; i++) {
+			for (int j = 0; j < grid[0].length; j++) {
+				if (grid[i][j].isOpen()) {
+					Point curr = new Point(i, j);
+					node_to_point.put(k, curr);
+					point_to_node.put(curr, k);
+					k++;
+				}
+			}
+		}
+
+		/*
+		TODO:
+		- Build Matrix Representation of graph
+		- Dijsktra
+		 */
+
 	}
+
 
 	public int closestToTarget(ArrayList<Point> locations) {
 		int closestDistance = 9999999;
