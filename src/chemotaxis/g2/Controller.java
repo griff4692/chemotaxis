@@ -1,8 +1,7 @@
 package chemotaxis.g2;
 
 import java.awt.Point;
-import java.util.List;
-import java.util.ArrayList;
+import java.util.*;
 
 import chemotaxis.sim.ChemicalPlacement;
 import chemotaxis.sim.ChemicalCell;
@@ -27,6 +26,43 @@ public class Controller extends chemotaxis.sim.Controller {
 	public Controller(Point start, Point target, Integer size, ChemicalCell[][] grid, Integer simTime, Integer budget, Integer seed, SimPrinter simPrinter) {
 		super(start, target, size, grid, simTime, budget, seed, simPrinter);
 	}
+	/**
+	 * Apply chemicals to the map
+	 *
+	 * @param currentTurn         current turn in the simulation
+	 * @param chemicalsRemaining  number of chemicals remaining
+	 * @param locations     current locations of the agents
+	 * @param grid                game grid/map
+	 * @return                    a cell location and list of chemicals to apply
+	 *
+	 */
+	@Override
+	public ChemicalPlacement applyChemicals(Integer currentTurn, Integer chemicalsRemaining, ArrayList<Point> locations, ChemicalCell[][] grid) {
+
+		List<Point> path = new ArrayList<Point>();
+
+		path = this.getShortestPath(start, target, grid);
+
+		ChemicalPlacement chemicalPlacement = new ChemicalPlacement();
+		int pathLength = path.size();
+		int tempTurn;
+		if ( currentTurn <= pathLength) {
+			tempTurn = currentTurn -1;
+		} else {
+			tempTurn = (currentTurn -1) % pathLength;
+		}
+		tempTurn = tempTurn -1;
+		int newX = path.get(tempTurn).x;
+		int newY = path.get(tempTurn).y;
+
+		List<ChemicalType> chemicals = new ArrayList<>();
+		chemicals.add(ChemicalType.BLUE);
+
+		chemicalPlacement.location = new Point(newX, newY);
+		chemicalPlacement.chemicals = chemicals;
+
+		return chemicalPlacement;
+	}
 
 	public int closestToTarget(ArrayList<Point> locations) {
 		int closestDistance = 9999999;
@@ -42,16 +78,21 @@ public class Controller extends chemotaxis.sim.Controller {
 		}
 		return closestIdx;
 	}
-	
+
+	/**
+	 *  A private class that represents a grid's coordinate and its predecessor. Used in BFS implementation
+	 */
 	private class Node {
-		private int x = 0;
-		private int y = 0;
+		private int x;
+		private int y;
 		private Node prev;
 
+		public Node() {this(0, 0); }
+
 		public Node(int x, int y) {
-      			this.x = x;
+			this.x = x;
 			this.y = y;
-   		}
+		}
 
 		public Node getPrev(){
 			return this.prev;
@@ -60,96 +101,104 @@ public class Controller extends chemotaxis.sim.Controller {
 		public int getX(){
 			return this.x;
 		}
-		
 		public int getY(){
 			return this.y;
 		}
 
+		public void setPrev(Node prev){
+			this.prev = prev;
+		}
+
+		@Override
+		public String toString() {
+			return "Node{" +
+					"x=" + x +
+					", y=" + y +
+					", prev=" + prev +
+					'}';
+		}
 	}
 
-	private List<Point> getShortestPath(Point p, Point target, ChemicalCell[][] grid,) {
+	/**
+	 * BFS implementation that searches the shortest path between point p and the target on the grid
+	 *
+	 * @param p             a point on the grid/map
+	 * @param target        the target point on the grid/map
+	 * @param grid          game grid/map
+	 * @return              a list of points that represent the shortest path between point p and the target
+	 */
+	private List<Point> getShortestPath(Point p, Point target, ChemicalCell[][] grid) {
 		Queue<Node> queue = new LinkedList<Node>();
 		boolean[][] visited = new boolean[grid.length][grid[0].length];
 		Node start = new Node((int) p.getX(), (int) p.getY());
 		queue.add(start);
 		List<Point> path = new ArrayList<Point>();
-
+		int targetX = (int)target.getX();
+		int targetY = (int)target.getY();
 		while (!queue.isEmpty()) {
 			Node curNode = queue.poll();
-			if (curNode.getX() == target.getX() && curNode.getY() == target.getY()) {
+			if (curNode.getX() == targetX && curNode.getY() == targetY) {
 				while (curNode != null) {
 					path.add(new Point(curNode.getX(), curNode.getY()));
-					curNode = curNode.prev;
+					curNode = curNode.getPrev();
 				}
 				Collections.reverse(path);
 				break;
 			}
-			for (Node nei : getNeighbors(curNode, grid, visited)){
- 				visited[nei.getX()][nei.getY()] = true;
+			for (Node nei: getNeighbors(curNode, grid, visited)){
+				visited[nei.getX() - 1][nei.getY() - 1] = true;
 				queue.add(nei);
 			}
 		}
-
 		return path;
 	}
-	
-	
-	private List<Node> getNeighbors(Node n, ChemicalCell grid[][], boolean[][] visited){
+
+	/**
+	 * Gets
+	 *
+	 * @param n         current node (a cell in the grid)
+	 * @param grid      game grid/map
+	 * @param visited   a 2d array indicating whether a grid has been visited during BFS
+	 * @return          a list of nodes that represents possible neighbors of the current cell
+	 */
+	private List<Node> getNeighbors(Node n, ChemicalCell[][] grid, boolean[][] visited){
 		List<Node> neighbors = new ArrayList<Node>();
-		int x = n.getX();
-		int y = n.getY();
-		if (isCellValid(grid, visited, x - 1, y - 1)){
-			neighbors.add(new Node(x - 1, y - 1));
+		int x = n.getX() - 1;
+		int y = n.getY() - 1;
+		// Note: make sure to create new node based on an 1-indexed map
+		if (isCellValid(grid, visited, x - 1, y)){
+			Node next = new Node(x, y + 1);
+			next.setPrev(n);
+			neighbors.add(next);
 		}
-		if (isCellValid(grid, visited, x + 1, y + 1)){
-			neighbors.add(new Node(x + 1, y + 1));
+		if (isCellValid(grid, visited, x + 1, y )){
+			Node next = new Node(x + 2, y + 1);
+			next.setPrev(n);
+			neighbors.add(next);
 		}
-		if (isCellValid(grid, visited, x + 1, y - 1)){
-			neighbors.add(new Node(x + 1, y - 1));
+		if (isCellValid(grid, visited, x , y - 1)){
+			Node next = new Node(x + 1, y);
+			next.setPrev(n);
+			neighbors.add(next);
 		}
-		if (isCellValid(grid, visited, x - 1, y + 1)){
-			neighbors.add(new Node(x - 1, y + 1));
+		if (isCellValid(grid, visited, x , y + 1)){
+			Node next = new Node(x + 1, y + 2);
+			next.setPrev(n);
+			neighbors.add(next);
 		}
 		return neighbors;
 	}
-	
-	
+
+
+	/**
+	 *
+	 * @param grid      game grid/map
+	 * @param visited   a 2d array indicating whether a grid has been visited during BFS
+	 * @param x         the x coordinate of a node (a cell on the grid)
+	 * @param y         the y coordinate of a node (a cell on the grid)
+	 * @return          whether the current cell is a valid cell that the agent can move to
+	 */
 	private boolean isCellValid(ChemicalCell grid[][], boolean visited[][], int x, int y) {
 		return (x >= 0) && (x < grid.length) && (y >= 0) && (y < grid[0].length) && grid[x][y].isOpen() && !visited[x][y];
-	}
-
-    /**
-     * Apply chemicals to the map
-     *
-     * @param currentTurn         current turn in the simulation
-     * @param chemicalsRemaining  number of chemicals remaining
-     * @param locations     current locations of the agents
-     * @param grid                game grid/map
-     * @return                    a cell location and list of chemicals to apply
-     *
-     */
- 	@Override
-	public ChemicalPlacement applyChemicals(Integer currentTurn, Integer chemicalsRemaining, ArrayList<Point> locations, ChemicalCell[][] grid) {
-		ChemicalPlacement chemicalPlacement = new ChemicalPlacement();
-		int closestIdx = this.closestToTarget(locations);
- 		Point currentLocation = locations.get(closestIdx);
-		int currentX = currentLocation.x;
-		int currentY = currentLocation.y;
-
-		int leftEdgeX = Math.max(1, currentX - 5);
-		int rightEdgeX = Math.min(size, currentX + 5);
-		int topEdgeY = Math.max(1, currentY - 5);
-		int bottomEdgeY = Math.min(size, currentY + 5);
-
-		int randomX = this.random.nextInt(rightEdgeX - leftEdgeX + 1) + leftEdgeX;
-		int randomY = this.random.nextInt(bottomEdgeY - topEdgeY + 1) + topEdgeY ;
-
-		List<ChemicalType> chemicals = new ArrayList<>();
-		chemicals.add(ChemicalType.BLUE);
-
-		chemicalPlacement.location = new Point(randomX, randomY);
-		chemicalPlacement.chemicals = chemicals;
-
-		return chemicalPlacement;
 	}
 }
