@@ -48,33 +48,40 @@ public class Controller extends chemotaxis.sim.Controller {
         Queue<Point> queue = new LinkedList<Point>();
         queue.add(new Point(endX, endY));
 
+        visited[endX][endY] = true;
+        directionMap[endX][endY] = DirectionType.CURRENT;
+
         while (!queue.isEmpty()) {
             Point curr = queue.remove();
             int x = curr.x;
             int y = curr.y;
-            visited[x][y] = true;
             if (x - 1 >= 0 && grid[x - 1][y].isOpen() && !visited[x - 1][y]) {
                 queue.add(new Point(x - 1, y));
+                visited[x-1][y] = true;
                 directionMap[x - 1][y] = DirectionType.SOUTH;
             }
 
             if (y - 1 >= 0 && grid[x][y - 1].isOpen() && !visited[x][y - 1]) {
                 queue.add(new Point(x, y - 1));
+                visited[x][y-1] = true;
                 directionMap[x][y - 1] = DirectionType.EAST;
             }
 
             if (x + 1 < size && grid[x + 1][y].isOpen() && !visited[x + 1][y]) {
                 queue.add(new Point(x + 1, y));
+                visited[x+1][y] = true;
                 directionMap[x + 1][y] = DirectionType.NORTH;
             }
 
             if (y + 1 < size && grid[x][y + 1].isOpen() && !visited[x][y + 1]) {
                 queue.add(new Point(x, y + 1));
+                visited[x][y+1] = true;
                 directionMap[x][y + 1] = DirectionType.WEST;
             }
         }
 
-        /* Prints the map that is made
+        //Prints the map that is made
+        /*
         HashMap<DirectionType, Character> debugging = new HashMap<>();
         debugging.put(DirectionType.NORTH, 'N');
         debugging.put(DirectionType.SOUTH, 'S');
@@ -88,7 +95,6 @@ public class Controller extends chemotaxis.sim.Controller {
             System.out.println();
         }
         */
-
     }
 
     public int closestToTarget(ArrayList<Point> locations) {

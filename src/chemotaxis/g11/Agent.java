@@ -55,7 +55,7 @@ public class Agent extends chemotaxis.sim.Agent {
         for (DirectionType directionType : neighborMap.keySet()) {
             if (neighborMap.get(directionType).getConcentration(chosenChemicalType) >= 0.99) {
                 move.directionType = directionType;
-                move.currentState = (byte) (bitDirectionMap.get(move.directionType) | previousState);
+                move.currentState = (byte) (bitDirectionMap.get(move.directionType) | 0b00);
             }
         }
 
