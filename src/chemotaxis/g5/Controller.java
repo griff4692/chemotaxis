@@ -56,7 +56,7 @@ public class Controller extends chemotaxis.sim.Controller {
 
         while(!que.isEmpty() && !found)
         {
-            temp = que.poll();
+            temp = que.pollFirst();
             i=(int)temp.getX();
             j=(int)temp.getY();
             if(temp == target_zero)
