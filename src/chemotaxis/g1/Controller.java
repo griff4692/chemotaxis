@@ -34,23 +34,16 @@ public class Controller extends chemotaxis.sim.Controller {
      * @param simPrinter  simulation printer
      *
      */
-    // This is the constructor from vaibhav's branch but it reports error
-    /*
-    public Controller(Point start, Point target, Integer size, Integer simTime, Integer budget, Integer seed, SimPrinter simPrinter) {
-        super(start, target, size, simTime, budget, seed, simPrinter);
-    }
-    */
-
-    /*
-    The construction from dummy
-     */
     public Controller(Point start, Point target, Integer size, ChemicalCell[][] grid, Integer simTime, Integer budget, Integer seed, SimPrinter simPrinter) {
         super(start, target, size, grid, simTime, budget, seed, simPrinter);
         dist = new int[size][size][4];
+        // Necessary since (0,0) on the game board is labeled (1,1)
         modifiedStart.x=start.x-1;
         modifiedStart.y=start.y-1;
         modifiedTarget.x=target.x-1;
         modifiedTarget.y=target.y-1;
+
+        // Initialize distance map
         for (int i=0;i<size;i++) {
             for (int j = 0; j < size; j++) {
                 for (int d = 0; d < 4; d++) {
@@ -59,8 +52,19 @@ public class Controller extends chemotaxis.sim.Controller {
             }
         }
 
-        // TODO: divide budget by 3 since we need to move 3 agents by default
-        findshortestpath(grid,budget);
+        // TODO (etm): Update this once the constructor is privy to the number of
+        //   agents that need to reach the goal.
+        // Divide by 3 since the default number of agents to send to the goal is 3
+        int maxTurns = budget / 3;
+
+        // Run the shortest paths algorithm. Results are stored in `routes`
+        // and keyed by the number of turns necessary for the path.
+        findshortestpath(grid,budget / 3);
+
+        // Select the fastest route within our budget.
+        // Routes with more turns are faster, otherwise `findshortestpath` will terminate
+        // without adding a route for that number of turns. Therefore, if key `5` exists in
+        // `routes`, it's route is strictly shorter than the route for key `4`.
         for (int i=0;i<budget;i++) {
             if (!routes.containsKey(i)){
                 break;
@@ -69,9 +73,8 @@ public class Controller extends chemotaxis.sim.Controller {
             Collections.reverse(temp);
             routes.put(i, new ArrayList<>(temp));
             setTurnAt(i,grid);
+            // TODO (etm): Update this once the time allowed is known (?)
             schedule(1000);
-            //System.out.println(routes.get(i));
-            //System.out.println(turnAt.get(i));
         }
     }
 
@@ -98,26 +101,7 @@ public class Controller extends chemotaxis.sim.Controller {
 
         }
     }
-    /*
-     *
 
-     * Apply chemicals to the map
-     *
-     * @param currentTurn         current turn in the simulation
-     * @param chemicalsRemaining  number of chemicals remaining
-     * @param locations           current locations of the agents
-
-     * @param grid                game grid/map
-     * @return                    a cell location and list of chemicals to apply
-     *
-     */
-
-    /****************************************/
-    /*****Call This Function To Get Path*****/
-    /****************************************/
-    public ArrayList<Point> getRoute(int turn) {
-        return routes.get(turn);
-    }
     public void setTurnAt(int turn,ChemicalCell[][] grid) {
         ArrayList<Integer> turns = new ArrayList<>();
         int i = routes.get(turn).size()-1;
@@ -172,6 +156,17 @@ public class Controller extends chemotaxis.sim.Controller {
         }
     }
 
+    /**
+     * Apply chemicals to the map
+     *
+     * @param currentTurn         current turn in the simulation
+     * @param chemicalsRemaining  number of chemicals remaining
+     * @param locations           current locations of the agents
+
+     * @param grid                game grid/map
+     * @return                    a cell location and list of chemicals to apply
+     *
+     */
     @Override
     public ChemicalPlacement applyChemicals(Integer currentTurn, Integer chemicalsRemaining, ArrayList<Point> locations, ChemicalCell[][] grid) {
         // TODO add your code here to apply chemicals
@@ -181,7 +176,7 @@ public class Controller extends chemotaxis.sim.Controller {
     }
 
     // whether the agent can reach cell x,y facing direction d within s steps
-    private Boolean betterPath(int x, int y, int d, int s){
+    private Boolean isBestPath(int x, int y, int d, int s){
         if (!(modifiedTarget.x==x && modifiedTarget.y==y)) {
             return dist[x][y][d] == 0 || dist[x][y][d]>s;
         }
@@ -290,7 +285,7 @@ public class Controller extends chemotaxis.sim.Controller {
                         TriInteger targetPoint = new TriInteger(basePoint.x+movement(newDirection).x,basePoint.y+movement(newDirection).y,newDirection);
                         if (!mapHasBlockAt(grid,targetPoint.x,targetPoint.y)) {
                             // If the current path is the best path
-                            if (betterPath(targetPoint.x,targetPoint.y,targetPoint.d,dist[basePoint.x][basePoint.y][basePoint.d]+1)) {
+                            if (isBestPath(targetPoint.x,targetPoint.y,targetPoint.d,dist[basePoint.x][basePoint.y][basePoint.d]+1)) {
                                 currentpoints.add(new TriInteger(targetPoint));
                                 dist[targetPoint.x][targetPoint.y][targetPoint.d] = dist[basePoint.x][basePoint.y][basePoint.d]+1;
                             }
@@ -301,7 +296,7 @@ public class Controller extends chemotaxis.sim.Controller {
                 if (turn == 1) {
                     // Not blocked at south
                     if (!mapHasBlockAt(grid,modifiedStart.x-1,modifiedStart.y)){
-                        if (betterPath(modifiedStart.x-1,modifiedStart.y,2,1)){
+                        if (isBestPath(modifiedStart.x-1,modifiedStart.y,2,1)){
                             currentpoints.add(new TriInteger(modifiedStart.x-1,modifiedStart.y,2));
                             dist[modifiedStart.x-1][modifiedStart.y][2] = 1;
                         }
@@ -321,7 +316,7 @@ public class Controller extends chemotaxis.sim.Controller {
                         continue;
                     }
 
-                    if (betterPath(targetpoint.x,targetpoint.y,targetpoint.d,dist[basepoint.x][basepoint.y][basepoint.d]+1)){
+                    if (isBestPath(targetpoint.x,targetpoint.y,targetpoint.d,dist[basepoint.x][basepoint.y][basepoint.d]+1)){
                         dist[targetpoint.x][targetpoint.y][targetpoint.d] = dist[basepoint.x][basepoint.y][basepoint.d]+1;
                         pointsSavedForNextTurn.add(new TriInteger(targetpoint));
                         currentpoints.add(new TriInteger(targetpoint));
