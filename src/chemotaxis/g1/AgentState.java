@@ -67,16 +67,16 @@ public class AgentState {
         this.state &= ~DIRECTION_MASK;
         switch (dir) {
             case NORTH:
-                this.state &= NORTH_BITS;
+                this.state |= NORTH_BITS;
                 break;
             case EAST:
-                this.state &= EAST_BITS;
+                this.state |= EAST_BITS;
                 break;
             case WEST:
-                this.state &= WEST_BITS;
+                this.state |= WEST_BITS;
                 break;
             case SOUTH:
-                this.state &= SOUTH_BITS;
+                this.state |= SOUTH_BITS;
                 break;
             default:
                 throw new RuntimeException("invalid Direction enum");
