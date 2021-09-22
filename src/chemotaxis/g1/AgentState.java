@@ -1,6 +1,7 @@
 package chemotaxis.g1;
 
 import chemotaxis.sim.DirectionType;
+import chemotaxis.sim.ChemicalCell.ChemicalType;
 
 public class AgentState {
     // State is represented as a single byte of memory
@@ -13,6 +14,10 @@ public class AgentState {
 
     // First two bits are used for direction
     private static final byte DIRECTION_MASK = 0x3;
+
+    // Third bit used for color agent is currently looking for
+    private static final byte COLOR_MASK = 0x1 << 2;
+    private static final byte RED_BITS = 0x1 << 2;
 
     public AgentState() {
         this.state = 0x0;
@@ -49,6 +54,27 @@ public class AgentState {
                 return this.getDirection();
         }
         throw new RuntimeException("unreachable");
+    }
+
+    public void setFollowColor(ChemicalType color) {
+        this.state &= ~COLOR_MASK;
+        switch (color) {
+            case BLUE:
+                // Blue is encoded as 0x0
+                break;
+            case RED:
+                this.state |= RED_BITS;
+                break;
+            default:
+                throw new RuntimeException("agent cannot follow GREEN");
+        }
+    }
+
+    public ChemicalType getFollowColor() {
+        if ((this.state &= COLOR_MASK) == RED_BITS) {
+            return ChemicalType.RED;
+        }
+        return ChemicalType.BLUE;
     }
 
     /**
