@@ -100,10 +100,10 @@ public class Controller extends chemotaxis.sim.Controller {
             }
 
             int numNeighborsBlocked = 0;
-            if (grid[agentLocation.x - 1][agentLocation.y].isBlocked()) numNeighborsBlocked++;
-            if (grid[agentLocation.x][agentLocation.y - 1].isBlocked()) numNeighborsBlocked++;
-            if (grid.length > agentLocation.x + 1 && grid[agentLocation.x + 1][agentLocation.y].isBlocked()) numNeighborsBlocked++;
-            if (grid[0].length > agentLocation.y + 1 && grid[agentLocation.x][agentLocation.y + 1].isBlocked()) numNeighborsBlocked++;
+            if (agentLocation.x == 1 || (agentLocation.x > 1 && grid[agentLocation.x - 2][agentLocation.y - 1].isBlocked())) numNeighborsBlocked++;
+            if (agentLocation.y == 1 || (agentLocation.y > 1 && grid[agentLocation.x - 1][agentLocation.y - 2].isBlocked())) numNeighborsBlocked++;
+            if (agentLocation.x == grid.length || (grid.length > agentLocation.x && grid[agentLocation.x][agentLocation.y - 1].isBlocked())) numNeighborsBlocked++;
+            if (agentLocation.y == grid[0].length || grid[0].length > agentLocation.y && grid[agentLocation.x - 1][agentLocation.y].isBlocked()) numNeighborsBlocked++;
 
             // agentsLastDir.get(i) != getAgentDirection(agentsLastLocation.get(i), agentLocation)
             if ((agentLocation.x != target.x || agentLocation.y != target.y) && (numNeighborsBlocked < 2 || (numNeighborsBlocked == 2 && getAgentDirection(agentsLastLocation.get(i), agentLocation) == getOppositeDirection(agentsLastDir.get(i)))) && ((agentLocation.x == start.x && agentLocation.y == start.y) || agentTurnGridNode.getTurns() != agentsLastNumTurns.get(i))) {
