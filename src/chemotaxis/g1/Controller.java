@@ -193,14 +193,17 @@ public class Controller extends chemotaxis.sim.Controller {
                     continue;
                 }
                 Point turn = route.get(turnIx + 1);
-                if (turn.equals(agentLocation) && turnIx > furthestTurnIx ) {
+                // Fix this annoying 1-based map indexing
+                Point zeroAgentLocation = new Point(agentLocation.x - 1, agentLocation.y - 1);
+                if (turn.equals(zeroAgentLocation) && turnIx > furthestTurnIx ) {
                     furthestTurnIx = turnIx;
                 }
             }
         }
         if (furthestTurnIx >= 0) {
             // Place the chemical on the next step on the path
-            chemicalPlacement.location = route.get(furthestTurnIx + 1);
+            Point loc = route.get(furthestTurnIx + 2);
+            chemicalPlacement.location = new Point(loc.x + 1, loc.y + 1);
             chemicalPlacement.chemicals.add(ChemicalCell.ChemicalType.BLUE);
         }
 
