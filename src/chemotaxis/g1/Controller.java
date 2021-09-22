@@ -103,39 +103,40 @@ public class Controller extends chemotaxis.sim.Controller {
     }
 
     public void setTurnAt(int turn,ChemicalCell[][] grid) {
+        final ArrayList<Point> route = routes.get(turn);
+        // List of turns in the route
         ArrayList<Integer> turns = new ArrayList<>();
-        int i = routes.get(turn).size()-1;
+        int currentStep = routes.get(turn).size()-1;
         int d = 0;
-        ArrayList<Integer> allDirections = new ArrayList<>(Arrays.asList(0,1,-1,2));
 
-        while (i>0) {
-            Point current = new Point(routes.get(turn).get(i).x,routes.get(turn).get(i).y);
-            int defalutDir=d;
+        while (currentStep>0) {
+            Point current = new Point(route.get(currentStep).x,route.get(currentStep).y);
+            int defaultDir=d;
             for (int j=0;j<4;j++) {
                 int newDir = d+j;
                 if (!mapHasBlockAt(grid, current.x + movement(newDir).x, current.y + movement(newDir).y)) {
-                    defalutDir = d+j;
+                    defaultDir = d+j;
                     break;
                 }
             }
             int actualDir = 0;
             for (int j=0;j<4;j++) {
-                if ((routes.get(turn).get(i-1).x - routes.get(turn).get(i).x == movement(j).x) &&
-                    (routes.get(turn).get(i-1).y - routes.get(turn).get(i).y == movement(j).y)) {
+                if ((route.get(currentStep-1).x - route.get(currentStep).x == movement(j).x) &&
+                    (route.get(currentStep-1).y - route.get(currentStep).y == movement(j).y)) {
                     actualDir = j;
                     break;
                 }
             }
-            if (actualDir==defalutDir) {
+            if (actualDir==defaultDir) {
                 turns.add(0);
             }
             else {
                 turns.add(actualDir - d);
             }
-            i-=1;
+            currentStep-=1;
             d = actualDir;
         }
-        turnAt.put(turn,new ArrayList<>(turns));
+        turnAt.put(turn, turns);
     }
 
     /**
