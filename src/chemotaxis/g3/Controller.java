@@ -12,9 +12,84 @@ import chemotaxis.sim.ChemicalCell.ChemicalType;
 import chemotaxis.sim.SimPrinter;
 
 public class Controller extends chemotaxis.sim.Controller {
+	static class Graph {
+		int vertices;
+		int matrix[][];
+
+		public Graph(int vertex) {
+			this.vertices = vertex;
+			matrix = new int[vertex][vertex];
+		}
+
+		public void addEdge(int source, int destination) {
+			//add edge
+			matrix[source][destination] = 1;
+
+			//add back edge for undirected graph
+			matrix[destination][source] = 1;
+		}
+
+		//get the vertex with minimum distance which is not included in SPT
+		int getMinimumVertex(boolean[] mst, int[] key) {
+			int minKey = Integer.MAX_VALUE;
+			int vertex = -1;
+			for (int i = 0; i < vertices; i++) {
+				if (mst[i] == false && minKey > key[i]) {
+					minKey = key[i];
+					vertex = i;
+				}
+			}
+			return vertex;
+		}
+
+		public void dijkstra_GetMinDistances(int sourceVertex) {
+			// shortest path tree
+			boolean[] spt = new boolean[vertices];
+			int[] distance = new int[vertices];
+			//Initialize all the distance to infinity
+			for (int i = 0; i < vertices; i++) {
+				distance[i] = Integer.MAX_VALUE;
+			}
+			//start from source vertex
+			distance[sourceVertex] = 0;
+			//create SPT
+			for (int i = 0; i < vertices; i++) {
+				//get the vertex with the minimum distance
+				int vertex_U = getMinimumVertex(spt, distance);
+				//include this vertex in SPT
+				spt[vertex_U] = true;
+				//iterate through all the adjacent vertices of above vertex and update the keys
+				for (int vertex_V = 0; vertex_V < vertices; vertex_V++) {
+					//check of the edge between vertex_U and vertex_V
+					if (matrix[vertex_U][vertex_V] > 0) {
+						//check if this vertex 'vertex_V' already in spt and
+						// if distance[vertex_V]!=Infinity
+						if (spt[vertex_V] == false && matrix[vertex_U][vertex_V] != Integer.MAX_VALUE) {
+							//check if distance needs an update or not
+							//if total weight from source to vertex_V is less than
+							//the current distance value, update the distance
+							int newKey = matrix[vertex_U][vertex_V] + distance[vertex_U];
+							if (newKey < distance[vertex_V])
+								distance[vertex_V] = newKey;
+						}
+					}
+				}
+			}
+			//print shortest path tree
+			//print(sourceVertex, distance);
+		}
+	}
+
+
 	ArrayList<Integer> shortest_path;
 	Hashtable<Integer, Point> node_to_point;
 	Hashtable<Point, Integer> point_to_node;
+	Point one_third;
+	Point two_thirds;
+
+
+
+
     /**
      * Controller constructor
      *
@@ -48,11 +123,49 @@ public class Controller extends chemotaxis.sim.Controller {
 			}
 		}
 
-		/*
-		TODO:
-		- Build Matrix Representation of graph
-		- Dijsktra
-		 */
+		Graph g = new Graph(node_to_point.size());
+
+		for(int i = 0; i < node_to_point.size(); i++)
+		{
+			Point p = node_to_point[i];
+			int x_val = p.x;
+			int y_val = p.y;
+			Point above = new Point(x_val, y_val-1);
+			Point below = new Point(x_val,y_val+1);
+			Point left = new Point(x_val-1, y_val);
+			Point right = new Point(x_val+1,y_val);
+
+			if(point_to_node.containsKey(above))
+			{
+				g.addEdge(i, point_to_node[above]);
+			}
+			if(point_to_node.containsKey(below))
+			{
+				g.addEdge(i, point_to_node[below]);
+			}
+			if(point_to_node.containsKey(left))
+			{
+				g.addEdge(i, point_to_node[left]);
+			}
+			if(point_to_node.containsKey(right))
+			{
+				g.addEdge(i, point_to_node[right]);
+			}
+
+		}
+
+		ArrayList<int> shortest_path = //shortest path from start to finish
+		int one_third_index = shortest_path.size()/3;
+		int two_thirds_index = shortest_path.size()/3;
+
+		int one_third_node = shortest_path[one_third_index];
+		int two_thirds_node = shortest_path[two_thirds_index];
+
+		one_third = node_to_point[one_third_node];
+		two_thirds = node_to_point[two_thirds_node];
+
+
+
 
 	}
 
@@ -91,7 +204,19 @@ public class Controller extends chemotaxis.sim.Controller {
 		 */
 		ChemicalPlacement chemicalPlacement = new ChemicalPlacement();
 
-		if (currentTurn%5 == 1) {
+		if(currentTurn%5 == 1){
+			List<ChemicalType> chemicals = new ArrayList<>();
+			chemicals.add(ChemicalType.RED);
+			chemicalPlacement.location = new Point(this.one_third.x, this.one_third.y);
+			chemicalPlacement.chemicals = chemicals;
+		}
+		else if(currentTurn%5 = 2){
+			List<ChemicalType> chemicals = new ArrayList<>();
+			chemicals.add(ChemicalType.GREEN);
+			chemicalPlacement.location = new Point(this.two_thirds.x, this.two_thirds.y);
+			chemicalPlacement.chemicals = chemicals;
+		}
+		else if (currentTurn%5 == 3) {
 			List<ChemicalType> chemicals = new ArrayList<>();
 			chemicals.add(ChemicalType.BLUE);
 			chemicalPlacement.location = new Point(this.target.x, this.target.y);
@@ -104,3 +229,4 @@ public class Controller extends chemotaxis.sim.Controller {
 		return chemicalPlacement;
 	}
 }
+
