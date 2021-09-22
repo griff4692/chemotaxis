@@ -54,6 +54,7 @@ public class Agent extends chemotaxis.sim.Agent {
 
         Move move = new Move();
         move.currentState = previousState;
+        Integer previousDirection = previousState & 0b11;
 
         /*
         ChemicalType chosenChemicalType = ChemicalType.BLUE;
@@ -73,9 +74,13 @@ public class Agent extends chemotaxis.sim.Agent {
         for (DirectionType directionType : neighborMap.keySet()) {
             Map<ChemicalType, Double> neighborConcentrations = neighborMap.get(directionType).getConcentrations();
             if (highestConcentration < getHighestConcentration(neighborConcentrations)) {
-                highestConcentration = getHighestConcentration(neighborConcentrations);
-                move.directionType = directionType;
-                move.currentState = (byte) (bitDirectionMap.get(move.directionType) | 0b00);
+                if (bitDirectionMap.get(directionType) + previousDirection == 3) {
+                    continue;
+                } else {
+                    highestConcentration = getHighestConcentration(neighborConcentrations);
+                    move.directionType = directionType;
+                    move.currentState = (byte) (bitDirectionMap.get(move.directionType) | 0b00);
+                }
             }
         }
 
@@ -102,7 +107,6 @@ public class Agent extends chemotaxis.sim.Agent {
             }
         }
 
-        Integer previousDirection = previousState & 0b11;
         if ( move.directionType == DirectionType.CURRENT ) {
             if ( previousDirection == 0)
             { move.directionType = DirectionType.SOUTH; }
