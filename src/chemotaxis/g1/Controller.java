@@ -16,6 +16,9 @@ public class Controller extends chemotaxis.sim.Controller {
     Point modifiedStart = new Point();
     Point modifiedTarget = new Point();
 
+    // Key is number of chemical (paid) turns
+    // The largest key that exists in the map will be the shortest route
+    // If there's a key n+1 in the Map, it's distance is less than the distance of key n
     private static Map<Integer, ArrayList<Point>> routes=new HashMap<>();
     private static Map<Integer, ArrayList<Integer>> turnAt=new HashMap<>();
 
@@ -56,6 +59,7 @@ public class Controller extends chemotaxis.sim.Controller {
             }
         }
 
+        // TODO: divide budget by 3 since we need to move 3 agents by default
         findshortestpath(grid,budget);
         for (int i=0;i<budget;i++) {
             if (!routes.containsKey(i)){
