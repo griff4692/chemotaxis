@@ -105,20 +105,20 @@ public class Controller extends chemotaxis.sim.Controller {
         }
     }
 
-    public void setTurnAt(int turn,ChemicalCell[][] grid) {
+    public void setTurnAt(final int turn,ChemicalCell[][] grid) {
         final ArrayList<Point> route = routes.get(turn);
         // List of turns in the route
         ArrayList<Integer> turns = new ArrayList<>();
         int currentStep = routes.get(turn).size()-1;
         int d = 0;
-
+        ArrayList<Integer> allDirections = new ArrayList<>(Arrays.asList(0,1,-1,2));
         while (currentStep>0) {
             Point current = new Point(route.get(currentStep).x,route.get(currentStep).y);
             int defaultDir=d;
-            for (int j=0;j<4;j++) {
+            for (int j : allDirections) {
                 int newDir = d+j;
                 if (!mapHasBlockAt(grid, current.x + movement(newDir).x, current.y + movement(newDir).y)) {
-                    defaultDir = d+j;
+                    defaultDir = (d+j+4) % 4;
                     break;
                 }
             }
@@ -139,7 +139,8 @@ public class Controller extends chemotaxis.sim.Controller {
             currentStep-=1;
             d = actualDir;
         }
-        turnAt.put(turn, turns);
+        Collections.reverse(turns);
+        turnAt.put(turn,new ArrayList<>(turns));
     }
 
     /**
