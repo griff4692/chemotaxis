@@ -21,7 +21,7 @@ public class Controller extends chemotaxis.sim.Controller {
     // If there's a key n+1 in the Map, it's distance is less than the distance of key n
     private Map<Integer, ArrayList<Point>> routes=new HashMap<>();
     private Map<Integer, ArrayList<Integer>> turnAt=new HashMap<>();
-    private ArrayList<Point> selectedRoute = new ArrayList<Point>();
+    private int selectedRoute;
 
     /**
      * Controller constructor
@@ -70,9 +70,9 @@ public class Controller extends chemotaxis.sim.Controller {
             if (!routes.containsKey(i)){
                 break;
             }
+            this.selectedRoute = i;
             ArrayList<Point> route = routes.get(i);
             Collections.reverse(route);
-            this.selectedRoute = route;
             setTurnAt(i,grid);
 
             // TODO (etm): Schedule is currently unused, so it's commented out
@@ -174,10 +174,37 @@ public class Controller extends chemotaxis.sim.Controller {
      */
     @Override
     public ChemicalPlacement applyChemicals(Integer currentTurn, Integer chemicalsRemaining, ArrayList<Point> locations, ChemicalCell[][] grid) {
-        // TODO add your code here to apply chemicals
         ChemicalPlacement chemicalPlacement = new ChemicalPlacement();
+        if (chemicalsRemaining == 0 || !this.routes.containsKey(this.selectedRoute)) {
+            // Either no chemicals, or route doesn't exist
+            return chemicalPlacement;
+        }
+        ArrayList<Point> route = this.routes.get(this.selectedRoute);
+        ArrayList<Integer> turns = this.turnAt.get(this.selectedRoute);
 
-        return chemicalPlacement; // TODO modify the return statement to return your chemical placement
+        // Turns are stored in reverse order, so turns[0] is the last turn
+        int furthestTurnIx = Integer.MIN_VALUE;
+        // Check the location of all agents and see if any are sitting on
+        // a turn point. For those that are, select the furthest turn point,
+        // which is the one with the smallest index.
+        for (Point agentLocation : locations) {
+            for (int turnIx = 0; turnIx < turns.size(); ++turnIx) {
+                if (turns.get(turnIx) == 0) {
+                    continue;
+                }
+                Point turn = route.get(turnIx + 1);
+                if (turn.equals(agentLocation) && turnIx > furthestTurnIx ) {
+                    furthestTurnIx = turnIx;
+                }
+            }
+        }
+        if (furthestTurnIx >= 0) {
+            // Place the chemical on the next step on the path
+            chemicalPlacement.location = route.get(furthestTurnIx + 1);
+            chemicalPlacement.chemicals.add(ChemicalCell.ChemicalType.BLUE);
+        }
+
+        return chemicalPlacement;
     }
 
     // whether the agent can reach cell x,y facing direction d within s steps
