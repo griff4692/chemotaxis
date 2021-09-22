@@ -45,6 +45,6 @@ out
 coms4444-chemotaxis.iml
 
 .vscode/
-*.DS_Store
+.DS_Store
 .metadata/
 
