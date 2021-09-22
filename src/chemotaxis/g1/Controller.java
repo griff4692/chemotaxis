@@ -12,15 +12,16 @@ public class Controller extends chemotaxis.sim.Controller {
      *dist[i][j][d] = 0 means agent can't go to cell x,y from direction d yet
      *dist[i][j][d] = -1 means there is a block at x,y
      **/
-    private static int[][][] dist;
+    private int[][][] dist;
     Point modifiedStart = new Point();
     Point modifiedTarget = new Point();
 
     // Key is number of chemical (paid) turns
     // The largest key that exists in the map will be the shortest route
     // If there's a key n+1 in the Map, it's distance is less than the distance of key n
-    private static Map<Integer, ArrayList<Point>> routes=new HashMap<>();
-    private static Map<Integer, ArrayList<Integer>> turnAt=new HashMap<>();
+    private Map<Integer, ArrayList<Point>> routes=new HashMap<>();
+    private Map<Integer, ArrayList<Integer>> turnAt=new HashMap<>();
+    private ArrayList<Point> selectedRoute = new ArrayList<Point>();
 
     /**
      * Controller constructor
@@ -59,7 +60,7 @@ public class Controller extends chemotaxis.sim.Controller {
 
         // Run the shortest paths algorithm. Results are stored in `routes`
         // and keyed by the number of turns necessary for the path.
-        findshortestpath(grid,budget / 3);
+        findshortestpath(grid,maxTurns);
 
         // Select the fastest route within our budget.
         // Routes with more turns are faster, otherwise `findshortestpath` will terminate
@@ -69,16 +70,18 @@ public class Controller extends chemotaxis.sim.Controller {
             if (!routes.containsKey(i)){
                 break;
             }
-            ArrayList<Point> temp = new ArrayList<>(routes.get(i));
-            Collections.reverse(temp);
-            routes.put(i, new ArrayList<>(temp));
+            ArrayList<Point> route = routes.get(i);
+            Collections.reverse(route);
+            this.selectedRoute = route;
             setTurnAt(i,grid);
+
+            // TODO (etm): Schedule is currently unused, so it's commented out
             // TODO (etm): Update this once the time allowed is known (?)
-            schedule(1000);
+//            schedule(1000);
         }
     }
 
-    public static void schedule(int maxTime) {
+    public void schedule(int maxTime) {
         for (int i=1;i<=10001;i++) {
             ArrayList<ArrayList<Integer>> schedule = new ArrayList<>();
             if (!turnAt.containsKey(i)){
