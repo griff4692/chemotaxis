@@ -133,7 +133,7 @@ public class Controller extends chemotaxis.sim.Controller {
 
 						// set reminder
 						needReminder = true;
-						reminder = shortestPath.get(indexOfV + 4);
+						reminder = shortestPath.get(Math.min(indexOfV + 4, shortestPath.size() - 1));
 
 						// update prevLocations
 						prevLocations = locations;
