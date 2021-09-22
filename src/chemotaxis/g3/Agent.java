@@ -39,13 +39,13 @@ public class Agent extends chemotaxis.sim.Agent {
 		//set that chemical to chosen chemical type
 		ChemicalType highest_priority = ChemicalType.RED;
 
-		if(currentCell.getConcentration(ChemicalType.Blue) != 0)
+		if(currentCell.getConcentration(ChemicalType.BLUE) != 0)
 		{
 			highest_priority = ChemicalType.BLUE;
 		}
 		else if(currentCell.getConcentration(ChemicalType.GREEN) != 0)
 		{
-			highest_priority = ChemicalType.GREEN
+			highest_priority = ChemicalType.GREEN;
 		}
 
 		for(DirectionType directionType : neighborMap.keySet())

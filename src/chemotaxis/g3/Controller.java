@@ -6,6 +6,7 @@ import java.util.Hashtable;
 import java.util.List;
 import java.util.ArrayList;
 
+
 import chemotaxis.sim.ChemicalPlacement;
 import chemotaxis.sim.ChemicalCell;
 import chemotaxis.sim.ChemicalCell.ChemicalType;
@@ -176,7 +177,7 @@ public class Controller extends chemotaxis.sim.Controller {
 		for (int i = 0; i < grid.length; i++) {
 			for (int j = 0; j < grid[0].length; j++) {
 				if (grid[i][j].isOpen()) {
-					Point curr = new Point(i, j);
+					Point curr = new Point(j, i);  // reversed to match grid's orientation
 					node_to_point.put(k, curr);
 					point_to_node.put(curr, k);
 					k++;
@@ -188,7 +189,7 @@ public class Controller extends chemotaxis.sim.Controller {
 
 		for(int i = 0; i < node_to_point.size(); i++)
 		{
-			Point p = node_to_point[i];
+			Point p = node_to_point.get(i);
 			int x_val = p.x;
 			int y_val = p.y;
 			Point above = new Point(x_val, y_val-1);
@@ -198,39 +199,43 @@ public class Controller extends chemotaxis.sim.Controller {
 
 			if(point_to_node.containsKey(above))
 			{
-				g.addEdge(i, point_to_node[above]);
+				g.addEdge(i, point_to_node.get(above));
 			}
 			if(point_to_node.containsKey(below))
 			{
-				g.addEdge(i, point_to_node[below]);
+				g.addEdge(i, point_to_node.get(below));
 			}
 			if(point_to_node.containsKey(left))
 			{
-				g.addEdge(i, point_to_node[left]);
+				g.addEdge(i, point_to_node.get(left));
 			}
 			if(point_to_node.containsKey(right))
 			{
-				g.addEdge(i, point_to_node[right]);
+				g.addEdge(i, point_to_node.get(right));
 			}
 
 		}
 
-		Integer startNode = point_to_node(start);
-		Integer targetNode = point_to_node(target);
+		Integer startNode = point_to_node.get(start);
+		Integer targetNode = point_to_node.get(target);
 
 		//call dijkstra to record a shortest path from start to target
 		//NOTE if the shortest path from 0 to 7 is 0, 1, 5, 4, 7
 		//in the shortest_path arraylist it is recorded as 4, 5, 1
 		ArrayList<Integer> shortest_path = g.dijkstra(g.matrix, startNode, targetNode);
+		System.out.println(shortest_path);
+		int one_third_index = shortest_path.size() / 3;
+		System.out.println(one_third_index);
+		int two_thirds_index = shortest_path.size() * 2 / 3;
+		System.out.println(two_thirds_index);
 
-		int one_third_index = shortest_path.size()/3;
-		int two_thirds_index = shortest_path.size()/3;
+		int one_third_node = shortest_path.get(one_third_index);
+		int two_thirds_node = shortest_path.get(two_thirds_index);
 
-		int one_third_node = shortest_path[one_third_index];
-		int two_thirds_node = shortest_path[two_thirds_index];
-
-		one_third = node_to_point[one_third_node];
-		two_thirds = node_to_point[two_thirds_node];
+		one_third = node_to_point.get(one_third_node);
+		System.out.println(one_third);
+		two_thirds = node_to_point.get(two_thirds_node);
+		System.out.println(two_thirds);
 
 	}
 
@@ -274,7 +279,7 @@ public class Controller extends chemotaxis.sim.Controller {
 			chemicalPlacement.location = new Point(this.one_third.x, this.one_third.y);
 			chemicalPlacement.chemicals = chemicals;
 		}
-		else if(currentTurn%5 = 2){
+		else if(currentTurn%5 == 2){
 			List<ChemicalType> chemicals = new ArrayList<>();
 			chemicals.add(ChemicalType.GREEN);
 			chemicalPlacement.location = new Point(this.two_thirds.x, this.two_thirds.y);
