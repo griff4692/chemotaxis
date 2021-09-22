@@ -23,6 +23,10 @@ public class Agent extends chemotaxis.sim.Agent {
 		super(simPrinter);
 	}
 
+    public Double getHighestConcentration(Map<ChemicalType, Double> concentrations) {
+        return Math.max(Math.max(concentrations.get(ChemicalType.RED), concentrations.get(ChemicalType.BLUE)), concentrations.get(ChemicalType.GREEN));
+    }
+
     /**
      * Move agent
      *
@@ -50,11 +54,50 @@ public class Agent extends chemotaxis.sim.Agent {
 
         Move move = new Move();
         move.currentState = previousState;
+
+        /*
         ChemicalType chosenChemicalType = ChemicalType.BLUE;
+
 
         for (DirectionType directionType : neighborMap.keySet()) {
             if (neighborMap.get(directionType).getConcentration(chosenChemicalType) >= 0.99) {
                 move.directionType = directionType;
+                move.currentState = (byte) (bitDirectionMap.get(move.directionType) | 0b00);
+            }
+        }
+        */
+
+        Map<ChemicalType, Double> concentrations = currentCell.getConcentrations();
+        double highestConcentration = getHighestConcentration(concentrations);
+        double currentConcentration = highestConcentration;
+        for (DirectionType directionType : neighborMap.keySet()) {
+            Map<ChemicalType, Double> neighborConcentrations = neighborMap.get(directionType).getConcentrations();
+            if (highestConcentration < getHighestConcentration(neighborConcentrations)) {
+                highestConcentration = getHighestConcentration(neighborConcentrations);
+                move.directionType = directionType;
+                move.currentState = (byte) (bitDirectionMap.get(move.directionType) | 0b00);
+            }
+        }
+
+        /*
+        BLUE is SOUTH
+        GREEN is EAST
+        RED is NORTH
+        GREEN + BLUE is WEST
+         */
+
+        if (highestConcentration > 0 && currentConcentration == highestConcentration) {
+            if (concentrations.get(ChemicalType.BLUE) == highestConcentration && concentrations.get(ChemicalType.GREEN) == highestConcentration) {
+                move.directionType = DirectionType.WEST;
+                move.currentState = (byte) (bitDirectionMap.get(move.directionType) | 0b00);
+            } else if (concentrations.get(ChemicalType.RED) == highestConcentration) {
+                move.directionType = DirectionType.NORTH;
+                move.currentState = (byte) (bitDirectionMap.get(move.directionType) | 0b00);
+            } else if (concentrations.get(ChemicalType.GREEN) == highestConcentration) {
+                move.directionType = DirectionType.EAST;
+                move.currentState = (byte) (bitDirectionMap.get(move.directionType) | 0b00);
+            } else if (concentrations.get(ChemicalType.BLUE) == highestConcentration) {
+                move.directionType = DirectionType.SOUTH;
                 move.currentState = (byte) (bitDirectionMap.get(move.directionType) | 0b00);
             }
         }
