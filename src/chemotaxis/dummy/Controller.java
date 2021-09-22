@@ -24,8 +24,8 @@ public class Controller extends chemotaxis.sim.Controller {
      * @param simPrinter  simulation printer
      *
      */
-	public Controller(Point start, Point target, Integer size, ChemicalCell[][] grid, Integer simTime, Integer budget, Integer seed, SimPrinter simPrinter) {
-		super(start, target, size, grid, simTime, budget, seed, simPrinter);
+	public Controller(Point start, Point target, Integer size, ChemicalCell[][] grid, Integer simTime, Integer budget, Integer seed, SimPrinter simPrinter, Integer agentGoal, Integer spawnFreq) {
+		super(start, target, size, grid, simTime, budget, seed, simPrinter, agentGoal, spawnFreq);
 	}
 
 	public int closestToTarget(ArrayList<Point> locations) {

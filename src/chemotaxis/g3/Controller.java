@@ -166,8 +166,8 @@ public class Controller extends chemotaxis.sim.Controller {
      * @param simPrinter  simulation printer
      *
      */
-	public Controller(Point start, Point target, Integer size, ChemicalCell[][] grid, Integer simTime, Integer budget, Integer seed, SimPrinter simPrinter) {
-		super(start, target, size, grid, simTime, budget, seed, simPrinter);
+	public Controller(Point start, Point target, Integer size, ChemicalCell[][] grid, Integer simTime, Integer budget, Integer seed, SimPrinter simPrinter, Integer agentGoal, Integer spawnFreq) {
+		super(start, target, size, grid, simTime, budget, seed, simPrinter, agentGoal, spawnFreq);
 		// dijkestra: https://www.geeksforgeeks.org/dijkstras-shortest-path-algorithm-greedy-algo-7/
 		shortest_path = new ArrayList<Integer>();
 		node_to_point = new Hashtable<Integer, Point>();
