@@ -137,28 +137,38 @@ public class Controller extends chemotaxis.sim.Controller {
         Point wrongDirectionAgent = null;
         for (Point p: locations) {
             if (!p.equals(target) && agents.get(p) != directionMap[p.x - 1][p.y - 1]) {
-                wrongDirectionAgent = p;
-                break;
+                if (grid[p.x - 1][p.y - 1].getConcentration(ChemicalCell.ChemicalType.BLUE) == 0 &&
+                        grid[p.x - 1][p.y - 1].getConcentration(ChemicalCell.ChemicalType.GREEN) == 0 &&
+                        grid[p.x - 1][p.y - 1].getConcentration(ChemicalCell.ChemicalType.RED) == 0) {
+                    wrongDirectionAgent = p;
+                    break;
+                }
             }
         }
 
+        List<ChemicalCell.ChemicalType> chemicals = new ArrayList<>();
         if (wrongDirectionAgent != null) {
             DirectionType newDirection = directionMap[wrongDirectionAgent.x - 1][wrongDirectionAgent.y - 1];
             if (newDirection == DirectionType.NORTH) {
                 chemicalPlacement.location = new Point(wrongDirectionAgent.x - 1, wrongDirectionAgent.y);
                 agents.put(wrongDirectionAgent, DirectionType.NORTH);
+                chemicals.add(ChemicalCell.ChemicalType.RED);
             }
             else if (newDirection == DirectionType.SOUTH) {
                 chemicalPlacement.location = new Point(wrongDirectionAgent.x + 1, wrongDirectionAgent.y);
                 agents.put(wrongDirectionAgent, DirectionType.SOUTH);
+                chemicals.add(ChemicalCell.ChemicalType.BLUE);
             }
             else if (newDirection == DirectionType.EAST) {
                 chemicalPlacement.location = new Point(wrongDirectionAgent.x, wrongDirectionAgent.y + 1);
                 agents.put(wrongDirectionAgent, DirectionType.EAST);
+                chemicals.add(ChemicalCell.ChemicalType.GREEN);
             }
             else if (newDirection == DirectionType.WEST) {
                 chemicalPlacement.location = new Point(wrongDirectionAgent.x, wrongDirectionAgent.y - 1);
                 agents.put(wrongDirectionAgent, DirectionType.WEST);
+                chemicals.add(ChemicalCell.ChemicalType.BLUE);
+                chemicals.add(ChemicalCell.ChemicalType.GREEN);
             }
             else {
                 chemicalPlacement.location = new Point(wrongDirectionAgent.x, wrongDirectionAgent.y);
@@ -186,10 +196,12 @@ public class Controller extends chemotaxis.sim.Controller {
             }
         }
         this.agents = newAgents;
+        /*
         List<ChemicalCell.ChemicalType> chemicals = new ArrayList<>();
         if (wrongDirectionAgent != null) {
             chemicals.add(ChemicalCell.ChemicalType.BLUE);
         }
+         */
         chemicalPlacement.chemicals = chemicals;
         return chemicalPlacement;
     }
