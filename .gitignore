@@ -15,6 +15,9 @@ bin/
 # Makefile
 src/Makefile
 
+#iml file
+chemotaxis.iml
+
 # Log file
 *.log
 
@@ -42,5 +45,7 @@ hs_err_pid*
 out
 coms4444-chemotaxis.iml
 
-# MacOS junk
-*.DS_Store
+.vscode/
+.DS_Store
+.metadata/
+

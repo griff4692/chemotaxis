@@ -869,7 +869,9 @@ public class Simulator {
 	public static void main(String[] args) throws IOException, JSONException {
 		setup();
 		parseCommandLineArguments(args);
-		readMap();
+		if(!showGUI) {
+			readMap();
+		}
 		createSimulation();
 	}
 }

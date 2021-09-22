@@ -1,0 +1,77 @@
+package chemotaxis.g3;
+
+import java.awt.Point;
+import java.util.List;
+import java.util.ArrayList;
+
+import chemotaxis.sim.ChemicalPlacement;
+import chemotaxis.sim.ChemicalCell;
+import chemotaxis.sim.ChemicalCell.ChemicalType;
+import chemotaxis.sim.SimPrinter;
+
+public class Controller extends chemotaxis.sim.Controller {
+	
+    /**
+     * Controller constructor
+     *
+     * @param start       start cell coordinates
+     * @param target      target cell coordinates
+     * @param size     	  grid/map size
+     * @param grid        game grid/map
+     * @param simTime     simulation time
+     * @param budget      chemical budget
+     * @param seed        random seed
+     * @param simPrinter  simulation printer
+     *
+     */
+	public Controller(Point start, Point target, Integer size, ChemicalCell[][] grid, Integer simTime, Integer budget, Integer seed, SimPrinter simPrinter) {
+		super(start, target, size, grid, simTime, budget, seed, simPrinter);
+	}
+
+	public int closestToTarget(ArrayList<Point> locations) {
+		int closestDistance = 9999999;
+		int closestIdx = 0;
+		for(int i = 0; i < locations.size(); i++) {
+			int x = locations.get(i).x;
+			int y = locations.get(i).y;
+			int distance = Math.abs(x - this.target.x) + Math.abs(y - this.target.y);
+			if(distance > 0 && distance < closestDistance) {
+				closestIdx = i;
+				closestDistance = distance;
+			}
+		}
+		return closestIdx;
+	}
+
+    /**
+     * Apply chemicals to the map
+     *
+     * @param currentTurn         current turn in the simulation
+     * @param chemicalsRemaining  number of chemicals remaining
+     * @param locations     current locations of the agents
+     * @param grid                game grid/map
+     * @return                    a cell location and list of chemicals to apply
+     *
+     */
+ 	@Override
+	public ChemicalPlacement applyChemicals(Integer currentTurn, Integer chemicalsRemaining, ArrayList<Point> locations, ChemicalCell[][] grid) {
+		/* Inspired by Nikhilesh Belulkar's idea from class discussion:
+		“Build a gradient of chemicals to guide the agent towards the
+		goal block (have higher concentrations near the goal block,
+		lower concentrations nearer to the spawn block)“
+		 */
+		ChemicalPlacement chemicalPlacement = new ChemicalPlacement();
+
+		if (currentTurn%5 == 1) {
+			List<ChemicalType> chemicals = new ArrayList<>();
+			chemicals.add(ChemicalType.BLUE);
+			chemicalPlacement.location = new Point(this.target.x, this.target.y);
+			chemicalPlacement.chemicals = chemicals;
+
+		}
+
+
+
+		return chemicalPlacement;
+	}
+}
