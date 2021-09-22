@@ -13,23 +13,85 @@ import chemotaxis.sim.SimPrinter;
 
 public class Controller extends chemotaxis.sim.Controller {
 	static class Graph {
+		//fields
 		int vertices;
 		int matrix[][];
 
-		public Graph(int vertex) {
-			this.vertices = vertex;
-			matrix = new int[vertex][vertex];
+		//constructor
+		public Graph(int size) {
+			this.vertices = size;
+			matrix = new int[size][size];
+		}
+		// add an edge for undirected && unweighted graph
+		public void addEdge(int source, int dest) {
+			matrix[source][dest] = 1;
+			matrix[dest][source] = 1;
+		}
+		public static final int NO_PARENT = -1;
+		public static ArrayList<Integer> dijkstra(int[][] adjacencyMatrix, int startVertex, int targetVertex) {
+			int nVertices = adjacencyMatrix[0].length;
+
+			// shortestDistances[i] holds shortest distance from src to i
+			int[] shortestDistances = new int[nVertices];
+
+			// added[i] will true if vertex i is included / in shortest path tree
+			// or shortest distance from src to i is finalized
+			boolean[] added = new boolean[nVertices];
+
+			// Initialize all distances as INFINITE and added[] as false
+			for (int vertexIndex = 0; vertexIndex < nVertices; vertexIndex++) {
+				shortestDistances[vertexIndex] = Integer.MAX_VALUE;
+				added[vertexIndex] = false;
+			}
+
+			// Distance of source vertex from itself is always 0
+			shortestDistances[startVertex] = 0;
+
+			// Parent array to store shortest path tree
+			int[] prev = new int[nVertices];
+			prev[startVertex] = NO_PARENT;
+
+			// Find shortest path for all vertices
+			for (int i = 1; i < nVertices; i++) {
+
+				// Pick the minimum distance vertex from the set of vertices not yet
+				// processed. nearestVertex is always equal to startNode in
+				// first iteration.
+				int nearestVertex = -1;
+				int shortestDistance = Integer.MAX_VALUE;
+				for (int vertexIndex = 0; vertexIndex < nVertices; vertexIndex++) {
+					if (!added[vertexIndex] && shortestDistances[vertexIndex] < shortestDistance) {
+						nearestVertex = vertexIndex;
+						shortestDistance = shortestDistances[vertexIndex];
+					}
+				}
+
+				// Mark the picked vertex as processed
+				added[nearestVertex] = true;
+
+				// Update dist value of the adjacent vertices of the
+				// picked vertex.
+				for (int vertexIndex = 0; vertexIndex < nVertices; vertexIndex++) {
+					int edgeDistance = adjacencyMatrix[nearestVertex][vertexIndex];
+					if (edgeDistance > 0 && ((shortestDistance + edgeDistance) < shortestDistances[vertexIndex])) {
+						prev[vertexIndex] = nearestVertex;
+						shortestDistances[vertexIndex] = shortestDistance + edgeDistance;
+					}
+				}
+			}
+			return returnPath(targetVertex, prev);
 		}
 
-		public void addEdge(int source, int destination) {
-			//add edge
-			matrix[source][destination] = 1;
-
-			//add back edge for undirected graph
-			matrix[destination][source] = 1;
+		public static ArrayList<Integer> returnPath(int target, int[] prev) {
+			ArrayList<Integer> result = new ArrayList<Integer>();
+			while (prev[target] != NO_PARENT) {
+				result.add(target);
+				target = prev[target];
+			};
+			return result;
 		}
 
-		//get the vertex with minimum distance which is not included in SPT
+/*		//get the vertex with minimum distance which is not included in SPT
 		int getMinimumVertex(boolean[] mst, int[] key) {
 			int minKey = Integer.MAX_VALUE;
 			int vertex = -1;
@@ -42,7 +104,8 @@ public class Controller extends chemotaxis.sim.Controller {
 			return vertex;
 		}
 
-		public void dijkstra_GetMinDistances(int sourceVertex) {
+		//perform dijkstra and record the path from source to dest
+		public ArrayList<Integer> dijkstra(Integer sourceVertex, Integer targetVertex) {
 			// shortest path tree
 			boolean[] spt = new boolean[vertices];
 			int[] distance = new int[vertices];
@@ -77,18 +140,17 @@ public class Controller extends chemotaxis.sim.Controller {
 			}
 			//print shortest path tree
 			//print(sourceVertex, distance);
+			return null;
 		}
-	}
+		*/
 
+	}
 
 	ArrayList<Integer> shortest_path;
 	Hashtable<Integer, Point> node_to_point;
 	Hashtable<Point, Integer> point_to_node;
 	Point one_third;
 	Point two_thirds;
-
-
-
 
     /**
      * Controller constructor
@@ -109,7 +171,6 @@ public class Controller extends chemotaxis.sim.Controller {
 		shortest_path = new ArrayList<Integer>();
 		node_to_point = new Hashtable<Integer, Point>();
 		point_to_node = new Hashtable<Point, Integer>();
-
 
 		int k = 0;
 		for (int i = 0; i < grid.length; i++) {
@@ -154,7 +215,14 @@ public class Controller extends chemotaxis.sim.Controller {
 
 		}
 
-		ArrayList<int> shortest_path = //shortest path from start to finish
+		Integer startNode = point_to_node(start);
+		Integer targetNode = point_to_node(target);
+
+		//call dijkstra to record a shortest path from start to target
+		//NOTE if the shortest path from 0 to 7 is 0, 1, 5, 4, 7
+		//in the shortest_path arraylist it is recorded as 4, 5, 1
+		ArrayList<Integer> shortest_path = g.dijkstra(g.matrix, startNode, targetNode);
+
 		int one_third_index = shortest_path.size()/3;
 		int two_thirds_index = shortest_path.size()/3;
 
@@ -164,11 +232,7 @@ public class Controller extends chemotaxis.sim.Controller {
 		one_third = node_to_point[one_third_node];
 		two_thirds = node_to_point[two_thirds_node];
 
-
-
-
 	}
-
 
 	public int closestToTarget(ArrayList<Point> locations) {
 		int closestDistance = 9999999;
@@ -223,8 +287,6 @@ public class Controller extends chemotaxis.sim.Controller {
 			chemicalPlacement.chemicals = chemicals;
 
 		}
-
-
 
 		return chemicalPlacement;
 	}
