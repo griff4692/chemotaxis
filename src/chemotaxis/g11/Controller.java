@@ -135,11 +135,12 @@ public class Controller extends chemotaxis.sim.Controller {
         }
 
         Point wrongDirectionAgent = null;
+        double threshold = 0.5;
         for (Point p: locations) {
             if (!p.equals(target) && agents.get(p) != directionMap[p.x - 1][p.y - 1]) {
-                if (grid[p.x - 1][p.y - 1].getConcentration(ChemicalCell.ChemicalType.BLUE) == 0 &&
-                        grid[p.x - 1][p.y - 1].getConcentration(ChemicalCell.ChemicalType.GREEN) == 0 &&
-                        grid[p.x - 1][p.y - 1].getConcentration(ChemicalCell.ChemicalType.RED) == 0) {
+                if (grid[p.x - 1][p.y - 1].getConcentration(ChemicalCell.ChemicalType.BLUE) < threshold &&
+                        grid[p.x - 1][p.y - 1].getConcentration(ChemicalCell.ChemicalType.GREEN) < threshold &&
+                        grid[p.x - 1][p.y - 1].getConcentration(ChemicalCell.ChemicalType.RED) < threshold) {
                     wrongDirectionAgent = p;
                     break;
                 }
