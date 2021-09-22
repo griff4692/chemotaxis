@@ -2,7 +2,7 @@
     Project: Chemotaxis
     Course: COMS 4444 Programming & Problem Solving (Fall 2021)
     Instructor: Prof. Kenneth Ross
-    URL: http://www.cs.columbia.edu/~kar/4444f20
+    URL: http://www.cs.columbia.edu/~kar/4444f21
     Authors: Aditya Sridhar, Griffin Adams
     Simulator Version: 2.0
 */
