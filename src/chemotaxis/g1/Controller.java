@@ -21,6 +21,9 @@ public class Controller extends chemotaxis.sim.Controller {
     // If there's a key n+1 in the Map, it's distance is less than the distance of key n
     private Map<Integer, ArrayList<Point>> routes=new HashMap<>();
     private Map<Integer, ArrayList<Integer>> turnAt=new HashMap<>();
+    private ArrayList<TriInteger> agents = new ArrayList<>();
+    private ArrayList<TriInteger> agentsSimOutput;
+
     private int selectedRoute;
 
     /**
@@ -35,8 +38,8 @@ public class Controller extends chemotaxis.sim.Controller {
      * @param simPrinter  simulation printer
      *
      */
-    public Controller(Point start, Point target, Integer size, ChemicalCell[][] grid, Integer simTime, Integer budget, Integer seed, SimPrinter simPrinter) {
-        super(start, target, size, grid, simTime, budget, seed, simPrinter);
+    public Controller(Point start, Point target, Integer size, ChemicalCell[][] grid, Integer simTime, Integer budget, Integer seed, SimPrinter simPrinter, Integer agentGoal, Integer spawnFreq) {
+        super(start, target, size, grid, simTime, budget, seed, simPrinter, agentGoal, spawnFreq);
         dist = new int[size][size][4];
         // Necessary since (0,0) on the game board is labeled (1,1)
         modifiedStart.x=start.x-1;
@@ -74,14 +77,14 @@ public class Controller extends chemotaxis.sim.Controller {
             ArrayList<Point> route = routes.get(i);
             Collections.reverse(route);
             setTurnAt(i,grid);
-
+            System.out.println(turnAt.get(i));
             // TODO (etm): Schedule is currently unused, so it's commented out
             // TODO (etm): Update this once the time allowed is known (?)
-//            schedule(1000);
+            //schedule(simTime,spawnFreq);
         }
     }
 
-    public void schedule(int maxTime) {
+    public void schedule(int maxTime, int spawnF) {
         for (int i=1;i<=10001;i++) {
             ArrayList<ArrayList<Integer>> schedule = new ArrayList<>();
             if (!turnAt.containsKey(i)){
@@ -103,6 +106,64 @@ public class Controller extends chemotaxis.sim.Controller {
             System.out.println(schedule);
 
         }
+    }
+
+    private void trackAgents(ChemicalCell[][] grid, ArrayList<Point> agentLoc, Point start, Point end, int sim) {
+
+        int toRemove = -1;
+        boolean spawnPointOccupied = false;
+        for (int i=0;i<agents.size();i++) {
+            agents.set(i,agentMovementSim(grid,agents.get(i)));
+            if (agents.get(i).x==end.x && agents.get(i).y==end.y) {
+                toRemove = i;
+            }
+            if (agents.get(i).x==start.x && agents.get(i).y==start.y) {
+                spawnPointOccupied = true;
+            }
+        }
+        agents.remove(toRemove);
+        if (agentLoc.contains(start) && !spawnPointOccupied) {
+            agents.add(new TriInteger(start.x,start.y,0));
+        }
+        while (sim>0) {
+            sim-=1;
+            agentsSimOutput = new ArrayList<>(agents);
+            toRemove = -1;
+            for (int i=0;i<agentsSimOutput.size();i++) {
+                agentsSimOutput.set(i,agentMovementSim(grid,agentsSimOutput.get(i)));
+                if (agentsSimOutput.get(i).x==end.x && agentsSimOutput.get(i).y==end.y) {
+                    toRemove = i;
+                }
+            }
+            agentsSimOutput.remove(toRemove);
+
+        }
+    }
+    private boolean agentAt(int x, int y) {
+        for (TriInteger agent : agents) {
+            if (agent.x==x && agent.y==y) {
+                return  true;
+            }
+        }
+        return false;
+    }
+    private TriInteger agentMovementSim(ChemicalCell[][] grid, TriInteger agent) {
+        // Assume no chemical in the grid. let's talk about chemical during meeting
+        TriInteger des = new TriInteger(agent);
+        ArrayList<Integer> allDirections = new ArrayList<>(Arrays.asList(0,1,-1,2));
+        for (int j : allDirections) {
+            int newDir = des.d+j;
+            if (!mapHasBlockAt(grid, des.x + movement(newDir).x, des.y + movement(newDir).y)) {
+                if (agentAt(des.x + movement(newDir).x, des.y + movement(newDir).y)) {
+                    break;
+                }
+                des.d = (des.d+j+4) % 4;
+                des.x += movement(newDir).x;
+                des.y += movement(newDir).y;
+                break;
+            }
+        }
+        return new TriInteger(des);
     }
 
     public void setTurnAt(final int turn,ChemicalCell[][] grid) {
