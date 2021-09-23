@@ -11,7 +11,7 @@ public class Controller extends chemotaxis.sim.Controller {
 
    private TurnGridNode [][] turnGrid;
 
-   private final int PLACEMENT_DISTACE = 5;
+   private final int PLACEMENT_DISTACE = 7;
 
    private ArrayList<Point> path;
    private int pathIndex;
@@ -142,11 +142,7 @@ public class Controller extends chemotaxis.sim.Controller {
 
                chemIndex = (chemIndex + 1) % CHEM_TYPES.length;
                pathIndex += PLACEMENT_DISTACE;
-
-//               if (pathIndex - PLACEMENT_DISTACE == path.size() - 1) {
-//                  pathIndex = path.size() - 1;
-//                  chemIndex = (chemIndex + 2) % CHEM_TYPES.length;
-//               }
+               
             }
             if(lastChem != null)
             {
@@ -192,6 +188,8 @@ Agent's don't know where target is even if they're next to it. So placing lots o
 but due to the moving local max, placing lots of chem on the target doesn't always work.
 
 With field-based approach, agents can often get stuck looking for max and colliding with other agents.
+
+Problems when agent think it hits max and turns around to find
 
 Turn based may use a lot of chem, but with smart agent/controller this can be reduced
  */

@@ -1,5 +1,6 @@
 package chemotaxis.g10; // TODO modify the package name to reflect your team
 
+import java.util.ArrayList;
 import java.util.Map;
 
 import chemotaxis.sim.DirectionType;
@@ -86,63 +87,69 @@ public class Agent extends chemotaxis.sim.Agent {
    {
       Move move = new Move();
 
+      // Extract data from memory
       int chemState = previousState & 3;
       ChemicalCell.ChemicalType chemType = CHEM_TYPES[chemState];
-
       int prevMoveDirState = (previousState >> 2) & 7;
       DirectionType opPrevMoveDir = getOppositeDirection(getDirectionFromState((byte) prevMoveDirState));
-
 
       // Check if at top of grad
       Double currConc = currentCell.getConcentration(chemType);
       boolean top = true;
-      for (Map.Entry<DirectionType, ChemicalCell> entry : neighborMap.entrySet())
-      {
+      for (Map.Entry<DirectionType, ChemicalCell> entry : neighborMap.entrySet()) {
          if (entry.getKey() != opPrevMoveDir && currConc <= entry.getValue().getConcentration(chemType)) {
             top = false;
             break;
          }
       }
 
-      if (top)
-      {
-         System.out.format("Found top, changing chem from %s", chemType.toString());
+      if (top) {
          chemState = (chemState + 1) % 3;
          chemType = CHEM_TYPES[chemState];
-         System.out.format(" to %s\n", chemType.toString());
       }
 
-
-//      System.out.format("prevState=%d\n", previousState.intValue());
-
-//      byte nextState = (byte) chemTypeState;
-
-//      System.out.format("Begin: prevState=%x chem=%d\n",previousState, chemTypeState);
-
-
-      // Walk up grad
-      Double maxConc = currentCell.getConcentration(chemType);
-      DirectionType dirToMove = DirectionType.CURRENT;
-
-      System.out.println(dirToMove.toString() + "\t" + maxConc);
-
-      Double conc;
-      DirectionType dir;
+      // Check for open cells (pipe-case)
+      ArrayList<Map.Entry<DirectionType, ChemicalCell>> openCells = new ArrayList<>();
       for (Map.Entry<DirectionType, ChemicalCell> entry : neighborMap.entrySet()) {
-         System.out.println(entry.getKey().toString() + "\t" + entry.getValue().getConcentration(chemType));
-         conc = entry.getValue().getConcentration(chemType);
-         dir = entry.getKey();
-         if (/*dir != opPrevMoveDir &&*/ conc > maxConc) {
-            maxConc = conc;
-            dirToMove = dir;
+         if (entry.getValue().isOpen()) {
+            openCells.add(entry);
          }
       }
 
-      move.directionType = dirToMove;
-      move.currentState = (byte)((getStateFromDirection(move.directionType) << 2) | chemState);;
+      if(openCells.size() == 1) {
+         move.directionType = openCells.get(0).getKey();
+         move.currentState = (byte) ((getStateFromDirection(move.directionType) << 2) | chemState);
+      }
+      else if(openCells.size() == 2) {
+         for(Map.Entry<DirectionType, ChemicalCell> entry : openCells) {
+            if(entry.getKey() != opPrevMoveDir) {
+               move.directionType = entry.getKey();
+               move.currentState = (byte) ((getStateFromDirection(move.directionType) << 2) | chemState);
+               break;
+            }
+         }
+      }
+      else {
+         // Walk up grad
+         Double maxConc = currentCell.getConcentration(chemType);
+         DirectionType dirToMove = DirectionType.CURRENT;
 
-      System.out.format("Ending function: dir=%s state=%s\n", move.directionType.toString(), move.currentState.toString());
+         Double conc;
+         DirectionType dir;
+         for (Map.Entry<DirectionType, ChemicalCell> entry : neighborMap.entrySet()) {
+            conc = entry.getValue().getConcentration(chemType);
+            dir = entry.getKey();
+            if (/*dir != opPrevMoveDir &&*/ conc > maxConc) {
+               maxConc = conc;
+               dirToMove = dir;
+            }
+         }
 
+         move.directionType = dirToMove;
+         move.currentState = (byte) ((getStateFromDirection(move.directionType) << 2) | chemState);
+
+         System.out.format("Ending function: dir=%s state=%s\n", move.directionType.toString(), move.currentState.toString());
+      }
       return move;
    }
 
