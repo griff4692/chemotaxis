@@ -1,6 +1,7 @@
 package chemotaxis.g1;
 
 import chemotaxis.sim.DirectionType;
+import chemotaxis.sim.ChemicalCell.ChemicalType;
 
 public class AgentState {
     // State is represented as a single byte of memory
@@ -13,6 +14,21 @@ public class AgentState {
 
     // First two bits are used for direction
     private static final byte DIRECTION_MASK = 0x3;
+
+    // Third bit used for color agent is currently looking for
+    private static final byte COLOR_MASK = 0x1 << 2;
+    private static final byte RED_BITS = 0x1 << 2;
+
+    // Fourth bit is used to track whether the agent is has selected a strategy
+    private static final byte INITIALIZED_BIT = 0x1 << 3;
+
+    // Fifth bit is used to track the strategy
+    private static final byte STRAT_MASK = 0x1 << 4;
+    private static final byte WEAK_CHEM_BITS = 0x1 << 4;
+
+    public enum Strategy {
+        STRONG, WEAK
+    }
 
     public AgentState() {
         this.state = 0x0;
@@ -49,6 +65,27 @@ public class AgentState {
                 return this.getDirection();
         }
         throw new RuntimeException("unreachable");
+    }
+
+    public void setFollowColor(ChemicalType color) {
+        this.state &= ~COLOR_MASK;
+        switch (color) {
+            case BLUE:
+                // Blue is encoded as 0x0
+                break;
+            case RED:
+                this.state |= RED_BITS;
+                break;
+            default:
+                throw new RuntimeException("agent cannot follow GREEN");
+        }
+    }
+
+    public ChemicalType getFollowColor() {
+        if ((this.state &= COLOR_MASK) == RED_BITS) {
+            return ChemicalType.RED;
+        }
+        return ChemicalType.BLUE;
     }
 
     /**
@@ -102,4 +139,32 @@ public class AgentState {
         throw new RuntimeException("unreachable direction state");
     }
 
+    private void setInitialized() {
+        this.state |= INITIALIZED_BIT;
+    }
+
+    public boolean isInitialized() {
+        return (this.state & INITIALIZED_BIT) != 0;
+    }
+
+    public Strategy getStrategy() {
+        if (!this.isInitialized()) {
+            throw new RuntimeException("agent uninitialized");
+        }
+        if ((this.state & STRAT_MASK) == WEAK_CHEM_BITS) {
+            return Strategy.WEAK;
+        }
+        return Strategy.STRONG;
+    }
+
+    public void setStrategy(Strategy strat) {
+        if (this.isInitialized()) {
+            throw new RuntimeException("cannot change strategy after initialization");
+        }
+        if (strat == Strategy.WEAK) {
+            this.state |= WEAK_CHEM_BITS;
+        }
+        // Else do nothing since a zeroed bit is the strong strategy
+        this.setInitialized();
+    }
 }
