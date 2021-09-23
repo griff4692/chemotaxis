@@ -14,6 +14,7 @@ import chemotaxis.sim.DirectionType;
 
 public class Controller extends chemotaxis.sim.Controller {
     DirectionType[][] directionMap;
+    int[][] steps;
     HashMap<Point, DirectionType> agents;
     Point start;
     Point target;
@@ -38,11 +39,13 @@ public class Controller extends chemotaxis.sim.Controller {
         int endX = target.x - 1;
         int endY = target.y - 1;
         boolean[][] visited = new boolean[size][size];
+        steps = new int[size][size];
         directionMap = new DirectionType[size][size];
         for (int r = 0; r < size; r++) {
             for (int c = 0; c < size; c++) {
                 visited[r][c] = false;
                 directionMap[r][c] = DirectionType.CURRENT;
+                steps[r][c] = 0;
             }
         }
         Queue<Point> queue = new LinkedList<Point>();
@@ -50,36 +53,15 @@ public class Controller extends chemotaxis.sim.Controller {
 
         visited[endX][endY] = true;
         directionMap[endX][endY] = DirectionType.CURRENT;
-
         while (!queue.isEmpty()) {
             Point curr = queue.remove();
             int x = curr.x;
             int y = curr.y;
-            if (x - 1 >= 0 && grid[x - 1][y].isOpen() && !visited[x - 1][y]) {
-                queue.add(new Point(x - 1, y));
-                visited[x-1][y] = true;
-                directionMap[x - 1][y] = DirectionType.SOUTH;
-            }
-
-            if (y - 1 >= 0 && grid[x][y - 1].isOpen() && !visited[x][y - 1]) {
-                queue.add(new Point(x, y - 1));
-                visited[x][y-1] = true;
-                directionMap[x][y - 1] = DirectionType.EAST;
-            }
-
-            if (x + 1 < size && grid[x + 1][y].isOpen() && !visited[x + 1][y]) {
-                queue.add(new Point(x + 1, y));
-                visited[x+1][y] = true;
-                directionMap[x + 1][y] = DirectionType.NORTH;
-            }
-
-            if (y + 1 < size && grid[x][y + 1].isOpen() && !visited[x][y + 1]) {
-                queue.add(new Point(x, y + 1));
-                visited[x][y+1] = true;
-                directionMap[x][y + 1] = DirectionType.WEST;
-            }
+            helper(x + 1, y, 1, 0, DirectionType.NORTH, steps[x][y] + 1, queue, visited);
+            helper(x - 1, y, -1, 0, DirectionType.SOUTH, steps[x][y] + 1, queue, visited);
+            helper(x, y + 1, 0, 1, DirectionType.WEST, steps[x][y] + 1, queue, visited);
+            helper(x, y - 1, 0, -1, DirectionType.EAST, steps[x][y] + 1, queue, visited);
         }
-
         //Prints the map that is made
         /*
         HashMap<DirectionType, Character> debugging = new HashMap<>();
@@ -91,6 +73,13 @@ public class Controller extends chemotaxis.sim.Controller {
         for (int r = 0; r < size; r++) {
             for (int c = 0; c < size; c++) {
                 System.out.print(debugging.get(directionMap[r][c]));
+            }
+            System.out.println();
+        }
+        System.out.println("Steps Map");
+        for (int r = 0; r < size; r++) {
+            for (int c = 0; c < size; c++) {
+                System.out.print(steps[r][c]);
             }
             System.out.println();
         }
@@ -205,5 +194,16 @@ public class Controller extends chemotaxis.sim.Controller {
          */
         chemicalPlacement.chemicals = chemicals;
         return chemicalPlacement;
+    }
+
+    private void helper(int x, int y, int xDiff, int yDiff, DirectionType d, int count, Queue<Point> queue, boolean[][] visited) {
+        while (x >= 0 && x < size && y >= 0 && y < size && grid[x][y].isOpen() && !visited[x][y]) {
+            queue.add(new Point(x , y));
+            visited[x][y] = true;
+            directionMap[x][y] = d;
+            steps[x][y] = count;
+            x += xDiff;
+            y += yDiff;
+        }
     }
 }
