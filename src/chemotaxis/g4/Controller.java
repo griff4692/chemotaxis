@@ -16,6 +16,7 @@ public class Controller extends chemotaxis.sim.Controller {
 	ArrayList<Point> placementCells = null;
 	ArrayList<ChemicalType> colorPath = null;
 	Integer index = 0;
+	Analysis analyzer = null;
 
 
 	Integer time_interval = 4;
@@ -111,6 +112,7 @@ public class Controller extends chemotaxis.sim.Controller {
 
 		simPrinter = new SimPrinter(true);
 
+
 		if(path == null){
 			simPrinter.println("creating path");
 			path = getPath(grid);
@@ -135,6 +137,16 @@ public class Controller extends chemotaxis.sim.Controller {
 					colorPath.add(ChemicalType.BLUE);
 				}
 			}
+		}
+
+		if(analyzer == null){
+			analyzer = new Analysis(grid);
+			ArrayList<Integer> pathMaxAnalysis = new ArrayList<Integer>();
+			for(Point p: path){
+				pathMaxAnalysis.add(analyzer.simulatePoint(p));
+			}
+			System.out.println(pathMaxAnalysis);
+			System.out.println(path);
 		}
 
 
