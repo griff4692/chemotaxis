@@ -143,12 +143,13 @@ public class Controller extends chemotaxis.sim.Controller {
             }
         }
 
-
+        /*
         for(Point p : onConveyerAgents.keySet()) {
             System.out.println("MARKER");
             System.out.println(p);
             System.out.println(onConveyerAgents.get(p));
         }
+         */
 
 
         for (Point p: onConveyerAgents.keySet()) {

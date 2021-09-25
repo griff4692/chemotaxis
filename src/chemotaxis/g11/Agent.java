@@ -39,10 +39,10 @@ public class Agent extends chemotaxis.sim.Agent {
     public Move makeMove(Integer randomNum, Byte previousState, ChemicalCell currentCell, Map<DirectionType, ChemicalCell> neighborMap) {
         /* WE suppose that for the direction we use the last 2 bits
         of the byte and we set the default mapping as stated below:
-         11: up
-         00: down
-         01: right
-         10: left
+         11: NORTH
+         00: SOUTH
+         01: EAST
+         10: RIGHT
         */
         HashMap<DirectionType, Integer> bitDirectionMap = new HashMap<DirectionType, Integer>();
         bitDirectionMap.put(DirectionType.NORTH, 0b11);
@@ -51,20 +51,21 @@ public class Agent extends chemotaxis.sim.Agent {
         bitDirectionMap.put(DirectionType.EAST, 0b01);
 
         Move move = new Move();
-        move.currentState = previousState;
-        Integer previousDirection = previousState & 0b11;
 
+        Boolean hasSeenBlue= (previousState>4 || previousState<0);
+        previousState = (byte)(previousState - 128);
+        move.currentState = previousState;
 
         ChemicalType priorityChemicalType = ChemicalType.BLUE;
-
 
         for (DirectionType directionType : neighborMap.keySet()) {
             if (neighborMap.get(directionType).getConcentration(priorityChemicalType) >= 0.99) {
                 move.directionType = directionType;
                 move.currentState = (byte) (bitDirectionMap.get(move.directionType) | 0b00);
+                hasSeenBlue = true;
             }
         }
-        if (move.directionType == DirectionType.CURRENT) {
+        if (move.directionType == DirectionType.CURRENT && !hasSeenBlue) {
             ArrayList<DirectionType> possibledirections = new ArrayList<DirectionType>();
             for (DirectionType directionType : neighborMap.keySet()) {
                 if (neighborMap.get(directionType).isOpen()) {
@@ -85,15 +86,21 @@ public class Agent extends chemotaxis.sim.Agent {
             int position = randomNum % possibledirections.size();
             move.directionType = possibledirections.get(position);
             move.currentState = (byte) (bitDirectionMap.get(move.directionType) | 0b00);
-
+        } else if (move.directionType == DirectionType.CURRENT) {
+            if (previousState == 0) {
+                move.directionType = DirectionType.SOUTH;
+            } else if (previousState == 1) {
+                move.directionType = DirectionType.EAST;
+            } else if (previousState == 2) {
+                move.directionType = DirectionType.WEST;
+            } else if (previousState == 3) {
+                move.directionType = DirectionType.NORTH;
+            }
         }
 
-        /*
-        BLUE is SOUTH
-        GREEN is EAST
-        RED is NORTH
-        GREEN + BLUE is WEST
-         */
+        if (hasSeenBlue) {
+            move.currentState = (byte) (move.currentState + 128) ;
+        }
 
 
         return move;
