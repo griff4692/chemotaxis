@@ -177,7 +177,7 @@ public class Controller extends chemotaxis.sim.Controller {
 		for (int i = 0; i < grid.length; i++) {
 			for (int j = 0; j < grid[0].length; j++) {
 				if (grid[i][j].isOpen()) {
-					Point curr = new Point(j, i);  // reversed to match grid's orientation
+					Point curr = new Point( i + 1, j + 1);  // reversed to match grid's orientation
 					node_to_point.put(k, curr);
 					point_to_node.put(curr, k);
 					k++;
@@ -223,11 +223,11 @@ public class Controller extends chemotaxis.sim.Controller {
 		//NOTE if the shortest path from 0 to 7 is 0, 1, 5, 4, 7
 		//in the shortest_path arraylist it is recorded as 4, 5, 1
 		ArrayList<Integer> shortest_path = g.dijkstra(g.matrix, startNode, targetNode);
-		System.out.println(shortest_path);
-		int one_third_index = shortest_path.size() / 3;
-		System.out.println(one_third_index);
-		int two_thirds_index = shortest_path.size() * 2 / 3;
-		System.out.println(two_thirds_index);
+
+		int one_third_index = shortest_path.size() * 3 / 4;
+
+		int two_thirds_index = shortest_path.size() / 4;
+
 
 		int one_third_node = shortest_path.get(one_third_index);
 		int two_thirds_node = shortest_path.get(two_thirds_index);

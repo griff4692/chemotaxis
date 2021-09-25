@@ -63,6 +63,17 @@ public class Agent extends chemotaxis.sim.Agent {
 
 		ChemicalType chosenChemicalType = highest_priority;
 
+
+
+		/*
+		Behavior 1: Doesn't detect anything -- go in a spiral
+		 */
+
+		/*
+		Behavior 2: Detect that it is "stuck" somewhere, trigger some action
+		 */
+
+
 		//note: if all the concentrations are zero it will move in the direction
 		//of the last direction iterated through
 		double highestConcentration = currentCell.getConcentration(chosenChemicalType);
