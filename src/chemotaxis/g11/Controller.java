@@ -131,7 +131,7 @@ public class Controller extends chemotaxis.sim.Controller {
 
         for(Point p : locations) {
             if(!onConveyerAgents.containsKey(p) && steps[p.x - 1][p.y - 1] <= chemicalsPerAgent) {
-                onConveyerAgents.put(p, null);
+                onConveyerAgents.put(p, DirectionType.CURRENT);
             }
             if (onConveyerAgents.containsKey(p)) {
                 if (onConveyerAgents.get(p) != directionMap[p.x - 1][p.y - 1]) {

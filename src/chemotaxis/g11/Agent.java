@@ -42,7 +42,7 @@ public class Agent extends chemotaxis.sim.Agent {
          11: NORTH
          00: SOUTH
          01: EAST
-         10: RIGHT
+         10: WEST
         */
         HashMap<DirectionType, Integer> bitDirectionMap = new HashMap<DirectionType, Integer>();
         bitDirectionMap.put(DirectionType.NORTH, 0b11);
@@ -53,7 +53,9 @@ public class Agent extends chemotaxis.sim.Agent {
         Move move = new Move();
 
         Boolean hasSeenBlue= (previousState>4 || previousState<0);
-        previousState = (byte)(previousState - 128);
+        if (hasSeenBlue) {
+            previousState = (byte) (previousState - 128);
+        }
         move.currentState = previousState;
 
         ChemicalType priorityChemicalType = ChemicalType.BLUE;
@@ -83,7 +85,7 @@ public class Agent extends chemotaxis.sim.Agent {
                     possibledirections.remove(DirectionType.SOUTH);
                 }
             }
-            int position = randomNum % possibledirections.size();
+            int position = Math.abs(randomNum % possibledirections.size());
             move.directionType = possibledirections.get(position);
             move.currentState = (byte) (bitDirectionMap.get(move.directionType) | 0b00);
         } else if (move.directionType == DirectionType.CURRENT) {
