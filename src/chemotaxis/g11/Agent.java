@@ -64,7 +64,7 @@ public class Agent extends chemotaxis.sim.Agent {
                 move.currentState = (byte) (bitDirectionMap.get(move.directionType) | 0b00);
             }
         }
-        if (move.directionType != DirectionType.CURRENT) {
+        if (move.directionType == DirectionType.CURRENT) {
             ArrayList<DirectionType> possibledirections = new ArrayList<DirectionType>();
             for (DirectionType directionType : neighborMap.keySet()) {
                 if (neighborMap.get(directionType).isOpen()) {
