@@ -2,7 +2,7 @@
     Project: Chemotaxis
     Course: COMS 4444 Programming & Problem Solving (Fall 2021)
     Instructor: Prof. Kenneth Ross
-    URL: http://www.cs.columbia.edu/~kar/4444f20
+    URL: http://www.cs.columbia.edu/~kar/4444f21
     Authors: Aditya Sridhar, Griffin Adams
     Simulator Version: 2.0
 */
@@ -610,9 +610,9 @@ public class Simulator {
 
         @SuppressWarnings("rawtypes")
         Class rawClass = loader.loadClass("chemotaxis." + teamName + ".Controller");
-        Class[] classArgs = new Class[]{Point.class, Point.class, Integer.class, ChemicalCell[][].class, Integer.class, Integer.class, Integer.class, SimPrinter.class};
+        Class[] classArgs = new Class[]{Point.class, Point.class, Integer.class, ChemicalCell[][].class, Integer.class, Integer.class, Integer.class, SimPrinter.class, Integer.class, Integer.class};
 
-        return (Controller) rawClass.getDeclaredConstructor(classArgs).newInstance(start, target, mapSize, grid, turns, budget, seed, new SimPrinter(enableControllerPrints));
+        return (Controller) rawClass.getDeclaredConstructor(classArgs).newInstance(start, target, mapSize, grid, turns, budget, seed, new SimPrinter(enableControllerPrints), agentGoal, spawnFreq);
     }
 
 	private static AgentWrapper loadAgentWrapper() throws Exception {
