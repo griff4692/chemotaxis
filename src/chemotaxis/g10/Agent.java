@@ -122,6 +122,7 @@ public class Agent extends chemotaxis.sim.Agent {
     */
 
    private boolean isMoveOrthogonal(DirectionType previousDirection, DirectionType potentialNewMove){
+      if ((previousDirection.equals(DirectionType.CURRENT))) return true;
       if((previousDirection.equals(DirectionType.EAST) & potentialNewMove.equals(DirectionType.NORTH))||
               (previousDirection.equals(DirectionType.EAST) & potentialNewMove.equals(DirectionType.SOUTH))
       ){
@@ -168,7 +169,7 @@ public class Agent extends chemotaxis.sim.Agent {
 
 
 
-   private DirectionType findOptimalMove(DirectionType previousDirection, ChemicalCell.ChemicalType chosenChemicalType, Map<DirectionType, ChemicalCell> neighborMap){
+   public DirectionType findOptimalMove(DirectionType previousDirection, ChemicalCell.ChemicalType chosenChemicalType, Map<DirectionType, ChemicalCell> neighborMap){
       Double maxConcentration = -1.0;
       DirectionType selectedMove = null;
       //move to the cell that has the highest concentration
@@ -208,6 +209,9 @@ public class Agent extends chemotaxis.sim.Agent {
       //switch colors and continue to find the best move on the next iteration i.e. make a turn.
       if(selectedMove.equals(DirectionType.CURRENT)){
          selectedMove = previousDirection;
+         chosenChemicalType = this.switchColor(chosenChemicalType);
+      }
+      if (selectedMove != previousDirection) {
          chosenChemicalType = this.switchColor(chosenChemicalType);
       }
 
