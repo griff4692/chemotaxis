@@ -21,6 +21,7 @@ public class Controller extends chemotaxis.sim.Controller {
     Point target;
 
     int chemicalsPerAgent;
+    Point greenTarget;
 
     /**
      * Controller constructor
@@ -96,7 +97,7 @@ public class Controller extends chemotaxis.sim.Controller {
         }
         Queue<Point> queue2 = new LinkedList<>();
         queue2.add(new Point(start.x - 1, start.y - 1));
-        Point greenTarget;
+        greenTarget = null;
         while (!queue.isEmpty()) {
             Point curr = queue.remove();
             int x = curr.x;
@@ -107,7 +108,7 @@ public class Controller extends chemotaxis.sim.Controller {
                 queue.add(new Point(x + 1 , y + 1));
                 queue.add(new Point(x + 1 , y - 1));
                 visited[x][y] = true;
-                if (steps[x][y] <= agentGoal) {
+                if (steps[x][y] <= chemicalsPerAgent) {
                     greenTarget = new Point(x + 1, y + 1);
                     break;
                 }
@@ -207,6 +208,13 @@ public class Controller extends chemotaxis.sim.Controller {
         if(placeChemical) {
             chemicals.add(ChemicalCell.ChemicalType.BLUE);
         }
+        else {
+            Point placement = this.greenTarget;
+            chemicalPlacement.location = placement;
+            chemicals.add(ChemicalCell.ChemicalType.GREEN);
+
+        }
+
 
         chemicalPlacement.chemicals = chemicals;
         return chemicalPlacement;
