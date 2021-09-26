@@ -135,7 +135,11 @@ public class Controller extends chemotaxis.sim.Controller {
             }
             if (onConveyerAgents.containsKey(p)) {
                 if (onConveyerAgents.get(p) != directionMap[p.x - 1][p.y - 1]) {
-                    chemicalPlacement.location = getChemicalPlacement(p.x - 1, p.y - 1, p);
+                    Point placement = getChemicalPlacement(p.x - 1, p.y - 1, p);
+                    if (checkIfAgentExists(placement, p, locations)) {
+                        continue;
+                    }
+                    chemicalPlacement.location = placement;
                     onConveyerAgents.replace(p, directionMap[p.x - 1][p.y - 1]);
                     placeChemical = true;
                     break;
@@ -180,90 +184,6 @@ public class Controller extends chemotaxis.sim.Controller {
 
         chemicalPlacement.chemicals = chemicals;
         return chemicalPlacement;
-
-
-        /*
-        if (locations.contains(start)) {
-            agents.put(start, DirectionType.SOUTH);
-        }
-
-        if (locations.contains(target)) {
-            agents.remove(target);
-            locations.remove(target);
-        }
-
-        Point wrongDirectionAgent = null;
-        double threshold = 0.1;
-        for (Point p: locations) {
-            if (!p.equals(target) && agents.get(p) != directionMap[p.x - 1][p.y - 1]) {
-                if (grid[p.x - 1][p.y - 1].getConcentration(ChemicalCell.ChemicalType.BLUE) < threshold &&
-                        grid[p.x - 1][p.y - 1].getConcentration(ChemicalCell.ChemicalType.GREEN) < threshold &&
-                        grid[p.x - 1][p.y - 1].getConcentration(ChemicalCell.ChemicalType.RED) < threshold) {
-                    wrongDirectionAgent = p;
-                    break;
-                }
-            }
-        }
-
-        List<ChemicalCell.ChemicalType> chemicals = new ArrayList<>();
-        if (wrongDirectionAgent != null) {
-            DirectionType newDirection = directionMap[wrongDirectionAgent.x - 1][wrongDirectionAgent.y - 1];
-            if (newDirection == DirectionType.NORTH) {
-                chemicalPlacement.location = new Point(wrongDirectionAgent.x - 1, wrongDirectionAgent.y);
-                agents.put(wrongDirectionAgent, DirectionType.NORTH);
-                chemicals.add(ChemicalCell.ChemicalType.RED);
-            }
-            else if (newDirection == DirectionType.SOUTH) {
-                chemicalPlacement.location = new Point(wrongDirectionAgent.x + 1, wrongDirectionAgent.y);
-                agents.put(wrongDirectionAgent, DirectionType.SOUTH);
-                chemicals.add(ChemicalCell.ChemicalType.BLUE);
-            }
-            else if (newDirection == DirectionType.EAST) {
-                chemicalPlacement.location = new Point(wrongDirectionAgent.x, wrongDirectionAgent.y + 1);
-                agents.put(wrongDirectionAgent, DirectionType.EAST);
-                chemicals.add(ChemicalCell.ChemicalType.GREEN);
-            }
-            else if (newDirection == DirectionType.WEST) {
-                chemicalPlacement.location = new Point(wrongDirectionAgent.x, wrongDirectionAgent.y - 1);
-                agents.put(wrongDirectionAgent, DirectionType.WEST);
-                chemicals.add(ChemicalCell.ChemicalType.BLUE);
-                chemicals.add(ChemicalCell.ChemicalType.GREEN);
-            }
-            else {
-                chemicalPlacement.location = new Point(wrongDirectionAgent.x, wrongDirectionAgent.y);
-                agents.put(wrongDirectionAgent, DirectionType.CURRENT);
-            }
-        }
-
-        HashMap<Point, DirectionType> newAgents = new HashMap<Point, DirectionType>();
-        for (Point p: agents.keySet()) {
-            DirectionType currentDirection = agents.get(p);
-            if (currentDirection == DirectionType.NORTH) {
-                newAgents.put(new Point(p.x - 1, p.y), DirectionType.NORTH);
-            }
-            else if (currentDirection == DirectionType.SOUTH) {
-                newAgents.put(new Point(p.x + 1, p.y), DirectionType.SOUTH);
-            }
-            else if (currentDirection == DirectionType.WEST) {
-                newAgents.put(new Point(p.x, p.y - 1), DirectionType.WEST);
-            }
-            else if (currentDirection == DirectionType.EAST) {
-                newAgents.put(new Point(p.x, p.y + 1), DirectionType.EAST);
-            }
-            else {
-                newAgents.put(new Point(p.x, p.y), DirectionType.CURRENT);
-            }
-        }
-        this.agents = newAgents;
-         */
-        /*
-        List<ChemicalCell.ChemicalType> chemicals = new ArrayList<>();
-        if (wrongDirectionAgent != null) {
-            chemicals.add(ChemicalCell.ChemicalType.BLUE);
-        }
-         */
-        //chemicalPlacement.chemicals = chemicals;
-        //return chemicalPlacement;
     }
 
     private void helper(int x, int y, int xDiff, int yDiff, DirectionType d, int count, Queue<Point> queue, boolean[][] visited) {
@@ -291,5 +211,37 @@ public class Controller extends chemotaxis.sim.Controller {
             return new Point(agentLocation.x, agentLocation.y - 1);
         }
         return null;
+    }
+
+    private boolean checkIfAgentExists(Point placement, Point targetAgent, ArrayList<Point> locations) {
+        ArrayList<Point> pointsToCheck = new ArrayList<>();
+        pointsToCheck.add(placement);
+        if (targetAgent.x + 1 == placement.x) {
+            pointsToCheck.add(new Point(placement.x, placement.y - 1));
+            pointsToCheck.add(new Point(placement.x, placement.y + 1));
+            pointsToCheck.add(new Point(placement.x + 1, placement.y));
+        }
+        else if (targetAgent.x - 1 == placement.x) {
+            pointsToCheck.add(new Point(placement.x, placement.y - 1));
+            pointsToCheck.add(new Point(placement.x, placement.y + 1));
+            pointsToCheck.add(new Point(placement.x - 1, placement.y));
+        }
+        else if (targetAgent.y - 1 == placement.y) {
+            pointsToCheck.add(new Point(placement.x, placement.y - 1));
+            pointsToCheck.add(new Point(placement.x + 1, placement.y));
+            pointsToCheck.add(new Point(placement.x - 1, placement.y));
+        }
+        else if (targetAgent.y + 1 == placement.y) {
+            pointsToCheck.add(new Point(placement.x, placement.y + 1));
+            pointsToCheck.add(new Point(placement.x + 1, placement.y));
+            pointsToCheck.add(new Point(placement.x - 1, placement.y));
+        }
+
+        for(Point p : pointsToCheck)  {
+            if(locations.contains(p)) {
+                return true;
+            }
+        }
+        return false;
     }
 }
