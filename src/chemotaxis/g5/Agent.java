@@ -12,11 +12,15 @@ import chemotaxis.sim.SimPrinter;
 import chemotaxis.sim.ChemicalCell.ChemicalType;
 
 import java.util.ArrayList;
+import java.util.HashSet;
 import java.util.Iterator;
 import java.util.Map;
+import java.util.Set;
+import java.util.stream.Collectors;
 
 public class Agent extends chemotaxis.sim.Agent {
     private Map<Integer, DirectionType> intToDirection;
+    private Map<DirectionType, Integer> directionToInt;
     
     public Agent(SimPrinter var1) {
         super(var1);
@@ -25,6 +29,11 @@ public class Agent extends chemotaxis.sim.Agent {
                                      2, DirectionType.SOUTH, 3, DirectionType.EAST,
                                      4, DirectionType.WEST);
         System.out.println(this.intToDirection);
+        // follow https://stackoverflow.com/questions/20412354/reverse-hashmap-keys-and-values-in-java to reverse
+        this.directionToInt =  
+            intToDirection.entrySet()
+            .stream()
+            .collect(Collectors.toMap(Map.Entry::getValue, Map.Entry::getKey));
     }
 
     public Move makeMove(Integer randomNum, Byte previousState, ChemicalCell currentCell, Map<DirectionType, ChemicalCell> neighborMap) {
@@ -46,7 +55,7 @@ public class Agent extends chemotaxis.sim.Agent {
         // grab required number of bits for direction: https://stackoverflow.com/questions/15255692/grabbing-n-bits-from-a-byte
         // lower three bits represent current direction/gradient direction we're following
         int prevGradientDirection = previousState & 0x7;
-
+        int backwardsDirection = this.getBackwardsDirection(this.intToDirection.get(prevGradientDirection));
         int increasingGradDirectionType = this.getIncreasingGradient(currentCell, neighborMap);
 
         if (increasingGradDirectionType != 0) {
@@ -57,18 +66,43 @@ public class Agent extends chemotaxis.sim.Agent {
             move.currentState = (byte) increasingGradDirectionType;
             return move; //done
         }
-        // can't find increasing direction => 1) keep going in previous direction 2) pick random (not previous) 3) pick previous because stuck
-        ArrayList<Integer> possibleMoveList = this.getPossibleMoves(neighborMap);
+        // can't find increasing direction => 1) keep going in previous direction 2) pick random (not previous) 3) pick backwards because stuck
+        Set<Integer> possibleMoveSet = this.getPossibleMoves(neighborMap);
 
-        // check if previous direction is available
-        for (Integer intx : possibleMoveList) {
-            if (intx.intValue() == prevGradientDirection) {
-                move.directionType = this.intToDirection.get(intx);
-                return move; // done
+        // check if previous direction is available (ie: continue forward)
+        if (possibleMoveSet.contains(prevGradientDirection)) {
+            move.directionType = this.intToDirection.get(prevGradientDirection);
+            // don't need to change memory since we're continuing
+            return move; // done
+        }
+
+        // if only option is going backwards, size is 1 and we take it
+        if (possibleMoveSet.size() == 1) {
+            int newMoveDirection = possibleMoveSet.iterator().next();
+            move.directionType = this.intToDirection.get(newMoveDirection);
+            move.currentState = (byte) newMoveDirection;
+            return move;
+        }
+
+        // otherwise take a random one that's not going backwards
+        possibleMoveSet.remove(backwardsDirection);
+
+        int count = 0;
+        for (Integer dir : possibleMoveSet) {
+            if (count == randomNum % possibleMoveSet.size()) {
+                move.directionType = this.intToDirection.get(dir);
+                move.currentState = (byte) dir.intValue();
+                return move;
             }
         }
         
+        // somehow got here so stay in the same place. Print error but don't die
+        System.err.println("Error in finding direction!");
+        move.directionType = DirectionType.CURRENT;
+        return move;
+
         // iterate over possible directions and get the net concentration 
+        /*
         for (DirectionType directionType : neighborMap.keySet()) {
 			// double net = neighborMap.get(directionType).getConcentration(chosenChemicalType) - neighborMap.get(directionType).getConcentration((repulseChemicalType));
             double net = neighborMap.get(directionType).getConcentration(chosenChemicalType);
@@ -95,24 +129,37 @@ public class Agent extends chemotaxis.sim.Agent {
                  move.directionType = neighborMap.keySet().iterator().next();
              }
         }
+        */
         // setting specific bits in a byte type: https://stackoverflow.com/questions/4674006/set-specific-bit-in-byte
-        switch(move.directionType){
-            case NORTH:
-                move.currentState = 1;
-            case SOUTH:
-                move.currentState = 2;
-            case EAST:
-                move.currentState = 3;
-            case WEST:
-                move.currentState = 4;
-            case CURRENT:
-                move.currentState = 0;
-        }
-		return move;
    }
 
-    private ArrayList<Integer> getPossibleMoves(Map<DirectionType, ChemicalCell> neighborMap) {
-        return null;
+    private int getBackwardsDirection(DirectionType directionType) {
+        int retDir = 0;
+        switch (directionType) {
+            case NORTH: retDir = 2; // SOUTH
+                break;
+            case SOUTH: retDir = 1;
+                break;
+            case EAST: retDir = 4;
+                break;
+            case WEST: retDir = 3;
+                break;
+            default: retDir = 0;
+                break;
+        }
+        return retDir;
+    }
+
+    private Set<Integer> getPossibleMoves(Map<DirectionType, ChemicalCell> neighborMap) {
+        Set<Integer> possibleMovesSet = new HashSet<>();
+        
+        for (Map.Entry<DirectionType, ChemicalCell> entry : neighborMap.entrySet()) {
+            if (entry.getValue().isOpen()) {
+                possibleMovesSet.add(this.directionToInt.get(entry.getKey()));
+            }
+        }
+
+        return possibleMovesSet;
     }
 
     private int getIncreasingGradient(ChemicalCell currentCell, Map<DirectionType, ChemicalCell> neighborMap) {
