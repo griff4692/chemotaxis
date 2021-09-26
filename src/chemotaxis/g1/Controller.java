@@ -63,7 +63,6 @@ public class Controller extends chemotaxis.sim.Controller {
      */
     public Controller(Point start, Point target, Integer size, ChemicalCell[][] grid, Integer simTime, Integer budget, Integer seed, SimPrinter simPrinter, Integer agentGoal, Integer spawnFreq) {
         super(start, target, size, grid, simTime, budget, seed, simPrinter, agentGoal, spawnFreq);
-
         dist = new int[size][size][4];
         // Necessary since (0,0) on the game board is labeled (1,1)
         modifiedStart.x=start.x-1;

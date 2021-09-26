@@ -77,12 +77,33 @@ public class Agent extends chemotaxis.sim.Agent {
       DirectionType directionToMove = getDirectionFromState(previousState);
       Byte newState = previousState;
 
+      int numNeighborsBlocked = 0;
       for (DirectionType directionType : neighborMap.keySet()) {
-         if(neighborMap.get(directionType).getConcentration(chosenChemicalType) == 1.0){
+         if (neighborMap.get(directionType).isBlocked()) {
+            numNeighborsBlocked++;
+         }
+         else if(neighborMap.get(directionType).getConcentration(chosenChemicalType) == 1.0){
             directionToMove = directionType;
             newState = getStateFromDirection(directionToMove);
          }
       }
+
+      if (numNeighborsBlocked == 3 || numNeighborsBlocked == 2) {
+         for (DirectionType directionType : neighborMap.keySet()) {
+            DirectionType oppDirectionToMove = null;
+            if (previousState == 1 || previousState == 3) {
+               oppDirectionToMove = getDirectionFromState((byte) (previousState + 1));
+            } else if (previousState == 2 || previousState == 4) {
+               oppDirectionToMove = getDirectionFromState((byte) (previousState - 1));
+            }
+
+            if ((numNeighborsBlocked == 3 && neighborMap.get(directionType).isOpen()) || (numNeighborsBlocked == 2 && neighborMap.get(directionType).isOpen() && directionType != oppDirectionToMove)) {
+               directionToMove = directionType;
+               newState = getStateFromDirection(directionToMove);
+            }
+         }
+      }
+
       move.directionType = directionToMove;
       move.currentState = newState;
 

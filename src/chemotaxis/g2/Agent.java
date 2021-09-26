@@ -33,62 +33,85 @@ public class Agent extends chemotaxis.sim.Agent {
      */
 	@Override
 	public Move makeMove(Integer randomNum, Byte previousState, ChemicalCell currentCell, Map<DirectionType, ChemicalCell> neighborMap) {
+
+		/*
+		* Byte previousState : 3 LSBs hold previous direction
+		* 001 : North
+		* 010 : South
+		* 011 : East
+		* 100 : West
+		* 101 : Current
+		* 110 : Seen red. Ignore Blue?
+		* */
+
+
 		Move move = new Move();
 
-		ChemicalType chosenChemicalType = ChemicalType.BLUE;
+		ChemicalType chosenChemicalTurn = ChemicalType.BLUE;
+		ChemicalType chosenChemicalType = ChemicalType.RED;
 
-		double highestConcentration = currentCell.getConcentration(chosenChemicalType);
-		double currentConcentration = highestConcentration;
-		double result;
+
 		double minDetectableConcentration = 0.001;	/* Would have done a #define, but can't. CAUTION! Change if minimum detectable concentration
 		 changes. */
 		
-		boolean arr[] = {false, false, false, false, false};
-		int i = 0;
+		boolean turn = false;
 
-		move.directionType = DirectionType.SOUTH;
 
 		for (DirectionType directionType : neighborMap.keySet()) {
-			if (highestConcentration < neighborMap.get(directionType).getConcentration(chosenChemicalType)) {
-				highestConcentration = neighborMap.get(directionType).getConcentration(chosenChemicalType);
+			if (Math.abs(neighborMap.get(directionType).getConcentration(chosenChemicalTurn) - 1.0) < minDetectableConcentration ) {
 				move.directionType = directionType;
+				turn = true;
+				move.currentState = storeDir(directionType);
+				break;
+
 			}
-			else if(compareDoubles(highestConcentration, neighborMap.get(directionType).getConcentration(chosenChemicalType), minDetectableConcentration) == 0){
-				arr[i] = true;
-			}
-			
-			i++;	
-			
 		}
-		
-		if (arr[0] == arr[1] && arr[1] == arr[2] && arr[2] == arr[3] && arr[3] == arr[4] && arr[0] == true)
-			/* Then all squares have ~equal concentration. Choose a random move. */
-			switch (randomNum % 5){
-				case 0:
-					move.directionType = DirectionType.EAST;
-					break;
-				case 1:
-					move.directionType = DirectionType.WEST;
-					break;
-				case 2:
-					move.directionType = DirectionType.NORTH;
-					break;
-				case 3:
-					move.directionType = DirectionType.SOUTH;
-					break;
-				case 4:
-					move.directionType = DirectionType.CURRENT;
-					break;
-			}
+
+		if(!turn){
+			// No blue found. Then follow previous direction
+			move.directionType = findPreviousState(previousState);
+			move.currentState = previousState;
+
+		}
+
+		/*
+		* Add : if in current position for many turns, choose a different position.
+		*
+		 */
 
 		return move;
 	}
-	
-	public int compareDoubles(double a, double b, double minDetectableConcentration) {
-		
-		if(Math.abs(a - b) < minDetectableConcentration)
-			return 0;	// equal
-		else
-			return 1;	// not equal
+
+
+	public Byte storeDir(DirectionType directionType){
+		if(directionType == DirectionType.EAST){
+			return 3;
+		} else if(directionType == DirectionType.WEST){
+			return 4;
+		} else if(directionType == DirectionType.NORTH){
+			return 1;
+		} else if(directionType == DirectionType.SOUTH){
+			return 2;
+		}else{
+			return 5;
+		}
+	}
+
+	public DirectionType findPreviousState(Byte previousState){
+		if((previousState & 7) == 1){
+			return DirectionType.NORTH;
+		}
+		else if ((previousState & 7) == 2){
+			return DirectionType.SOUTH;
+		}
+		else if ((previousState & 7) == 3){
+			return DirectionType.EAST;
+		}
+		else if ((previousState & 7) == 4){
+			return DirectionType.WEST;
+		}
+		else{
+			return DirectionType.CURRENT;
+		}
 	}
 }
