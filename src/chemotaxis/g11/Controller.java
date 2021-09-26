@@ -89,6 +89,32 @@ public class Controller extends chemotaxis.sim.Controller {
         */
         int alpha = agentGoal;
         chemicalsPerAgent = (budget - alpha) / agentGoal;
+        for (int r = 0; r < size; r++) {
+            for (int c = 0; c < size; c++) {
+                visited[r][c] = false;
+            }
+        }
+        Queue<Point> queue2 = new LinkedList<>();
+        queue2.add(new Point(start.x - 1, start.y - 1));
+        Point greenTarget;
+        while (!queue.isEmpty()) {
+            Point curr = queue.remove();
+            int x = curr.x;
+            int y = curr.y;
+            if (x >= 0 && x < size && y >= 0 && y < size && grid[x][y].isOpen() && !visited[x][y]) {
+                queue.add(new Point(x + 1 , y));
+                queue.add(new Point(x - 1 , y));
+                queue.add(new Point(x + 1 , y + 1));
+                queue.add(new Point(x + 1 , y - 1));
+                visited[x][y] = true;
+                if (steps[x][y] <= agentGoal) {
+                    greenTarget = new Point(x + 1, y + 1);
+                    break;
+                }
+            }
+
+        }
+
     }
 
     public int closestToTarget(ArrayList<Point> locations) {
