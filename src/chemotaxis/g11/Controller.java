@@ -21,6 +21,9 @@ public class Controller extends chemotaxis.sim.Controller {
     Point target;
 
     int chemicalsPerAgent;
+    int refreshRate;
+    int greenChemicalBudget;
+    int greenChemicalsPut;
     Point greenTarget;
 
     /**
@@ -88,8 +91,10 @@ public class Controller extends chemotaxis.sim.Controller {
             System.out.println();
         }
         */
-        int alpha = agentGoal;
-        chemicalsPerAgent = (budget - alpha) / agentGoal;
+        refreshRate = 3;
+        greenChemicalBudget = agentGoal;
+        greenChemicalsPut = 0;
+        chemicalsPerAgent = (budget - greenChemicalBudget) / agentGoal;
         for (int r = 0; r < size; r++) {
             for (int c = 0; c < size; c++) {
                 visited[r][c] = false;
@@ -98,24 +103,22 @@ public class Controller extends chemotaxis.sim.Controller {
         Queue<Point> queue2 = new LinkedList<>();
         queue2.add(new Point(start.x - 1, start.y - 1));
         greenTarget = null;
-        while (!queue.isEmpty()) {
-            Point curr = queue.remove();
+        while (!queue2.isEmpty()) {
+            Point curr = queue2.remove();
             int x = curr.x;
             int y = curr.y;
             if (x >= 0 && x < size && y >= 0 && y < size && grid[x][y].isOpen() && !visited[x][y]) {
-                queue.add(new Point(x + 1 , y));
-                queue.add(new Point(x - 1 , y));
-                queue.add(new Point(x + 1 , y + 1));
-                queue.add(new Point(x + 1 , y - 1));
+                queue2.add(new Point(x + 1 , y));
+                queue2.add(new Point(x - 1 , y));
+                queue2.add(new Point(x, y + 1));
+                queue2.add(new Point(x, y - 1));
                 visited[x][y] = true;
                 if (steps[x][y] <= chemicalsPerAgent) {
                     greenTarget = new Point(x + 1, y + 1);
                     break;
                 }
             }
-
         }
-
     }
 
     public int closestToTarget(ArrayList<Point> locations) {
@@ -208,11 +211,13 @@ public class Controller extends chemotaxis.sim.Controller {
         if(placeChemical) {
             chemicals.add(ChemicalCell.ChemicalType.BLUE);
         }
-        else {
-            Point placement = this.greenTarget;
-            chemicalPlacement.location = placement;
-            chemicals.add(ChemicalCell.ChemicalType.GREEN);
-
+        else if ((currentTurn - 1) % refreshRate == 0) {
+            if (greenChemicalsPut < greenChemicalBudget) {
+                Point placement = this.greenTarget;
+                chemicalPlacement.location = placement;
+                chemicals.add(ChemicalCell.ChemicalType.GREEN);
+                greenChemicalsPut++;
+            }
         }
 
 
