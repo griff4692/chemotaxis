@@ -148,6 +148,15 @@ public class Agent extends chemotaxis.sim.Agent {
       }
    }
 
+   private DirectionType[] getOrthogonalDirections(DirectionType previousDirection){
+      if (previousDirection == DirectionType.EAST || previousDirection == DirectionType.WEST){
+         return new DirectionType[] {DirectionType.NORTH, DirectionType.SOUTH};
+      }
+      else {
+         return new DirectionType[]{DirectionType.EAST, DirectionType.WEST};
+      }
+   }
+
 
    private DirectionType turnRight(DirectionType previousDirection){
       if(previousDirection.equals(DirectionType.EAST)){
@@ -165,34 +174,40 @@ public class Agent extends chemotaxis.sim.Agent {
 
    }
 
+   //returns null if all directions are 0 or if there are multiple directions of max concentration
+   private boolean ifDirectionIsAbsoluteMax(DirectionType proposedDirection, ChemicalCell.ChemicalType chosenChemicalType, Map<DirectionType, ChemicalCell> neighborMap) {
+      Double maxConcentration = neighborMap.get(proposedDirection).getConcentration(chosenChemicalType);
 
+      for (DirectionType direction : neighborMap.keySet()) {
+         ChemicalCell candidateCell = neighborMap.get(direction);
+         //if blocked, move to next
+         if (candidateCell.isBlocked()) {
+            continue;
+         }
+         if (candidateCell.getConcentration(chosenChemicalType) > maxConcentration) {
+            return false;
+         }
+      }
+      if (maxConcentration > 0.0) {
+         return true;
+      }
+      else {
+         return false;
+      }
+   }
 
 
    private DirectionType findOptimalMove(DirectionType previousDirection, ChemicalCell.ChemicalType chosenChemicalType, Map<DirectionType, ChemicalCell> neighborMap){
-      Double maxConcentration = -1.0;
-      DirectionType selectedMove = null;
-      //move to the cell that has the highest concentration
-      for (DirectionType potentialNewMove : neighborMap.keySet()) {
-         ChemicalCell candidateCell = neighborMap.get(potentialNewMove);
-         Double candidateCellChemicalValue = candidateCell.getConcentration(chosenChemicalType);
+      DirectionType[] orthogonalDirections = getOrthogonalDirections(previousDirection);
 
-         //for the situation of hitting a wall head-on, turn right, break the loop and don't worry about the rest of the logic.
-         if(potentialNewMove==previousDirection & candidateCell.isBlocked()){
-            selectedMove = this.turnRight(previousDirection);
-            break;
-         }
-
-         if (candidateCellChemicalValue > maxConcentration & candidateCellChemicalValue!=0 & this.isMoveOrthogonal(previousDirection, potentialNewMove)) {
-            selectedMove = potentialNewMove;
-            maxConcentration = candidateCellChemicalValue;
+      for (DirectionType orthogonalDirection: orthogonalDirections) {
+         if (!neighborMap.get(orthogonalDirection).isBlocked() && ifDirectionIsAbsoluteMax(orthogonalDirection, chosenChemicalType, neighborMap)){
+            return orthogonalDirection;
          }
       }
-      //continue going in the same direction if you all the chemical cell's near you are zero
-      if(selectedMove==null){
-         selectedMove = previousDirection;
-      }
 
-      return selectedMove;
+      // if gets to this point, resort to default functionality -- still need to implement turn-right strategy
+      return previousDirection;
    }
 
 
