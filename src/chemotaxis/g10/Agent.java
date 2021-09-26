@@ -149,6 +149,15 @@ public class Agent extends chemotaxis.sim.Agent {
       }
    }
 
+   private DirectionType[] getOrthogonalDirections(DirectionType previousDirection){
+      if (previousDirection == DirectionType.EAST || previousDirection == DirectionType.WEST){
+         return new DirectionType[] {DirectionType.NORTH, DirectionType.SOUTH};
+      }
+      else {
+         return new DirectionType[]{DirectionType.EAST, DirectionType.WEST};
+      }
+   }
+
 
    private DirectionType turnRight(DirectionType previousDirection){
       if(previousDirection.equals(DirectionType.EAST)){
@@ -166,9 +175,30 @@ public class Agent extends chemotaxis.sim.Agent {
 
    }
 
+   //returns null if all directions are 0 or if there are multiple directions of max concentration
+   private boolean ifDirectionIsAbsoluteMax(DirectionType proposedDirection, ChemicalCell.ChemicalType chosenChemicalType, Map<DirectionType, ChemicalCell> neighborMap) {
+      Double maxConcentration = neighborMap.get(proposedDirection).getConcentration(chosenChemicalType);
+
+      for (DirectionType direction : neighborMap.keySet()) {
+         ChemicalCell candidateCell = neighborMap.get(direction);
+         //if blocked, move to next
+         if (candidateCell.isBlocked()) {
+            continue;
+         }
+         if (candidateCell.getConcentration(chosenChemicalType) > maxConcentration) {
+            return false;
+         }
+      }
+      if (maxConcentration > 0.0) {
+         return true;
+      }
+      else {
+         return false;
+      }
+   }
 
 
-
+<<<<<<< HEAD
    public DirectionType findOptimalMove(DirectionType previousDirection, ChemicalCell.ChemicalType chosenChemicalType, Map<DirectionType, ChemicalCell> neighborMap){
       Double maxConcentration = -1.0;
       DirectionType selectedMove = null;
@@ -182,18 +212,19 @@ public class Agent extends chemotaxis.sim.Agent {
             selectedMove = this.turnRight(previousDirection);
             break;
          }
+=======
+   private DirectionType findOptimalMove(DirectionType previousDirection, ChemicalCell.ChemicalType chosenChemicalType, Map<DirectionType, ChemicalCell> neighborMap){
+      DirectionType[] orthogonalDirections = getOrthogonalDirections(previousDirection);
+>>>>>>> 8dcd27de97d25fd7188577c65ad7c08591d004c9
 
-         if (candidateCellChemicalValue > maxConcentration & candidateCellChemicalValue!=0 & this.isMoveOrthogonal(previousDirection, potentialNewMove)) {
-            selectedMove = potentialNewMove;
-            maxConcentration = candidateCellChemicalValue;
+      for (DirectionType orthogonalDirection: orthogonalDirections) {
+         if (!neighborMap.get(orthogonalDirection).isBlocked() && ifDirectionIsAbsoluteMax(orthogonalDirection, chosenChemicalType, neighborMap)){
+            return orthogonalDirection;
          }
       }
-      //continue going in the same direction if you all the chemical cell's near you are zero
-      if(selectedMove==null){
-         selectedMove = previousDirection;
-      }
 
-      return selectedMove;
+      // if gets to this point, resort to default functionality -- still need to implement turn-right strategy
+      return previousDirection;
    }
 
 
