@@ -98,28 +98,28 @@ public class Controller extends chemotaxis.sim.Controller {
             Collections.reverse(route);
             routes.put(i,route);
             setTurnAt(grid,i);
-            System.out.print("turns: ");
+            simPrinter.print("turns: ");
 
-            System.out.println(i);
-            System.out.print("steps: ");
+            simPrinter.println(i);
+            simPrinter.print("steps: ");
 
-            System.out.println(routes.get(i).size());
-            System.out.print("route: ");
+            simPrinter.println(routes.get(i).size());
+            simPrinter.print("route: ");
 
-            System.out.println(routes.get(i));
+            simPrinter.println(routes.get(i));
 
-            System.out.print("turns at: ");
+            simPrinter.print("turns at: ");
 
-            System.out.println(turnAt.get(i));
+            simPrinter.println(turnAt.get(i));
             // TODO (etm): Schedule is currently unused, so it's commented out
             // TODO (etm): Update this once the time allowed is known (?)
             scheduleAllAgents(i,i<(budget/agentGoal),simTime,spawnFreq,agentGoal);
 
-            System.out.print("strong strategy: ");
-            System.out.println(finalScheduleStrong);
-            System.out.print("weak strategy: ");
+            simPrinter.print("strong strategy: ");
+            simPrinter.println(finalScheduleStrong);
+            simPrinter.print("weak strategy: ");
 
-            System.out.println(initialScheduleWeak);
+            simPrinter.println(initialScheduleWeak);
         }
     }
 
