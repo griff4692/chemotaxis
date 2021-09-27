@@ -314,18 +314,14 @@ public class Controller extends chemotaxis.sim.Controller {
     }
 
     /**
-     * Apply chemicals to the map
-     *
-     * @param currentTurn         current turn in the simulation
-     * @param chemicalsRemaining  number of chemicals remaining
-     * @param locations           current locations of the agents
-
-     * @param grid                game grid/map
-     * @return                    a cell location and list of chemicals to apply
-     *
+     * Internal chemical placement function. Used to capture result and update game state.
+     * @param currentTurn
+     * @param chemicalsRemaining
+     * @param locations
+     * @param grid
+     * @return
      */
-    @Override
-    public ChemicalPlacement applyChemicals(Integer currentTurn, Integer chemicalsRemaining, ArrayList<Point> locations, ChemicalCell[][] grid) {
+    private ChemicalPlacement _applyChemicals(Integer currentTurn, Integer chemicalsRemaining, ArrayList<Point> locations, ChemicalCell[][] grid) {
         ChemicalPlacement chemicalPlacement = new ChemicalPlacement();
         if (currentTurn == 1) {
             chemicalPlacement.location = start;
@@ -369,6 +365,31 @@ public class Controller extends chemotaxis.sim.Controller {
             chemicalPlacement.location = new Point(loc.x + 1, loc.y + 1);
             chemicalPlacement.chemicals.add(ChemicalCell.ChemicalType.BLUE);
         }
+        return chemicalPlacement;
+    }
+
+    /**
+     * Apply chemicals to the map
+     *
+     * @param currentTurn         current turn in the simulation
+     * @param chemicalsRemaining  number of chemicals remaining
+     * @param locations           current locations of the agents
+
+     * @param grid                game grid/map
+     * @return                    a cell location and list of chemicals to apply
+     *
+     */
+    @Override
+    public ChemicalPlacement applyChemicals(Integer currentTurn, Integer chemicalsRemaining, ArrayList<Point> locations, ChemicalCell[][] grid) {
+        // TODO (etm): Debug only, remove this validation.
+        //   Throws an exception if the game state deviates from expected.
+        try {
+            this.gameState.validateEquivalence(currentTurn, chemicalsRemaining, locations, grid);
+        } catch (RuntimeException e) {
+            System.err.println("" + e);
+        }
+
+        ChemicalPlacement chemicalPlacement = this._applyChemicals(currentTurn, chemicalsRemaining, locations, grid);
 
         this.gameState = this.gameState.placeChemicalAndStep(chemicalPlacement);
         return chemicalPlacement;
