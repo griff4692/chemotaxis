@@ -16,8 +16,17 @@ public class Controller extends chemotaxis.sim.Controller {
 	List<Point> shortestPathList;
 	private int incrementBy;
 	private int colorCounter = 0;
-	private int currentPathIndex = 1;
-	private int idealChemicalIncrement = 10;
+	private int currentPathIndex;
+	private int idealChemicalIncrement = 4;
+	
+	/*
+	 * agent goal
+	 * respawn rate
+	 * 
+	 * 
+	 * initial - contain agent goal # amount of agents -- min(idealChemicalIncrement, respawnrate)
+	 * 
+	 */
 	/**
 	 * Controller constructor
 	 *
@@ -35,6 +44,8 @@ public class Controller extends chemotaxis.sim.Controller {
 		super(start, target, size, grid, simTime, budget, seed, simPrinter);
 		this.shortestPathList = shortestPath(grid);	
 		this.incrementBy = decidePlacementStrategy(this.shortestPathList, idealChemicalIncrement, budget);
+		this.currentPathIndex = incrementBy;
+		System.out.println(shortestPathList.size());
 	}
 	
 	// will this need to keep track of simTime?
@@ -82,7 +93,7 @@ public class Controller extends chemotaxis.sim.Controller {
 		int nextPathIndex = currentPathIndex + incrementBy;
 		// if we are on the last step, move to the first step, and make sure we reset the color counter
 		if (currentPathIndex == pathLength - 1) {
-			nextPathIndex = 1;
+			nextPathIndex = incrementBy;
 			colorCounter = 0;
 		} else if (nextPathIndex > pathLength - 1) { // if we are about to wrap around, put us at the last step.
 			nextPathIndex = pathLength - 1;
