@@ -12,7 +12,10 @@ import chemotaxis.sim.ChemicalCell.ChemicalType;
 public class Controller extends chemotaxis.sim.Controller {
     LinkedList<Point> path1 = new LinkedList<Point>();
     LinkedList<Point> path2 = new LinkedList<Point>();
+    LinkedList<Point> turn1 = new LinkedList<Point>();
+    LinkedList<Point> turn2 = new LinkedList<Point>();
     private int curPlacement = 1;
+    private int optStepGap = 5;
     /**
      * Controller constructor
      *
@@ -32,7 +35,7 @@ public class Controller extends chemotaxis.sim.Controller {
 
         int[][] visited = new int[grid.length][grid[0].length];
         initializeVisited(visited,grid);
-        calculatePath(start, target, visited, grid, path1);
+        calculatePath(start, target, visited, grid, path1, turn1);
 
         initializeVisited(visited,grid);
 
@@ -40,7 +43,7 @@ public class Controller extends chemotaxis.sim.Controller {
         for (int i = 0; i < path1.size() - 1; i++)
             visited[path1.get(i).x - 1][path1.get(i).y - 1] = -1;
 
-        calculatePath(start, target, visited, grid, path2);
+        calculatePath(start, target, visited, grid, path2, turn2);
     }
 
     private void initializeVisited(int[][] visited, ChemicalCell[][] grid){
@@ -55,7 +58,7 @@ public class Controller extends chemotaxis.sim.Controller {
         }
     }
 
-    private void calculatePath(Point start, Point target, int[][] visited, ChemicalCell[][] grid, LinkedList<Point> path){
+    private void calculatePath(Point start, Point target, int[][] visited, ChemicalCell[][] grid, LinkedList<Point> path, LinkedList<Point> turn){
         int[][] parent = new int[grid.length][grid[0].length];
         // 0->start, -1->no parent, 1->top, 2-> right, 3->down, 4->left
 
@@ -134,16 +137,58 @@ public class Controller extends chemotaxis.sim.Controller {
             }
             path.addFirst(new Point(i+1,j+1));
 
-            //printing path
+            /*printing path
             for (i = 0; i < path.size(); i++) {
                 System.out.print(path.get(i).x);
                 System.out.print(" ");
                 System.out.print(path.get(i).y);
                 System.out.println("");
-            }
+            }*/
+
+            //turns
+            if(path.size()>1)
+                calculateTurn(path, turn);
         }
     }
 
+    private void calculateTurn(LinkedList<Point> path, LinkedList<Point> turn)
+    {
+        int x = path.get(0).x;
+        int y = path.get(0).y;
+        int vertical = 0;
+        if(x==path.get(1).x)
+            vertical = 1;
+        for (int i = 1; i < path.size();i++) {
+            if(x!=path.get(i).x && vertical==1)
+            {
+                vertical = 0;
+                if(i==path.size()-2)
+                    turn.add(path.get(i+1));
+                else
+                    turn.add(path.get(i-1));
+            }
+            else if(y!=path.get(i).y && vertical==0)
+            {
+                vertical = 1;
+                if(i==path.size()-2)
+                    turn.add(path.get(i+1));
+                else
+                    turn.add(path.get(i-1));
+            }
+            x = path.get(i).x;
+            y = path.get(i).y;
+        }
+        if(turn.get(turn.size()-1)!=path.get(path.size()-1))
+            turn.add(path.get(path.size()-1));
+
+        /*System.out.println("Printing turns");
+        for (int i = 0; i < turn.size(); i++) {
+            System.out.print(turn.get(i).x);
+            System.out.print(" ");
+            System.out.print(turn.get(i).y);
+            System.out.println("");
+        }*/
+    }
     /**
      * Apply chemicals to the map
      *
@@ -164,21 +209,48 @@ public class Controller extends chemotaxis.sim.Controller {
         // }
 
         // Point locToPlace = getPosCloseToGoal(closestAgent, grid);
-        Point locToPlace = this.path1.get(curPlacement++);
+        /*Point locToPlace = this.path1.get(curPlacement++);
 
         // reset back to beginning
         if (curPlacement == this.path1.size()) {
             curPlacement = this.path1.size()-1;
         }
 
-        System.out.println("Placing green at: " + locToPlace.toString());
+        System.out.println("Placing green at: " + locToPlace.toString());*/
 
+        Point locToPlace ;
         ChemicalPlacement ret = new ChemicalPlacement();
-        ret.location = locToPlace;
-        ret.chemicals.add(ChemicalType.GREEN);
+        int currPosition = agentOnTurn(locations,turn1) + 1;
+        if(currPosition!=0 || currentTurn % optStepGap == 0)
+        {
+
+            locToPlace = turn1.get(currPosition%turn1.size());
+            ret.location = locToPlace;
+            ret.chemicals.add(ChemicalType.GREEN);
+            //locToPlace = path1.get((currentTurn+optStepGap)%path1.size());
+        }
+        /*
+        else if(grid.length>=50 && (currentTurn-optStepGap/2) % optStepGap == 0)
+        {
+            //locToPlace = path2.get((currentTurn+optStepGap)%path2.size());
+            ret.location = locToPlace;
+            ret.chemicals.add(ChemicalType.BLUE);
+        }*/
         return ret;
     }
-
+    private int agentOnTurn(ArrayList<Point> locations,LinkedList<Point> turn){
+        int found = -1;
+        for(int i=turn.size()-2;i>=0;i--)
+        {
+            for(Point loc : locations)
+            {
+                if(loc.x==turn.get(i).x && loc.y==turn.get(i).y) {
+                    return i;
+                }
+            }
+        }
+        return found;
+    }
     /* Private helper methods to make the code concise
      * Examples: caching the original path along with distance to goal for each one
      */
