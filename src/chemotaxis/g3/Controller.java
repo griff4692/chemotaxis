@@ -150,8 +150,8 @@ public class Controller extends chemotaxis.sim.Controller {
 	ArrayList<Integer> shortest_path;
 	Hashtable<Integer, Point> node_to_point;
 	Hashtable<Point, Integer> point_to_node;
-	Point one_third;
-	Point two_thirds;
+	Point first_pt;
+	Point second_pt;
 
     /**
      * Controller constructor
@@ -177,7 +177,7 @@ public class Controller extends chemotaxis.sim.Controller {
 		for (int i = 0; i < grid.length; i++) {
 			for (int j = 0; j < grid[0].length; j++) {
 				if (grid[i][j].isOpen()) {
-					Point curr = new Point(j, i);  // reversed to match grid's orientation
+					Point curr = new Point( i + 1, j + 1);  // reversed to match grid's orientation
 					node_to_point.put(k, curr);
 					point_to_node.put(curr, k);
 					k++;
@@ -219,23 +219,29 @@ public class Controller extends chemotaxis.sim.Controller {
 		Integer startNode = point_to_node.get(start);
 		Integer targetNode = point_to_node.get(target);
 
-		//call dijkstra to record a shortest path from start to target
-		//NOTE if the shortest path from 0 to 7 is 0, 1, 5, 4, 7
-		//in the shortest_path arraylist it is recorded as 4, 5, 1
+
+		/*
+		call dijkstra to record the shortest path from start to target
+			- NOTE: the shortest path array is reversed and does not include the start and end points.
+			(i.e. if the shortest path from 0 to 7 is 0, 1, 5, 4, 7
+			in the shortest_path arraylist it is recorded as 4, 5, 1)
+		 */
 		ArrayList<Integer> shortest_path = g.dijkstra(g.matrix, startNode, targetNode);
-		System.out.println(shortest_path);
-		int one_third_index = shortest_path.size() / 3;
-		System.out.println(one_third_index);
-		int two_thirds_index = shortest_path.size() * 2 / 3;
-		System.out.println(two_thirds_index);
 
-		int one_third_node = shortest_path.get(one_third_index);
-		int two_thirds_node = shortest_path.get(two_thirds_index);
 
-		one_third = node_to_point.get(one_third_node);
-		System.out.println(one_third);
-		two_thirds = node_to_point.get(two_thirds_node);
-		System.out.println(two_thirds);
+
+		int index_one = shortest_path.size() * 2 / 3;
+
+		int index_two = shortest_path.size() / 3;
+
+
+		int first_node = shortest_path.get(index_one);
+		int second_node = shortest_path.get(index_two);
+
+		first_pt = node_to_point.get(first_node);
+		System.out.println(first_pt);
+		second_pt = node_to_point.get(second_node);
+		System.out.println(second_pt);
 
 	}
 
@@ -276,13 +282,13 @@ public class Controller extends chemotaxis.sim.Controller {
 		if(currentTurn%5 == 1){
 			List<ChemicalType> chemicals = new ArrayList<>();
 			chemicals.add(ChemicalType.RED);
-			chemicalPlacement.location = new Point(this.one_third.x, this.one_third.y);
+			chemicalPlacement.location = new Point(this.first_pt.x, this.first_pt.y);
 			chemicalPlacement.chemicals = chemicals;
 		}
 		else if(currentTurn%5 == 2){
 			List<ChemicalType> chemicals = new ArrayList<>();
 			chemicals.add(ChemicalType.GREEN);
-			chemicalPlacement.location = new Point(this.two_thirds.x, this.two_thirds.y);
+			chemicalPlacement.location = new Point(this.second_pt.x, this.second_pt.y);
 			chemicalPlacement.chemicals = chemicals;
 		}
 		else if (currentTurn%5 == 3) {
