@@ -100,6 +100,7 @@ public class Controller extends chemotaxis.sim.Controller {
             Collections.reverse(route);
             routes.put(i,route);
             setTurnAt(grid,i);
+
             simPrinter.print("turns: ");
 
             simPrinter.println(i);
@@ -120,11 +121,13 @@ public class Controller extends chemotaxis.sim.Controller {
 
             scheduleAllAgents(i,i<(budget*1.0/agentGoal),simTime,spawnFreq,agentGoal);
 
+
             simPrinter.print("strong strategy: ");
             simPrinter.println(finalScheduleStrong);
             simPrinter.print("weak strategy: ");
 
             simPrinter.println(initialScheduleWeak);
+
         }
     }
 
@@ -422,7 +425,7 @@ public class Controller extends chemotaxis.sim.Controller {
         Point current = new Point(modifiedTarget.x,modifiedTarget.y);
         int step = 10001;
         int direction = 0;
-        System.out.println(turn);
+        simPrinter.println(turn);
 
         for (int i=0;i<4;i++) {
             if (dist[modifiedTarget.x][modifiedTarget.y][i]>0 && dist[modifiedTarget.x][modifiedTarget.y][i]<step){
@@ -433,13 +436,6 @@ public class Controller extends chemotaxis.sim.Controller {
         int localturn = turn;
         if (step<10001) {
             while (!((modifiedStart.x==current.x)&&(modifiedStart.y==current.y))) {
-                System.out.print(step);
-                System.out.print("(");
-                System.out.print(current.x);
-                System.out.print(",");
-                System.out.print(current.y);
-                System.out.print(")  ");
-
                 route.add(new Point(current));
                 boolean endwhile = false;
                 while (!endwhile) {
@@ -460,11 +456,12 @@ public class Controller extends chemotaxis.sim.Controller {
                 current.x -= movement(direction).x;
                 current.y -= movement(direction).y;
             }
-            System.out.print("(");
-            System.out.print(current.x);
-            System.out.print(",");
-            System.out.print(current.y);
-            System.out.println(")  ");
+            simPrinter.print("(");
+            simPrinter.print(current.x);
+            simPrinter.print(",");
+            simPrinter.print(current.y);
+            simPrinter.println(")  ");
+
 
             route.add(new Point(current));
         }
