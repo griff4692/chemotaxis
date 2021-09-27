@@ -17,13 +17,11 @@ public class Controller extends chemotaxis.sim.Controller {
 	ArrayList<Point> placementCells = null;
 	ArrayList<ChemicalType> colorPath = null;
 	Integer index = 0;
-	Analysis analyzer = null;
 
 
 	Integer time_interval = 4;
 	Integer path_interval = 5;
 	Integer chemical_color = 0;
-	Integer arrayLength = 20;
 
 	/**
 	 * Controller constructor
@@ -38,49 +36,8 @@ public class Controller extends chemotaxis.sim.Controller {
 	 * @param simPrinter  simulation printer
 	 *
 	 */
-	public Controller(Point start, Point target, Integer size, ChemicalCell[][] grid, Integer simTime, Integer budget, Integer seed, SimPrinter simPrinter) {
-		super(start, target, size, grid, simTime, budget, seed, simPrinter);
-
-		if(path == null) {
-			simPrinter.println("creating path");
-			path = getPath(grid);
-		}
-		if(analyzer == null){
-			analyzer = new Analysis(grid);
-			analyzer.setThreshold(0.05); //default is 0.05
-
-			ArrayList<AnalysisData> data = analyzer.analyzePath(path, arrayLength);
-
-
-			for(AnalysisData dataPoint:data){
-				System.out.printf("for point %d, %d:\n", dataPoint.p.x, dataPoint.p.y);
-				System.out.println("isMax:");
-				for(boolean b: dataPoint.isMax){
-					System.out.print(b);
-				}
-				System.out.println();
-
-				System.out.println("hasGoodGradient:");
-				for(boolean b: dataPoint.goodGradient){
-					System.out.print(b);
-				}
-				System.out.println();
-
-				System.out.println("distance reached:");
-				for(int i: dataPoint.distanceReached){
-					System.out.printf("%d ", i);
-				}
-				System.out.println();
-				System.out.printf("is max percentage: %f\n", dataPoint.isMaxPercentage);
-				System.out.printf("has good gradient percentage: %f\n", dataPoint.isGoodGradientPercentage);
-				System.out.println();
-				System.out.println();
-			}
-
-
-
-
-		}
+	public Controller(Point start, Point target, Integer size, ChemicalCell[][] grid, Integer simTime, Integer budget, Integer seed, SimPrinter simPrinter, Integer agentGoal, Integer spawnFreq) {
+		super(start, target, size, grid, simTime, budget, seed, simPrinter, agentGoal, spawnFreq);
 	}
 
 	public int closestToTarget(ArrayList<Point> locations) {
@@ -240,38 +197,45 @@ public class Controller extends chemotaxis.sim.Controller {
 	 */
 	@Override
 	public ChemicalPlacement applyChemicals(Integer currentTurn, Integer chemicalsRemaining, ArrayList<Point> locations, ChemicalCell[][] grid) {
-
-
 		ChemicalPlacement chemicalPlacement = new ChemicalPlacement();
-		Point p = new Point(11,6);
-		int index = path.indexOf(p);
-		System.out.println("from controller:");
-		System.out.println(grid[p.x - 1][p.y - 1].getConcentration(ChemicalType.BLUE));
-		chemicalPlacement.location = p;
-		ArrayList<ChemicalType> chemicals = new ArrayList<ChemicalType>();
-		if(currentTurn == 1) chemicals.add(ChemicalType.BLUE);
-		else{
-			if(analyzer.hasGoodGradient(grid, path, index)){
-				System.out.printf("still a good gradient on turn: %d\n", currentTurn);
-			}
-			else System.out.printf("not a good gradient on turn: %d\n", currentTurn);
-			if(analyzer.isMax(grid, p)){
-				System.out.printf("still a max on turn: %d\n", currentTurn);
-			}
-			else System.out.printf("not a max on turn: %d\n", currentTurn);
-			System.out.printf("reached on turn %d: %d\n", currentTurn, analyzer.calculateReached(grid, path, index));
 
+		simPrinter = new SimPrinter(true);
+
+		if(path == null){
+			simPrinter.println("creating path");
+			path = getPath(grid);
+
+			placementCells = new ArrayList<Point>();
+			for (int i=1; i<path.size(); i++){
+				if(i%path_interval == 0){
+					placementCells.add(path.get(i));
+				}
+			}
+			if(path.size()%4!=0){
+				placementCells.add(path.get(path.size()-1));
+			}
+
+			colorPath = new ArrayList<ChemicalType>();
+			for (int i=0; i<placementCells.size(); i++) {
+				if (i % 3 == 0) {
+					colorPath.add(ChemicalType.RED);
+				} else if (i % 3 == 1) {
+					colorPath.add(ChemicalType.GREEN);
+				} else {
+					colorPath.add(ChemicalType.BLUE);
+				}
+			}
 		}
+
+
+		Point currentLocation = placementCells.get(index%placementCells.size());
+		chemicalPlacement.location = currentLocation;
+		ArrayList<ChemicalType> chemicals = new ArrayList<>();
+		chemicals.add(colorPath.get(index%colorPath.size()));
 		chemicalPlacement.chemicals = chemicals;
+		index = index + 1;
+
 
 		return chemicalPlacement;
-
-		//simPrinter = new SimPrinter(true);
-
-
-
-
-
-		//return chemicalPlacement;
 	}
 }

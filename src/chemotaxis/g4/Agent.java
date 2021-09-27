@@ -97,19 +97,25 @@ public class Agent extends chemotaxis.sim.Agent {
         }
         //If the agent is at local maxima, update currState
         int currState = 0;
-        if(highestConcentration == 0){
+        if(move.directionType == DirectionType.CURRENT && chemIdx == 0){
+            currState = 0;
+        }
+        else if(move.directionType == DirectionType.CURRENT){
             int currChem = switch (chosenChemicalType) {
-                case RED -> 1;
-                case GREEN -> 2;
-                case BLUE -> 0;
+                case RED -> 2;
+                case GREEN -> 3;
+                case BLUE -> 1;
             };
             currState = currChem<<6 | thdLastMoveIdx<<4 | secLastMoveIdx<<2 | lastMoveIdx;
         }
+        else if (highestConcentration == 0){
+            currState = previousState;
+        }
         else{
             int currChem = switch (chosenChemicalType) {
-                case RED -> 0;
-                case GREEN -> 1;
-                case BLUE -> 2;
+                case RED -> 1;
+                case GREEN -> 2;
+                case BLUE -> 3;
             };
             int currSecLastMove = lastMoveIdx;
             int currThdLastMove = secLastMoveIdx;
