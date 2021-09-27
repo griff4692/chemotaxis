@@ -27,7 +27,7 @@ public class Agent extends chemotaxis.sim.Agent {
                                     intToDirection.entrySet()
                                     .stream()
                                     .collect(Collectors.toMap(Map.Entry::getValue, Map.Entry::getKey));
-    
+
     public Agent(SimPrinter var1) {
         super(var1);
         // for easier access to our memory mapping to direction. Baeldung referenced for Map of
@@ -49,7 +49,7 @@ public class Agent extends chemotaxis.sim.Agent {
 
         // set our default behaviours to look for
         // how do we change this depending on the path to go to? First chemical is used for priming?
-        // then have a swith depending on our selected chemical
+        // then have a switch depending on our selected chemical
 		ChemicalType chosenChemicalType = ChemicalType.GREEN;
 
         /*
@@ -116,7 +116,114 @@ public class Agent extends chemotaxis.sim.Agent {
 
         // setting specific bits in a byte type: https://stackoverflow.com/questions/4674006/set-specific-bit-in-byte
    }
+   /*
+    private int getNavigateDirection(Set<Integer> possibleMoveSet, int backwardsDirection){
+        int wallFollow = 0;
 
+        DirectionType pledgeDirection = DirectionType.NORTH;
+
+        DirectionType[] relativePledge = getRelativeDirections(pledgeDirection);
+        DirectionType[] relativeBack = getRelativeDirections(intToDirection.get(backwardsDirection));
+
+        if(wallFollow == 0){
+            if(!possibleMoveSet.contains(pledgeDirection)){
+                if(possibleMoveSet.contains(relativePledge[1])){
+                    wallFollow = 1;
+                    return directionToInt.get(relativePledge[1]);
+                }
+                else if(possibleMoveSet.contains(relativePledge[0])){
+                    wallFollow = 2;
+                    return directionToInt.get(relativePledge[0]);
+                }
+                else{
+                    wallFollow = 1;
+                    return directionToInt.get(relativePledge[2]);
+                }
+            }else{
+                wallFollow = 0;
+                return directionToInt.get(pledgeDirection);
+            }
+        }else if(wallFollow == 1){
+            if(possibleMoveSet.contains(pledgeDirection)){
+                if(backwardsDirection == directionToInt.get(pledgeDirection)) {
+                    wallFollow = 1;
+                    if (possibleMoveSet.contains(relativeBack[0])) {
+                        return directionToInt.get(relativeBack[0]);
+                    } else if (possibleMoveSet.contains(relativeBack[2])) {
+                        return directionToInt.get(relativeBack[2]);
+                    } else if (possibleMoveSet.contains(relativeBack[1])) {
+                        return directionToInt.get(relativeBack[1]);
+                    }else{
+                        return directionToInt.get(backwardsDirection);
+                    }
+                }
+                else{
+                    wallFollow = 1;
+                    return directionToInt.get(pledgeDirection);
+                }
+            }else{
+                wallFollow = 1;
+                if (possibleMoveSet.contains(relativeBack[0])) {
+                    return directionToInt.get(relativeBack[0]);
+                } else if (possibleMoveSet.contains(relativeBack[2])) {
+                    return directionToInt.get(relativeBack[2]);
+                } else if (possibleMoveSet.contains(relativeBack[1])) {
+                    return directionToInt.get(relativeBack[1]);
+                }else{
+                    return directionToInt.get(backwardsDirection);
+                }
+
+            }
+        }else {
+            if (possibleMoveSet.contains(pledgeDirection)) {
+                if (backwardsDirection == directionToInt.get(pledgeDirection)) {
+                    wallFollow = 1;
+                    if (possibleMoveSet.contains(relativeBack[1])) {
+                        return directionToInt.get(relativeBack[1]);
+                    } else if (possibleMoveSet.contains(relativeBack[2])) {
+                        return directionToInt.get(relativeBack[2]);
+                    } else if (possibleMoveSet.contains(relativeBack[0])) {
+                        return directionToInt.get(relativeBack[0]);
+                    }else{
+                        return directionToInt.get(backwardsDirection);
+                    }
+                } else {
+                    wallFollow = 1;
+                    return directionToInt.get(pledgeDirection);
+                }
+            } else {
+                wallFollow = 1;
+                if (possibleMoveSet.contains(relativeBack[1])) {
+                    return directionToInt.get(relativeBack[1]);
+                } else if (possibleMoveSet.contains(relativeBack[2])) {
+                    return directionToInt.get(relativeBack[2]);
+                } else if (possibleMoveSet.contains(relativeBack[0])) {
+                    return directionToInt.get(relativeBack[0]);
+                }else{
+                    return directionToInt.get(backwardsDirection);
+                }
+            }
+        }
+
+    }
+    private DirectionType[] getRelativeDirections(DirectionType direction){
+        switch(direction){
+            //LEFT, RIGHT, BACKWARDS
+            case NORTH:
+                return new DirectionType[]{DirectionType.WEST, DirectionType.EAST, DirectionType.SOUTH};
+            case EAST:
+                return new DirectionType[]{DirectionType.NORTH, DirectionType.SOUTH, DirectionType.WEST};
+            case WEST:
+                return new DirectionType[]{DirectionType.SOUTH, DirectionType.NORTH, DirectionType.EAST};
+            case SOUTH:
+                return new DirectionType[]{DirectionType.EAST, DirectionType.WEST, DirectionType.SOUTH};
+            case CURRENT:
+                return new DirectionType[]{DirectionType.EAST, DirectionType.WEST, DirectionType.SOUTH};
+            default:
+                return new DirectionType[]{DirectionType.EAST, DirectionType.WEST, DirectionType.SOUTH};
+        }
+    }
+    */
     private int getBackwardsDirection(DirectionType directionType) {
         int retDir = 0;
         switch (directionType) {
