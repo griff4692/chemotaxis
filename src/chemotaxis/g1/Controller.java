@@ -63,7 +63,6 @@ public class Controller extends chemotaxis.sim.Controller {
      */
     public Controller(Point start, Point target, Integer size, ChemicalCell[][] grid, Integer simTime, Integer budget, Integer seed, SimPrinter simPrinter, Integer agentGoal, Integer spawnFreq) {
         super(start, target, size, grid, simTime, budget, seed, simPrinter, agentGoal, spawnFreq);
-
         dist = new int[size][size][4];
         // Necessary since (0,0) on the game board is labeled (1,1)
         modifiedStart.x=start.x-1;
@@ -85,6 +84,7 @@ public class Controller extends chemotaxis.sim.Controller {
         // Run the shortest paths algorithm. Results are stored in `routes`
         // and keyed by the number of turns necessary for the path.
         findshortestpath(grid,budget);
+
         // Select the fastest route within our budget.
         // Routes with more turns are faster, otherwise `findshortestpath` will terminate
         // without adding a route for that number of turns. Therefore, if key `5` exists in
@@ -98,14 +98,27 @@ public class Controller extends chemotaxis.sim.Controller {
             Collections.reverse(route);
             routes.put(i,route);
             setTurnAt(grid,i);
+            System.out.print("turns: ");
+
             System.out.println(i);
+            System.out.print("steps: ");
+
             System.out.println(routes.get(i).size());
+            System.out.print("route: ");
+
             System.out.println(routes.get(i));
+
+            System.out.print("turns at: ");
+
             System.out.println(turnAt.get(i));
             // TODO (etm): Schedule is currently unused, so it's commented out
             // TODO (etm): Update this once the time allowed is known (?)
-            scheduleAllAgents(i,true,simTime,spawnFreq,agentGoal);
+            scheduleAllAgents(i,i<(budget/agentGoal),simTime,spawnFreq,agentGoal);
+
+            System.out.print("strong strategy: ");
             System.out.println(finalScheduleStrong);
+            System.out.print("weak strategy: ");
+
             System.out.println(initialScheduleWeak);
         }
     }
@@ -344,6 +357,9 @@ public class Controller extends chemotaxis.sim.Controller {
 
     // whether the agent can reach cell x,y facing direction d within s steps
     private Boolean isBestPath(int x, int y, int d, int s){
+        if (modifiedStart.x==x && modifiedStart.y==y) {
+            return false;
+        }
         if (!(modifiedTarget.x==x && modifiedTarget.y==y)) {
             return dist[x][y][d] == 0 || dist[x][y][d]>s;
         }
@@ -397,8 +413,8 @@ public class Controller extends chemotaxis.sim.Controller {
         }
 
         if (step<10001) {
-
             while (!((modifiedStart.x==current.x)&&(modifiedStart.y==current.y))) {
+
 
                 route.add(new Point(current));
                 for (int i=0;i<4;i++) {
@@ -412,6 +428,7 @@ public class Controller extends chemotaxis.sim.Controller {
                 current.x -= movement(direction).x;
                 current.y -= movement(direction).y;
             }
+
 
             route.add(new Point(current));
         }
@@ -429,7 +446,9 @@ public class Controller extends chemotaxis.sim.Controller {
         // Usually this is just a list of points in a straight line, but could include
         // other points if there is a wall that gives you a "free" turn in some direction.
         Queue<TriInteger> pointsSavedForNextTurn = new LinkedList<>();
+        pointsSavedForNextTurn.add(new TriInteger(modifiedStart.x,modifiedStart.y,0));
         for (int turn=0;turn<maxturn;turn++) {
+
             if (turn>0) {
                 while (!pointsSavedForNextTurn.isEmpty()) {
                     TriInteger basePoint = pointsSavedForNextTurn.poll();
@@ -493,6 +512,7 @@ public class Controller extends chemotaxis.sim.Controller {
                     shortestdist = dist[modifiedTarget.x][modifiedTarget.y][i];
                 }
             }
+
             if (pointsSavedForNextTurn.isEmpty()&&turn>0) {
                 return;
             }
