@@ -219,22 +219,28 @@ public class Controller extends chemotaxis.sim.Controller {
 		Integer startNode = point_to_node.get(start);
 		Integer targetNode = point_to_node.get(target);
 
-		//call dijkstra to record a shortest path from start to target
-		//NOTE if the shortest path from 0 to 7 is 0, 1, 5, 4, 7
-		//in the shortest_path arraylist it is recorded as 4, 5, 1
+
+		/*
+		call dijkstra to record the shortest path from start to target
+			- NOTE: the shortest path array is reversed and does not include the start and end points.
+			(i.e. if the shortest path from 0 to 7 is 0, 1, 5, 4, 7
+			in the shortest_path arraylist it is recorded as 4, 5, 1)
+		 */
 		ArrayList<Integer> shortest_path = g.dijkstra(g.matrix, startNode, targetNode);
 
-		int one_third_index = shortest_path.size() * 3 / 4;
-
-		int two_thirds_index = shortest_path.size() / 4;
 
 
-		int one_third_node = shortest_path.get(one_third_index);
-		int two_thirds_node = shortest_path.get(two_thirds_index);
+		int index_one = shortest_path.size() * 2 / 3;
 
-		one_third = node_to_point.get(one_third_node);
+		int index_two = shortest_path.size() / 3;
+
+
+		int one_third_node = shortest_path.get(index_one);
+		int two_thirds_node = shortest_path.get(index_two);
+
+		one_third = node_to_point.get(index_one);
 		System.out.println(one_third);
-		two_thirds = node_to_point.get(two_thirds_node);
+		two_thirds = node_to_point.get(index_two);
 		System.out.println(two_thirds);
 
 	}

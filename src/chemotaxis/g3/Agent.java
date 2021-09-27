@@ -70,9 +70,38 @@ public class Agent extends chemotaxis.sim.Agent {
 		 */
 
 		/*
-		Behavior 2: Detect that it is "stuck" somewhere, trigger some action
+		Behavior 2: Detect that agent is "stuck" somewhere
+
+
+		1. Predict concentration of all 3 colors (note that if a given cell as (0,0,0), it is considered a block)
+
+		2a. If last 3 digits of prediction < 256 (i.e. 0.3123)
+			- Store last three digits (i.e. 123)
+
+		2b If last 3 digits of prediction > 256 (i.e. 0.4567)
+			- Store last two digits (i.e. 67)
+
 		 */
 
+		/*
+		0. Compare prediction (stored in previousState) to current cell.
+			- If it's a match we're stuck -- move on to some random behavior.
+			- If not do new prediction with steps below.
+			- Initial value of previousState = 0
+		 */
+
+		double currentConcentration = currentCell.getConcentration(ChemicalType.RED) +
+									currentCell.getConcentration(ChemicalType.GREEN) +
+									currentCell.getConcentration(ChemicalType.BLUE);
+
+		if (currentConcentration == previousState) {
+			// Start "random" motion
+			System.out.println("prediction matches");
+
+		} else {
+			// Store new prediction
+			System.out.println("prediction doesn't match");
+		}
 
 		//note: if all the concentrations are zero it will move in the direction
 		//of the last direction iterated through
