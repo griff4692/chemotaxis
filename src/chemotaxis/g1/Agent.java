@@ -31,9 +31,14 @@ public class Agent extends chemotaxis.sim.Agent {
      */
     @Override
     public Move makeMove(Integer randomNum, Byte previousState, ChemicalCell currentCell, Map<DirectionType, ChemicalCell> neighborMap) {
-        AgentState prevState = new AgentState(previousState);
-        Move move;
+        AgentState prevState;
+        if (previousState == null) {
+            prevState = new AgentState();
+        } else {
+            prevState = new AgentState(previousState);
+        }
 
+        Move move;
         if (prevState.isInitialized()) {
             if (prevState.getStrategy() == AgentState.Strategy.WEAK)
                 move = weakFollowStrategy(prevState, neighborMap);
