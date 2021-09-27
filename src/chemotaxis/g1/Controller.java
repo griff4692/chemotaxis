@@ -21,7 +21,33 @@ public class Controller extends chemotaxis.sim.Controller {
     // If there's a key n+1 in the Map, it's distance is less than the distance of key n
     private Map<Integer, ArrayList<Point>> routes=new HashMap<>();
     private Map<Integer, ArrayList<Integer>> turnAt=new HashMap<>();
+    private Map<Integer, ArrayList<Integer>> turnAt_simpleForm = new HashMap<>();
+    private ArrayList<TriInteger> agents = new ArrayList<>();
+    private ArrayList<TriInteger> agentsSimOutput;
+    private enum StrategyChoice {
+        strong,
+        weak;
+    }
+    private enum Color{
+        blue,
+        red,
+        green;
+        public Color next() {
+            switch (this) {
+                case blue: return Color.red;
+                case red: return Color.green;
+                default: return Color.blue;
+            }
+        }
+    }
+    private StrategyChoice strategy;
     private int selectedRoute;
+    // a final schedule if the strategy is strong
+    // finalSchedule[i]=j means put a chemical at j+1 cell on the route on turn i
+    private ArrayList<Integer> finalScheduleStrong;
+    // a initial schedule if the strategy is weak
+    // initialScheduleWeak[i]=color_a means put a color_a chemical at i+1 cell on the route
+    private Map<Integer, Color> initialScheduleWeak;
 
     /**
      * Controller constructor
@@ -43,7 +69,6 @@ public class Controller extends chemotaxis.sim.Controller {
         modifiedStart.y=start.y-1;
         modifiedTarget.x=target.x-1;
         modifiedTarget.y=target.y-1;
-
         // Initialize distance map
         for (int i=0;i<size;i++) {
             for (int j = 0; j < size; j++) {
@@ -56,11 +81,9 @@ public class Controller extends chemotaxis.sim.Controller {
         // TODO (etm): Update this once the constructor is privy to the number of
         //   agents that need to reach the goal.
         // Divide by 3 since the default number of agents to send to the goal is 3
-        int maxTurns = budget / 3;
-
         // Run the shortest paths algorithm. Results are stored in `routes`
         // and keyed by the number of turns necessary for the path.
-        findshortestpath(grid,maxTurns);
+        findshortestpath(grid,budget);
 
         // Select the fastest route within our budget.
         // Routes with more turns are faster, otherwise `findshortestpath` will terminate
@@ -73,59 +96,169 @@ public class Controller extends chemotaxis.sim.Controller {
             this.selectedRoute = i;
             ArrayList<Point> route = routes.get(i);
             Collections.reverse(route);
-            setTurnAt(i,grid);
+            routes.put(i,route);
+            setTurnAt(grid,i);
+            simPrinter.print("turns: ");
 
+            simPrinter.println(i);
+            simPrinter.print("steps: ");
+
+            simPrinter.println(routes.get(i).size());
+            simPrinter.print("route: ");
+
+            simPrinter.println(routes.get(i));
+
+            simPrinter.print("turns at: ");
+
+            simPrinter.println(turnAt.get(i));
             // TODO (etm): Schedule is currently unused, so it's commented out
             // TODO (etm): Update this once the time allowed is known (?)
-//            schedule(1000);
+            scheduleAllAgents(i,i<(budget/agentGoal),simTime,spawnFreq,agentGoal);
+
+            simPrinter.print("strong strategy: ");
+            simPrinter.println(finalScheduleStrong);
+            simPrinter.print("weak strategy: ");
+
+            simPrinter.println(initialScheduleWeak);
         }
     }
 
-    public void schedule(int maxTime) {
-        for (int i=1;i<=10001;i++) {
-            ArrayList<ArrayList<Integer>> schedule = new ArrayList<>();
-            if (!turnAt.containsKey(i)){
-                break;
+    public void scheduleAllAgents(int turnChoicice, boolean sufficientChemical, int simTime, int spawnFreq, int agentGoal) {
+      if  (turnAt_simpleForm.get(turnChoicice).isEmpty()) {
+        return;
+      }
+      ArrayList<Integer> schedule = new ArrayList<>();
+        if (!turnAt.containsKey(turnChoicice)){
+            while (turnChoicice>0 && !turnAt.containsKey(turnChoicice)) {
+                turnChoicice-=1;
             }
-            if (turnAt.get(i).size()==0){
-                continue;
+        }
+        if (turnAt.get(turnChoicice).size()==0){
+            while (turnAt.containsKey(turnChoicice) && turnAt.get(turnChoicice).size()==0) {
+                turnChoicice+=1;
             }
-            for (int j=0;j<maxTime;j++) {
-                schedule.add(new ArrayList<>());
+        }
+        if (sufficientChemical) {
+            for (int j = 0; j < simTime; j++) {
+                schedule.add(-1);
             }
-            for (int j=0;j<turnAt.get(i).size();j++) {
-                if (turnAt.get(i).get(j)!=0) {
-                    ArrayList<Integer> temp = new ArrayList<>(schedule.get(j));
-                    temp.add(turnAt.get(i).get(j));
-                    schedule.set(j,temp);
+            int agentReachTarget=0;
+            int currentStartRound=0;
+            while (agentReachTarget<agentGoal && currentStartRound<simTime-spawnFreq) {
+                boolean conflict = false;
+
+
+                for (int j = 0; j < turnAt_simpleForm.get(turnChoicice).size(); j++) {
+                    if (turnAt_simpleForm.get(turnChoicice).get(j)+currentStartRound>simTime || schedule.get(turnAt_simpleForm.get(turnChoicice).get(j)+currentStartRound)!=-1) {
+                        conflict = true;
+                        break;
+                    }
+                }
+
+                if (!conflict) {
+                    for (int j = 0; j < turnAt_simpleForm.get(turnChoicice).size(); j++) {
+                        schedule.set(turnAt_simpleForm.get(turnChoicice).get(j)+currentStartRound,turnAt_simpleForm.get(turnChoicice).get(j));
+                    }
+                    agentReachTarget+=1;
+                }
+                currentStartRound += spawnFreq;
+            }
+            if (agentReachTarget>=agentGoal){
+                strategy = StrategyChoice.strong;
+                finalScheduleStrong = new ArrayList<>(schedule);
+                return;
+            }
+        }
+        strategy = StrategyChoice.weak;
+        Color currentColor = Color.blue;
+        for (int j=0;j<turnAt_simpleForm.get(turnChoicice).size();j++) {
+            initialScheduleWeak.put(turnAt_simpleForm.get(turnChoicice).get(j), currentColor);
+            currentColor = currentColor.next();
+        }
+    }
+
+
+    //sim==0, no simulation
+    //sim=x>0, sim for x turns
+    private void trackAgents(ChemicalCell[][] grid, ArrayList<Point> agentLoc, Point start, Point end, int sim) {
+
+        int toRemove = -1;
+        boolean spawnPointOccupied = false;
+        for (int i=0;i<agents.size();i++) {
+            agents.set(i,agentMovementSim(grid, agents.get(i)));
+            if (agents.get(i).x==end.x && agents.get(i).y==end.y) {
+                toRemove = i;
+            }
+            if (agents.get(i).x==start.x && agents.get(i).y==start.y) {
+                spawnPointOccupied = true;
+            }
+        }
+        agents.remove(toRemove);
+        if (agentLoc.contains(start) && !spawnPointOccupied) {
+            agents.add(new TriInteger(start.x,start.y,0));
+        }
+        while (sim>0) {
+            sim-=1;
+            agentsSimOutput = new ArrayList<>(agents);
+            toRemove = -1;
+            for (int i=0;i<agentsSimOutput.size();i++) {
+                agentsSimOutput.set(i,agentMovementSim(grid, agentsSimOutput.get(i)));
+                if (agentsSimOutput.get(i).x==end.x && agentsSimOutput.get(i).y==end.y) {
+                    toRemove = i;
                 }
             }
-            System.out.println(schedule);
+            agentsSimOutput.remove(toRemove);
 
         }
     }
+    private boolean agentAt(int x, int y) {
+        for (TriInteger agent : agents) {
+            if (agent.x==x && agent.y==y) {
+                return  true;
+            }
+        }
+        return false;
+    }
+    private TriInteger agentMovementSim(ChemicalCell[][] grid,TriInteger agent) {
+        // Assume no chemical in the grid. let's talk about chemical during meeting
+        TriInteger des = new TriInteger(agent);
+        ArrayList<Integer> allDirections = new ArrayList<>(Arrays.asList(0,1,-1));
+        for (int j : allDirections) {
+            int newDir = des.d+j;
+            if (!mapHasBlockAt(grid,des.x + movement(newDir).x, des.y + movement(newDir).y)) {
+                if (agentAt(des.x + movement(newDir).x, des.y + movement(newDir).y)) {
+                    break;
+                }
+                des.d = (des.d+j+4) % 4;
+                des.x += movement(newDir).x;
+                des.y += movement(newDir).y;
+                break;
+            }
+        }
+        return new TriInteger(des);
+    }
 
-    public void setTurnAt(final int turn,ChemicalCell[][] grid) {
+    private void setTurnAt(ChemicalCell[][] grid, final int turn) {
         final ArrayList<Point> route = routes.get(turn);
         // List of turns in the route
         ArrayList<Integer> turns = new ArrayList<>();
-        int currentStep = routes.get(turn).size()-1;
+        int currentStep = 0;
         int d = 0;
-        ArrayList<Integer> allDirections = new ArrayList<>(Arrays.asList(0,1,-1,2));
-        while (currentStep>0) {
+        ArrayList<Integer> allDirections = new ArrayList<>(Arrays.asList(0,1,-1));
+        while (currentStep<routes.get(turn).size()-1) {
             Point current = new Point(route.get(currentStep).x,route.get(currentStep).y);
             int defaultDir=d;
             for (int j : allDirections) {
-                int newDir = d+j;
-                if (!mapHasBlockAt(grid, current.x + movement(newDir).x, current.y + movement(newDir).y)) {
+                int newDir = (d+j+4) % 4;
+                if (!mapHasBlockAt(grid,current.x + movement(newDir).x, current.y + movement(newDir).y)) {
                     defaultDir = (d+j+4) % 4;
                     break;
                 }
             }
             int actualDir = 0;
             for (int j=0;j<4;j++) {
-                if ((route.get(currentStep-1).x - route.get(currentStep).x == movement(j).x) &&
-                    (route.get(currentStep-1).y - route.get(currentStep).y == movement(j).y)) {
+                if ((route.get(currentStep+1).x - route.get(currentStep).x == movement(j).x) &&
+                    (route.get(currentStep+1).y - route.get(currentStep).y == movement(j).y)) {
                     actualDir = j;
                     break;
                 }
@@ -134,13 +267,25 @@ public class Controller extends chemotaxis.sim.Controller {
                 turns.add(0);
             }
             else {
-                turns.add(actualDir - d);
+                turns.add(actualDir - defaultDir);
             }
-            currentStep-=1;
+            currentStep+=1;
             d = actualDir;
         }
-        Collections.reverse(turns);
-        turnAt.put(turn,new ArrayList<>(turns));
+
+        turnAt_simpleForm.put(turn,new ArrayList<>());
+
+        if (!turns.isEmpty()) {
+            turnAt.put(turn, new ArrayList<>(turns));
+            for (int i=0;i<turnAt.get(turn).size();i++) {
+                if (turnAt.get(turn).get(i)!=0) {
+                    turnAt_simpleForm.get(turn).add(i);
+                }
+            }
+        }
+        else {
+            turnAt.put(turn, new ArrayList<>());
+        }
     }
 
     /**
@@ -175,6 +320,11 @@ public class Controller extends chemotaxis.sim.Controller {
     @Override
     public ChemicalPlacement applyChemicals(Integer currentTurn, Integer chemicalsRemaining, ArrayList<Point> locations, ChemicalCell[][] grid) {
         ChemicalPlacement chemicalPlacement = new ChemicalPlacement();
+        if (currentTurn == 1) {
+            chemicalPlacement.location = start;
+            chemicalPlacement.chemicals.add(ChemicalCell.ChemicalType.GREEN);
+            return chemicalPlacement;
+        }
         if (chemicalsRemaining == 0 || !this.routes.containsKey(this.selectedRoute)) {
             // Either no chemicals, or route doesn't exist
             return chemicalPlacement;
@@ -187,22 +337,28 @@ public class Controller extends chemotaxis.sim.Controller {
         // Check the location of all agents and see if any are sitting on
         // a turn point. For those that are, select the furthest turn point,
         // which is the one with the smallest index.
-        for (Point agentLocation : locations) {
-            for (int turnIx = 0; turnIx < turns.size(); ++turnIx) {
-                if (turns.get(turnIx) == 0) {
-                    continue;
-                }
-                Point turn = route.get(turnIx + 1);
+        for (int turnIx =  turns.size()-1; turnIx >=0; --turnIx) {
+            if (turns.get(turnIx) == 0) {
+                continue;
+            }
+            boolean found=false;
+            for (Point agentLocation : locations) {
+                Point turn = route.get(turnIx);
                 // Fix this annoying 1-based map indexing
                 Point zeroAgentLocation = new Point(agentLocation.x - 1, agentLocation.y - 1);
-                if (turn.equals(zeroAgentLocation) && turnIx > furthestTurnIx ) {
+                if (turn.equals(zeroAgentLocation)) {
                     furthestTurnIx = turnIx;
+                    found = true;
+                    break;
                 }
+            }
+            if (found) {
+                break;
             }
         }
         if (furthestTurnIx >= 0) {
             // Place the chemical on the next step on the path
-            Point loc = route.get(furthestTurnIx + 2);
+            Point loc = route.get(furthestTurnIx + 1);
             chemicalPlacement.location = new Point(loc.x + 1, loc.y + 1);
             chemicalPlacement.chemicals.add(ChemicalCell.ChemicalType.BLUE);
         }
@@ -212,6 +368,9 @@ public class Controller extends chemotaxis.sim.Controller {
 
     // whether the agent can reach cell x,y facing direction d within s steps
     private Boolean isBestPath(int x, int y, int d, int s){
+        if (modifiedStart.x==x && modifiedStart.y==y) {
+            return false;
+        }
         if (!(modifiedTarget.x==x && modifiedTarget.y==y)) {
             return dist[x][y][d] == 0 || dist[x][y][d]>s;
         }
@@ -265,14 +424,9 @@ public class Controller extends chemotaxis.sim.Controller {
         }
 
         if (step<10001) {
-            System.out.println(step);
             while (!((modifiedStart.x==current.x)&&(modifiedStart.y==current.y))) {
-                /*System.out.print("(");
-                System.out.print(current.x+1);
-                System.out.print(",");
-                System.out.print(current.y+1);
-                System.out.print(")<-");
-                */
+
+
                 route.add(new Point(current));
                 for (int i=0;i<4;i++) {
                     int j = (i + direction +4) % 4;
@@ -285,29 +439,27 @@ public class Controller extends chemotaxis.sim.Controller {
                 current.x -= movement(direction).x;
                 current.y -= movement(direction).y;
             }
-            /*System.out.print("(");
-            System.out.print(current.x+1);
-            System.out.print(",");
-            System.out.print(current.y+1);
-            System.out.print(")<-");
-            System.out.println("");
-            */
+
+
             route.add(new Point(current));
         }
+
         routes.put(turn, new ArrayList<>(route));
     }
 
     /*
     find the shortest path with 0 to maxturn turns, store data in dist
      */
-    private void findshortestpath(ChemicalCell[][] grid, Integer maxturn) {
+    private void findshortestpath(ChemicalCell[][] grid, int maxturn) {
         Queue<TriInteger> currentpoints = new LinkedList<>();
         currentpoints.add(new TriInteger(modifiedStart.x,modifiedStart.y,0));
         // pointsSavedForNextTurn contains the points you can reach with `turn` chemicals
         // Usually this is just a list of points in a straight line, but could include
         // other points if there is a wall that gives you a "free" turn in some direction.
         Queue<TriInteger> pointsSavedForNextTurn = new LinkedList<>();
+        pointsSavedForNextTurn.add(new TriInteger(modifiedStart.x,modifiedStart.y,0));
         for (int turn=0;turn<maxturn;turn++) {
+
             if (turn>0) {
                 while (!pointsSavedForNextTurn.isEmpty()) {
                     TriInteger basePoint = pointsSavedForNextTurn.poll();
@@ -330,22 +482,26 @@ public class Controller extends chemotaxis.sim.Controller {
                 // Special case for turning around at the beginning since the default direction is north
                 if (turn == 1) {
                     // Not blocked at south
-                    if (!mapHasBlockAt(grid,modifiedStart.x-1,modifiedStart.y)){
-                        if (isBestPath(modifiedStart.x-1,modifiedStart.y,2,1)){
-                            currentpoints.add(new TriInteger(modifiedStart.x-1,modifiedStart.y,2));
-                            dist[modifiedStart.x-1][modifiedStart.y][2] = 1;
+                    if (!mapHasBlockAt(grid,modifiedStart.x+1,modifiedStart.y)){
+                        if (isBestPath(modifiedStart.x+1,modifiedStart.y,2,1)){
+                            currentpoints.add(new TriInteger(modifiedStart.x+1,modifiedStart.y,2));
+                            dist[modifiedStart.x+1][modifiedStart.y][2] = 1;
                         }
                     }
                 }
                 pointsSavedForNextTurn.addAll(currentpoints);
             }
+
             while (!currentpoints.isEmpty()) {
                 TriInteger basepoint = currentpoints.poll();
-                ArrayList<Integer> allDirections = new ArrayList<>(Arrays.asList(0,1,-1,2));
+                ArrayList<Integer> allDirections = new ArrayList<>(Arrays.asList(0,1,-1));
                 // For each direction (straight, left, right backwards)
                 for (int iterDirection : allDirections) {
                     int direction = (basepoint.d +4+iterDirection) % 4;
                     TriInteger targetpoint = new TriInteger(basepoint.x+movement(direction).x,basepoint.y+movement(direction).y,direction);
+
+
+
                     if (mapHasBlockAt(grid,targetpoint.x,targetpoint.y)){
                         // If straight is blocked, continue on to right, if right is blocked continue to left, etc
                         continue;
@@ -355,17 +511,20 @@ public class Controller extends chemotaxis.sim.Controller {
                         dist[targetpoint.x][targetpoint.y][targetpoint.d] = dist[basepoint.x][basepoint.y][basepoint.d]+1;
                         pointsSavedForNextTurn.add(new TriInteger(targetpoint));
                         currentpoints.add(new TriInteger(targetpoint));
+
                     }
                     break;
                 }
             }
+
             int shortestdist = 100 * 100 + 1;
             for (int i=0;i<4;i++) {
                 if (dist[modifiedTarget.x][modifiedTarget.y][i]>0 && dist[modifiedTarget.x][modifiedTarget.y][i]<shortestdist) {
                     shortestdist = dist[modifiedTarget.x][modifiedTarget.y][i];
                 }
             }
-            if (pointsSavedForNextTurn.isEmpty()) {
+
+            if (pointsSavedForNextTurn.isEmpty()&&turn>0) {
                 return;
             }
             saveRoute(turn);

@@ -31,35 +31,30 @@ public class Agent extends chemotaxis.sim.Agent {
      */
     @Override
     public Move makeMove(Integer randomNum, Byte previousState, ChemicalCell currentCell, Map<DirectionType, ChemicalCell> neighborMap) {
-        final AgentState prevState = new AgentState(previousState);
-        AgentState newState = new AgentState(prevState);
-        DirectionType previousDirection = prevState.getDirection().asDirectionType();
-        Move move = new Move();
-
-        // Get new direction indicated through RED chemical
-        DirectionType newDirection = getHighestConcentrationDirection(neighborMap, ChemicalType.RED, previousDirection);
-
-        // If RED doesn't indicate a new direction, check direction indicated through blue chemical
-        if (newDirection == previousDirection) {
-            newDirection = getHighestConcentrationDirection(neighborMap, ChemicalType.BLUE, previousDirection);
+        AgentState prevState;
+        if (previousState == null) {
+            prevState = new AgentState();
+        } else {
+            prevState = new AgentState(previousState);
         }
 
-        // Check to see if the agent is trying to go backwards
-        CardinalDirection newCardinalDirection = newState.asCardinalDir(newDirection);
-        if (newCardinalDirection.reverseOf().asDirectionType() == previousDirection) {
-            newDirection = previousDirection;
+        Move move;
+        if (prevState.isInitialized()) {
+            if (prevState.getStrategy() == AgentState.Strategy.WEAK)
+                move = weakFollowStrategy(prevState, neighborMap);
+            else
+                move = strongFollowStrategy(prevState, neighborMap);
         }
-        move.directionType = newDirection;
+        else
+            move = initialize(prevState, neighborMap, currentCell);
 
-        // This is a noop if the new direction is unblocked
-        move.directionType = handleWall(move, neighborMap, prevState);
+        prevState.setDirection(move.directionType);
+        move.currentState = prevState.serialize();
 
         // TODO (etm): This stores the previous direction, but it doesn't really store the
         //   intended direction. So, if we want the agent to resume in the intended direction
         //   as soon as it can (no more wall blocking), we need to store the intended direction
         //   in the agent state as well.
-        newState.setDirection(move.directionType);
-        move.currentState = newState.serialize();
         return move;
     }
 
@@ -91,38 +86,80 @@ public class Agent extends chemotaxis.sim.Agent {
     private DirectionType handleWall(Move nextMove, final Map<DirectionType, ChemicalCell> neighborMap, final AgentState prevState) {
         // Use prevState to decode `nextMode.directionType` in case it is the `CURRENT` variant
         CardinalDirection nextDirection = prevState.asCardinalDir(nextMove.directionType);
+        DirectionType nxt = nextDirection.asDirectionType();
 
-        if (neighborMap.get(nextDirection.asDirectionType()).isBlocked()) {
+        if (!neighborMap.containsKey(nxt) || neighborMap.get(nxt).isBlocked()) {
             // Try right first, then left, then reverse
             DirectionType right = nextDirection.rightOf().asDirectionType();
             DirectionType left = nextDirection.leftOf().asDirectionType();
-            if (neighborMap.get(right).isOpen()) {
+            if (neighborMap.containsKey(right) && neighborMap.get(right).isOpen()) {
                 return right;
-            } else if (neighborMap.get(left).isOpen()) {
+            } else if (neighborMap.containsKey(left) && neighborMap.get(left).isOpen()) {
                 return left;
             } else {
                 return nextDirection.reverseOf().asDirectionType();
             }
         }
         // Not blocked, return direction the agent wanted to go in
-        return nextMove.directionType;
+        return nextDirection.asDirectionType();
     }
 
-    /**
-     * Gets the direction of highest concentration of a particular chemical in the agent's surroundings
-     * <p>
-     * 1. If the highest concentration is in two different directions, then the function just returns the previous direction
-     * 2. If the highest concentration is 0 (i.e. no chemical of that color is present in the neighbourhood), then the
-     * function will just return the previous direction
-     *
-     * @param neighborMap       Map of agent's immediate surroundings.
-     * @param chemicalType      Color of the chemical whose highest concentration direction is to be calculated
-     * @param previousDirection Agent's previous direction
-     * @return new direction to take
-     */
-    public DirectionType getHighestConcentrationDirection(Map<DirectionType, ChemicalCell> neighborMap, ChemicalType chemicalType, DirectionType previousDirection) {
-        DirectionType newDirection = previousDirection;
+    public Move initialize(AgentState prevState, Map<DirectionType, ChemicalCell> neighborMap, ChemicalCell currentCell) {
+        Move move = new Move();
+        if (isChemicalPresent(ChemicalType.GREEN, neighborMap, currentCell)) {
+            if (isChemicalPresent(ChemicalType.RED, neighborMap, currentCell))
+                prevState.setStrategy(AgentState.Strategy.WEAK);
+            else
+                prevState.setStrategy(AgentState.Strategy.STRONG);
+        }
+        else
+            prevState.setStrategy(AgentState.Strategy.WEAK);
+
+        if (prevState.getStrategy() == AgentState.Strategy.WEAK){
+            DirectionType nextDirection = getHighestConcentrationDirectionWeak(ChemicalType.BLUE, neighborMap);
+            if (nextDirection != null) {
+                move.directionType = nextDirection;
+                prevState.changeFollowColor(ChemicalType.BLUE);
+            }
+            move.directionType = handleWall(move, neighborMap, prevState);
+        }
+
+        return move;
+    }
+
+    public boolean isChemicalPresent(ChemicalType color, Map<DirectionType, ChemicalCell> neighborMap, ChemicalCell currentCell) {
+        if (currentCell.getConcentration(color) > 0)
+            return true;
+        for (DirectionType directionType : neighborMap.keySet()) {
+            double temp = neighborMap.get(directionType).getConcentration(color);
+            if (temp > 0)
+                return true;
+        }
+        return false;
+    }
+
+    public Move weakFollowStrategy(AgentState prevState, Map<DirectionType, ChemicalCell> neighborMap) {
+        Move move = new Move();
+        ChemicalType followColor = prevState.getFollowColor();
+        DirectionType nextDirection = getHighestConcentrationDirectionWeak(followColor, neighborMap);
+        DirectionType previousDirection = prevState.getDirection().asDirectionType();
+        DirectionType reverseDirection = prevState.getDirection().reverseOf().asDirectionType();
+
+        if (nextDirection == previousDirection || nextDirection == reverseDirection || nextDirection == null)
+            nextDirection = previousDirection;
+        else
+            prevState.changeFollowColor(followColor);
+
+        // TODO : Can we modify handleWall to remove dependency on `move`?
+        move.directionType = nextDirection;
+        move.directionType = handleWall(move, neighborMap, prevState);
+
+        return move;
+    }
+
+    public DirectionType getHighestConcentrationDirectionWeak(ChemicalType chemicalType, Map<DirectionType, ChemicalCell> neighborMap) {
         double highestConcentration = 0;
+        DirectionType newDirection = null;
 
         // Get absolute highest value of concentration of particular chemical nearby
         for (DirectionType directionType : neighborMap.keySet()) {
@@ -133,18 +170,51 @@ public class Agent extends chemotaxis.sim.Agent {
             }
         }
 
-        // Check if the same highest is present in two different directions, in which case move same way as previous
-        if (newDirection != previousDirection) {
+        // Check if the same highest is present in two different directions, in which case return none
+        if (newDirection != null) {
             for (DirectionType directionType : neighborMap.keySet()) {
                 double temp = neighborMap.get(directionType).getConcentration(chemicalType);
                 if (highestConcentration == temp && newDirection != directionType)
-                    newDirection = previousDirection;
+                    return null;
+            }
+            // Check the concentration of follow color in next cell compared to other chemicals
+            if (!checkCellConcentrations(chemicalType, neighborMap.get(newDirection)))
+                return  null;
+        }
+
+        return newDirection;
+    }
+
+    // For agent to follow a color, that color should have the highest concentration in it's cell
+    public boolean checkCellConcentrations(ChemicalType followColor, ChemicalCell nextCell) {
+        Map<ChemicalType, Double> concentrationMap = nextCell.getConcentrations();
+        double highestConcentration = concentrationMap.get(followColor);
+
+        for (ChemicalType color : concentrationMap.keySet()) {
+            double temp = concentrationMap.get(color);
+            if (temp > highestConcentration)
+                return false;
+        }
+
+        return true;
+    }
+
+    public Move strongFollowStrategy(AgentState prevState, Map<DirectionType, ChemicalCell> neighborMap) {
+        Move move = new Move();
+        DirectionType nextDirection = prevState.getDirection().asDirectionType();
+
+        for (DirectionType directionType : neighborMap.keySet()) {
+            double temp = neighborMap.get(directionType).getConcentration(ChemicalType.BLUE);
+            boolean isReverse = prevState.asCardinalDir(directionType) == prevState.getDirection().reverseOf();
+            if (temp == 1 && !isReverse) {
+                    nextDirection = directionType;
             }
         }
 
-        // If there is no chemical, move same way as previous
-        if (highestConcentration == 0)
-            newDirection = previousDirection;
-        return newDirection;
+        move.directionType = nextDirection;
+        move.directionType = handleWall(move, neighborMap, prevState);
+
+        return move;
     }
+
 }
