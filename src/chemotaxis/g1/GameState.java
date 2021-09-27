@@ -5,9 +5,11 @@ import chemotaxis.sim.*;
 import chemotaxis.sim.ChemicalCell.ChemicalType;
 
 
+import javax.xml.validation.Schema;
 import java.awt.*;
 import java.util.ArrayList;
 import java.util.HashMap;
+import java.util.Objects;
 
 class AgentLoc {
     public Point loc;
@@ -86,6 +88,17 @@ class GameCell {
         return newCell;
     }
 
+    // Comparison method for chemical cells
+    public static boolean chemCellEquals(ChemicalCell a, ChemicalCell b) {
+        ChemicalType[] chems = {ChemicalType.BLUE, ChemicalType.RED, ChemicalType.GREEN};
+        for (ChemicalType c : chems) {
+            if (!Objects.equals(a.getConcentration(c), b.getConcentration(c))) {
+                return false;
+            }
+        }
+        return true;
+    }
+
     /**
      * Returns a point representing a 1-step move in the direction `dir`.
      * <p>
@@ -136,7 +149,7 @@ public class GameState {
      * @param grid
      */
     public GameState(final Point start, final Point target, int agentGoal, int spawnFreq,
-                      int chemicalsRemaining, ChemicalCell[][] grid) {
+                     int chemicalsRemaining, ChemicalCell[][] grid) {
         this.currentTurn = 1;
         this.start = new Point(start);
         this.target = new Point(target);
@@ -148,7 +161,7 @@ public class GameState {
         this.agents = new ArrayList<>();
         // Epoch 0 here is not a bug. The sim always spawns an agent on turn "0"
         // and then plays turn 1, which may spawn another agent.
-        this.agents.add(new AgentLoc(target, new AgentState(), 0));
+        this.agents.add(new AgentLoc(start, new AgentState(), 0));
     }
 
     /**
@@ -216,11 +229,11 @@ public class GameState {
     }
 
     private void placeChemical(ChemicalPlacement placement) {
-        if (this.chemicalsRemaining == 0) {
+        if (this.chemicalsRemaining == 0 || placement.location == null) {
             return;
         }
         chemicalsRemaining -= 1;
-        Point p = placement.location;
+        Point p = new Point(placement.location.x - 1, placement.location.y - 1);
         // Not sure why the placement has a list, but ok...
         for (ChemicalType c : placement.chemicals) {
             this.grid[p.x][p.y].cell.setConcentration(c, 1.0);
@@ -258,6 +271,7 @@ public class GameState {
     /**
      * Be careful! This function returns a reference to the grid to avoid
      * making a copy. Do not modify the state of this board directly.
+     *
      * @return
      */
     public GameCell[][] getGrid() {
@@ -266,11 +280,60 @@ public class GameState {
 
     /**
      * Be careful! Do not modify the agent state directly.
+     *
      * @return
      */
     public ArrayList<AgentLoc> getAgents() {
         return agents;
     }
+
+    public void validateEquivalence(int currentTurn, int chemicalsRemaining, ArrayList<Point> agentLocations,
+                                    ChemicalCell[][] grid) {
+        if (this.currentTurn != currentTurn) {
+            throw new RuntimeException("current turn " + this.currentTurn + " does not match" +
+                    " expected: " + currentTurn);
+        }
+
+        if (this.chemicalsRemaining != chemicalsRemaining) {
+            throw new RuntimeException("chemicals remaining: " + this.currentTurn + " does not match" +
+                    " expected: " + currentTurn);
+        }
+
+        // Validate the grid
+        if (this.grid.length != grid.length) {
+            throw new RuntimeException("grid row count mismatch");
+        }
+        for (int row = 0; row < grid.length; ++row) {
+            if (this.grid[row].length != grid[row].length) {
+                throw new RuntimeException("column size mismatch for row " + row);
+            }
+            for (int col = 0; col < grid[row].length; ++col) {
+                ChemicalCell ourCell = this.grid[row][col].cell;
+                ChemicalCell otherCell = grid[row][col];
+                if (!GameCell.chemCellEquals(ourCell, otherCell)) {
+                    throw new RuntimeException("chemical cell concentration mismatch: " + ourCell + " vs expected " + otherCell
+                            + " for cell " + row + ", " + col);
+                }
+            }
+        }
+
+        // This isn't a perfect test, but it should catch most mismatches
+        for (Point agentLoc : agentLocations) {
+            Point adjLoc = new Point(agentLoc.x - 1, agentLoc.y - 1);
+            boolean found = false;
+            for (AgentLoc actualLoc : this.agents) {
+                if (adjLoc.equals(actualLoc.loc)) {
+                    found = true;
+                    break;
+                }
+            }
+            if (found) {
+                continue;
+            }
+            throw new RuntimeException("agent location mismatch");
+        }
+    }
+
 
     /**
      * This function is impure and updates the `GameState` object.
@@ -292,7 +355,7 @@ public class GameState {
             }
             prevEpoch = agent.epoch;
             // Don't move agents that have reached the target
-            if (agent.loc.equals(this.start)) {
+            if (agent.loc.equals(this.target)) {
                 continue;
             }
 
