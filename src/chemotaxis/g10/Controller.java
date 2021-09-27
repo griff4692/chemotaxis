@@ -67,6 +67,13 @@ public class Controller extends chemotaxis.sim.Controller {
                   turnGrid[x][y] = n;
                   frontier.add(n);
                }
+               else if(!turnGrid[x][y].getGridPoint().equals(cur.getGridPoint()) &&
+                       cur.getTurns() < turnGrid[x][y].getTurns() &&
+                       turnGrid[x][y].getGridPoint().distanceSq(cur.getGridPoint()) <
+                       turnGrid[x][y].getGridPoint().distanceSq(turnGrid[x][y].getParentPoint()))
+               {
+                  turnGrid[x][y].setParentPoint(cur.getGridPoint());
+               }
                x += deltaXY[dir][0];
                y += deltaXY[dir][1];
             }
