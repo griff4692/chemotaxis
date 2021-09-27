@@ -219,7 +219,7 @@ public class Agent extends chemotaxis.sim.Agent {
       }
 
       // if gets to this point, resort to default functionality -- still need to implement turn-right strategy
-      if (!previousDirection.equals(DirectionType.CURRENT) && neighborMap.get(previousDirection).isBlocked()) {
+      if (previousDirection != null && !previousDirection.equals(DirectionType.CURRENT) && neighborMap.get(previousDirection).isBlocked()) {
          DirectionType directionToRight = turnRight(previousDirection);
          if (neighborMap.get(directionToRight).isBlocked()) {
             DirectionType directionToLeft = turnLeft(previousDirection);
