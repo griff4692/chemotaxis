@@ -422,7 +422,7 @@ public class Controller extends chemotaxis.sim.Controller {
         Point current = new Point(modifiedTarget.x,modifiedTarget.y);
         int step = 10001;
         int direction = 0;
-        System.out.println(turn);
+        simPrinter.println(turn);
 
         for (int i=0;i<4;i++) {
             if (dist[modifiedTarget.x][modifiedTarget.y][i]>0 && dist[modifiedTarget.x][modifiedTarget.y][i]<step){
@@ -433,19 +433,19 @@ public class Controller extends chemotaxis.sim.Controller {
         int localturn = turn;
         if (step<10001) {
             while (!((modifiedStart.x==current.x)&&(modifiedStart.y==current.y))) {
-                System.out.print(step);
-                System.out.print("(");
-                System.out.print(current.x);
-                System.out.print(",");
-                System.out.print(current.y);
-                System.out.println(")  ");
+                simPrinter.print(step);
+                simPrinter.print("(");
+                simPrinter.print(current.x);
+                simPrinter.print(",");
+                simPrinter.print(current.y);
+                simPrinter.println(")  ");
 
 
                 route.add(new Point(current));
                 boolean endwhile = false;
                 while (!endwhile) {
                     for (int i = 0; i < 4; i++) {
-                        System.out.println(localdist[current.x][current.y][i]);
+                        simPrinter.println(localdist[current.x][current.y][i]);
                     }
                     for (int i = 0; i < 4; i++) {
                         int j = (i + direction + 4) % 4;
@@ -457,7 +457,7 @@ public class Controller extends chemotaxis.sim.Controller {
                         }
                     }
                     if (!endwhile) {
-                        System.out.println("gggg");
+                        simPrinter.println("gggg");
                         localturn -= 1;
                         localdist = dist_record.get(localturn);
                     }
@@ -465,11 +465,11 @@ public class Controller extends chemotaxis.sim.Controller {
                 current.x -= movement(direction).x;
                 current.y -= movement(direction).y;
             }
-            System.out.print("(");
-            System.out.print(current.x);
-            System.out.print(",");
-            System.out.print(current.y);
-            System.out.println(")  ");
+            simPrinter.print("(");
+            simPrinter.print(current.x);
+            simPrinter.print(",");
+            simPrinter.print(current.y);
+            simPrinter.println(")  ");
 
 
             route.add(new Point(current));
