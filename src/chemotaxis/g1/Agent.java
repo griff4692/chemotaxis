@@ -86,21 +86,22 @@ public class Agent extends chemotaxis.sim.Agent {
     private DirectionType handleWall(Move nextMove, final Map<DirectionType, ChemicalCell> neighborMap, final AgentState prevState) {
         // Use prevState to decode `nextMode.directionType` in case it is the `CURRENT` variant
         CardinalDirection nextDirection = prevState.asCardinalDir(nextMove.directionType);
+        DirectionType nxt = nextDirection.asDirectionType();
 
-        if (neighborMap.get(nextDirection.asDirectionType()).isBlocked()) {
+        if (!neighborMap.containsKey(nxt) || neighborMap.get(nxt).isBlocked()) {
             // Try right first, then left, then reverse
             DirectionType right = nextDirection.rightOf().asDirectionType();
             DirectionType left = nextDirection.leftOf().asDirectionType();
-            if (neighborMap.get(right).isOpen()) {
+            if (neighborMap.containsKey(right) && neighborMap.get(right).isOpen()) {
                 return right;
-            } else if (neighborMap.get(left).isOpen()) {
+            } else if (neighborMap.containsKey(left) && neighborMap.get(left).isOpen()) {
                 return left;
             } else {
                 return nextDirection.reverseOf().asDirectionType();
             }
         }
         // Not blocked, return direction the agent wanted to go in
-        return nextMove.directionType;
+        return nextDirection.asDirectionType();
     }
 
     public Move initialize(AgentState prevState, Map<DirectionType, ChemicalCell> neighborMap, ChemicalCell currentCell) {
