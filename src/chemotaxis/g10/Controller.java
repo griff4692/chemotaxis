@@ -212,7 +212,7 @@ public class Controller extends chemotaxis.sim.Controller {
             Point agentLocation = locations.get(i);
             TurnGridNode agentTurnGridNode = turnGrid[agentLocation.x - 1][agentLocation.y - 1];
 
-            if (agentsLastLocation.size() != locations.size()) {
+            if (i == agentsLastLocation.size()) {
                agentsLastNumTurns.add(agentTurnGridNode.getTurns());
                agentsLastLocation.add(agentLocation);
                agentsLastDir.add(DirectionType.CURRENT);
@@ -347,7 +347,7 @@ public class Controller extends chemotaxis.sim.Controller {
     *
     */
    private DirectionType getAgentDirection(Point lastPoint, Point currentPoint) {
-      if (lastPoint == currentPoint) return DirectionType.CURRENT;
+      if (lastPoint.x == currentPoint.x && lastPoint.y == currentPoint.y) return DirectionType.CURRENT;
       if (lastPoint.x == currentPoint.x) {
          return (lastPoint.y < currentPoint.y) ? DirectionType.EAST : DirectionType.WEST;
       } else if (lastPoint.y == currentPoint.y) {
