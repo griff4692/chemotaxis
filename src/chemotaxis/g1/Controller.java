@@ -84,6 +84,7 @@ public class Controller extends chemotaxis.sim.Controller {
         // Run the shortest paths algorithm. Results are stored in `routes`
         // and keyed by the number of turns necessary for the path.
         findshortestpath(grid,budget);
+
         // Select the fastest route within our budget.
         // Routes with more turns are faster, otherwise `findshortestpath` will terminate
         // without adding a route for that number of turns. Therefore, if key `5` exists in
@@ -97,15 +98,28 @@ public class Controller extends chemotaxis.sim.Controller {
             Collections.reverse(route);
             routes.put(i,route);
             setTurnAt(grid,i);
-            System.out.println(i);
-            System.out.println(routes.get(i).size());
-            System.out.println(routes.get(i));
-            System.out.println(turnAt.get(i));
+            simPrinter.print("turns: ");
+
+            simPrinter.println(i);
+            simPrinter.print("steps: ");
+
+            simPrinter.println(routes.get(i).size());
+            simPrinter.print("route: ");
+
+            simPrinter.println(routes.get(i));
+
+            simPrinter.print("turns at: ");
+
+            simPrinter.println(turnAt.get(i));
             // TODO (etm): Schedule is currently unused, so it's commented out
             // TODO (etm): Update this once the time allowed is known (?)
-            scheduleAllAgents(i,true,simTime,spawnFreq,agentGoal);
-            System.out.println(finalScheduleStrong);
-            System.out.println(initialScheduleWeak);
+            scheduleAllAgents(i,i<(budget/agentGoal),simTime,spawnFreq,agentGoal);
+
+            simPrinter.print("strong strategy: ");
+            simPrinter.println(finalScheduleStrong);
+            simPrinter.print("weak strategy: ");
+
+            simPrinter.println(initialScheduleWeak);
         }
     }
 
@@ -306,6 +320,11 @@ public class Controller extends chemotaxis.sim.Controller {
     @Override
     public ChemicalPlacement applyChemicals(Integer currentTurn, Integer chemicalsRemaining, ArrayList<Point> locations, ChemicalCell[][] grid) {
         ChemicalPlacement chemicalPlacement = new ChemicalPlacement();
+        if (currentTurn == 1) {
+            chemicalPlacement.location = start;
+            chemicalPlacement.chemicals.add(ChemicalCell.ChemicalType.GREEN);
+            return chemicalPlacement;
+        }
         if (chemicalsRemaining == 0 || !this.routes.containsKey(this.selectedRoute)) {
             // Either no chemicals, or route doesn't exist
             return chemicalPlacement;
@@ -318,22 +337,28 @@ public class Controller extends chemotaxis.sim.Controller {
         // Check the location of all agents and see if any are sitting on
         // a turn point. For those that are, select the furthest turn point,
         // which is the one with the smallest index.
-        for (Point agentLocation : locations) {
-            for (int turnIx = 0; turnIx < turns.size(); ++turnIx) {
-                if (turns.get(turnIx) == 0) {
-                    continue;
-                }
-                Point turn = route.get(turnIx + 1);
+        for (int turnIx =  turns.size()-1; turnIx >=0; --turnIx) {
+            if (turns.get(turnIx) == 0) {
+                continue;
+            }
+            boolean found=false;
+            for (Point agentLocation : locations) {
+                Point turn = route.get(turnIx);
                 // Fix this annoying 1-based map indexing
                 Point zeroAgentLocation = new Point(agentLocation.x - 1, agentLocation.y - 1);
-                if (turn.equals(zeroAgentLocation) && turnIx > furthestTurnIx ) {
+                if (turn.equals(zeroAgentLocation)) {
                     furthestTurnIx = turnIx;
+                    found = true;
+                    break;
                 }
+            }
+            if (found) {
+                break;
             }
         }
         if (furthestTurnIx >= 0) {
             // Place the chemical on the next step on the path
-            Point loc = route.get(furthestTurnIx + 2);
+            Point loc = route.get(furthestTurnIx + 1);
             chemicalPlacement.location = new Point(loc.x + 1, loc.y + 1);
             chemicalPlacement.chemicals.add(ChemicalCell.ChemicalType.BLUE);
         }
@@ -343,6 +368,9 @@ public class Controller extends chemotaxis.sim.Controller {
 
     // whether the agent can reach cell x,y facing direction d within s steps
     private Boolean isBestPath(int x, int y, int d, int s){
+        if (modifiedStart.x==x && modifiedStart.y==y) {
+            return false;
+        }
         if (!(modifiedTarget.x==x && modifiedTarget.y==y)) {
             return dist[x][y][d] == 0 || dist[x][y][d]>s;
         }
@@ -396,8 +424,8 @@ public class Controller extends chemotaxis.sim.Controller {
         }
 
         if (step<10001) {
-
             while (!((modifiedStart.x==current.x)&&(modifiedStart.y==current.y))) {
+
 
                 route.add(new Point(current));
                 for (int i=0;i<4;i++) {
@@ -411,6 +439,7 @@ public class Controller extends chemotaxis.sim.Controller {
                 current.x -= movement(direction).x;
                 current.y -= movement(direction).y;
             }
+
 
             route.add(new Point(current));
         }
@@ -428,7 +457,9 @@ public class Controller extends chemotaxis.sim.Controller {
         // Usually this is just a list of points in a straight line, but could include
         // other points if there is a wall that gives you a "free" turn in some direction.
         Queue<TriInteger> pointsSavedForNextTurn = new LinkedList<>();
+        pointsSavedForNextTurn.add(new TriInteger(modifiedStart.x,modifiedStart.y,0));
         for (int turn=0;turn<maxturn;turn++) {
+
             if (turn>0) {
                 while (!pointsSavedForNextTurn.isEmpty()) {
                     TriInteger basePoint = pointsSavedForNextTurn.poll();
@@ -492,6 +523,7 @@ public class Controller extends chemotaxis.sim.Controller {
                     shortestdist = dist[modifiedTarget.x][modifiedTarget.y][i];
                 }
             }
+
             if (pointsSavedForNextTurn.isEmpty()&&turn>0) {
                 return;
             }
