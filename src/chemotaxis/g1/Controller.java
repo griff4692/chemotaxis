@@ -320,6 +320,11 @@ public class Controller extends chemotaxis.sim.Controller {
     @Override
     public ChemicalPlacement applyChemicals(Integer currentTurn, Integer chemicalsRemaining, ArrayList<Point> locations, ChemicalCell[][] grid) {
         ChemicalPlacement chemicalPlacement = new ChemicalPlacement();
+        if (currentTurn == 1) {
+            chemicalPlacement.location = start;
+            chemicalPlacement.chemicals.add(ChemicalCell.ChemicalType.GREEN);
+            return chemicalPlacement;
+        }
         if (chemicalsRemaining == 0 || !this.routes.containsKey(this.selectedRoute)) {
             // Either no chemicals, or route doesn't exist
             return chemicalPlacement;
