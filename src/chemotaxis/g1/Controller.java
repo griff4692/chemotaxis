@@ -284,11 +284,11 @@ public class Controller extends chemotaxis.sim.Controller {
             // North
             case 0: return new Point(-1,0);
             // East
-            case 1:return new Point(0,-1);
+            case 1:return new Point(0,1);
             // South
             case 2:return new Point(1,0);
             // West
-            default:return new Point(0,1);
+            default:return new Point(0,-1);
         }
     }
 
