@@ -12,6 +12,7 @@ public class Controller extends chemotaxis.sim.Controller {
      *dist[i][j][d] = 0 means agent can't go to cell x,y from direction d yet
      *dist[i][j][d] = -1 means there is a block at x,y
      **/
+    private ArrayList<int[][][]> dist_record = new ArrayList<>();
     private int[][][] dist;
     Point modifiedStart = new Point();
     Point modifiedTarget = new Point();
@@ -408,29 +409,53 @@ public class Controller extends chemotaxis.sim.Controller {
         Point current = new Point(modifiedTarget.x,modifiedTarget.y);
         int step = 10001;
         int direction = 0;
+        System.out.println(turn);
+
         for (int i=0;i<4;i++) {
             if (dist[modifiedTarget.x][modifiedTarget.y][i]>0 && dist[modifiedTarget.x][modifiedTarget.y][i]<step){
                 step = dist[modifiedTarget.x][modifiedTarget.y][i];
             }
         }
-
+        int[][][] localdist = dist;
+        int localturn = turn;
         if (step<10001) {
             while (!((modifiedStart.x==current.x)&&(modifiedStart.y==current.y))) {
-
+                System.out.print(step);
+                System.out.print("(");
+                System.out.print(current.x);
+                System.out.print(",");
+                System.out.print(current.y);
+                System.out.println(")  ");
 
                 route.add(new Point(current));
-                for (int i=0;i<4;i++) {
-                    int j = (i + direction +4) % 4;
-                    if (dist[current.x][current.y][j] == step) {
-                        direction = j;
-                        step-=1;
-                        break;
+                boolean endwhile = false;
+                while (!endwhile) {
+                    for (int i = 0; i < 4; i++) {
+                        System.out.println(localdist[current.x][current.y][i]);
+                    }
+                    for (int i = 0; i < 4; i++) {
+                        int j = (i + direction + 4) % 4;
+                        if (localdist[current.x][current.y][j] == step) {
+                            direction = j;
+                            step -= 1;
+                            endwhile = true;
+                            break;
+                        }
+                    }
+                    if (!endwhile) {
+                        System.out.println("gggg");
+                        localturn -= 1;
+                        localdist = dist_record.get(localturn);
                     }
                 }
                 current.x -= movement(direction).x;
                 current.y -= movement(direction).y;
             }
-
+            System.out.print("(");
+            System.out.print(current.x);
+            System.out.print(",");
+            System.out.print(current.y);
+            System.out.println(")  ");
 
             route.add(new Point(current));
         }
@@ -518,7 +543,19 @@ public class Controller extends chemotaxis.sim.Controller {
             if (pointsSavedForNextTurn.isEmpty()&&turn>0) {
                 return;
             }
-            saveRoute(turn);
+            int [][][] temp = new int[size][size][4];
+            for (int i=0;i<size;i++) {
+                for (int j = 0; j < size; j++) {
+                    for (int k = 0; k < 4; k++) {
+                        temp[i][j][k] = dist[i][j][k];
+                    }
+                }
+            }
+            dist_record.add(temp);
+
+            if (shortestdist<10001) {
+                saveRoute(turn);
+            }
         }
     }
 }
