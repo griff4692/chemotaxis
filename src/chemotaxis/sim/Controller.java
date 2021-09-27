@@ -8,9 +8,10 @@ import java.util.Random;
 public abstract class Controller {
 
 	public Point start, target;
-    public Integer size, simTime, budget, seed;
+    public Integer size, simTime, budget, seed, agentGoal, spawnFreq;
     public Random random;
     public SimPrinter simPrinter;
+    public ChemicalCell[][] grid;
 
     /**
      * Controller constructor
@@ -23,9 +24,12 @@ public abstract class Controller {
      * @param budget      chemical budget
      * @param seed        random seed
      * @param simPrinter  simulation printer
+     * @param agentGoal   agent target goal
+     * @param spawnFreq   number of turns in between spawning
      *
      */
-    public Controller(Point start, Point target, Integer size, ChemicalCell[][] grid, Integer simTime, Integer budget, Integer seed, SimPrinter simPrinter) {
+    public Controller(Point start, Point target, Integer size, ChemicalCell[][] grid, Integer simTime, Integer budget,
+                      Integer seed, SimPrinter simPrinter, Integer agentGoal, Integer spawnFreq) {
     	this.start = start;
     	this.target = target;
     	this.size = size;
@@ -34,6 +38,9 @@ public abstract class Controller {
         this.seed = seed;
         this.random = new Random(seed);
         this.simPrinter = simPrinter;
+        this.grid = grid;
+        this.agentGoal = agentGoal;
+        this.spawnFreq = spawnFreq;
 	}
     
     /**

@@ -1,7 +1,7 @@
 <!DOCTYPE html>
 <html xmlns="http://www.w3.org/1999/xhtml" lang="" xml:lang="">
   <head>
-    <title>PPS 2020 - Chemotaxis</title>
+    <title>PPS 2021 - Chemotaxis</title>
 
     <style>
       html, body {
@@ -155,9 +155,10 @@
         <br/>
       </div>
       <div id="g3">
-        <br>
         <div style="color:black;font-size:32px">Spawn Rate: <input style="font-size:32px" type="text" id="spawnFreq" size="20" value="10"></div>
-        </br>
+        <br/>
+        <div style="color:black;font-size:32px">Agent Goal: <input style="font-size:32px" type="text" id="agentGoal" size="20" value="3"></div>
+        <br/>
         <div style="color:black;font-size:32px">Map: <input style="font-size:32px" type="file" value="~/coms4444-chemotaxis/src/maps/dummy/10x10FarTarget.map" id="map"></div>
       </div>
       <div>
@@ -198,6 +199,7 @@
         var seed = document.getElementById("seed").value;
         var fpm = document.getElementById("fpm").value;
         var spawnFreq = document.getElementById("spawnFreq").value;
+        var agentGoal = document.getElementById("agentGoal").value;
         pauseEveryN = document.getElementById("pauseEveryN").value;
         var map = document.getElementById("map").value.replace("C:\\fakepath\\", "");
 
@@ -231,6 +233,11 @@
           return;
         }
 
+        if(!Number.isInteger(parseInt(agentGoal)) || agentGoal != parseInt(agentGoal)) {
+          alert("The agent goal must be a valid integer!");
+          return;
+        }
+
         if(map == "") {
           alert("You must choose a map!");
           return;
@@ -241,10 +248,11 @@
         console.log("Seed: " + seed);
         console.log("FPM: " + fpm);
         console.log("Spawn Frequency: " + spawnFreq);
+        console.log("Agent Goal: " + agentGoal);
         console.log("Pause Every N: " + pauseEveryN);
         console.log("Map: " + map);
 
-        var url = `parameters.txt?turns=${turns}&budget=${budget}&seed=${seed}&fpm=${fpm}&map=${map}&spawnFreq=${spawnFreq}`;
+        var url = `parameters.txt?turns=${turns}&budget=${budget}&seed=${seed}&fpm=${fpm}&map=${map}&spawnFreq=${spawnFreq}&agentGoal=${agentGoal}`;
 
         var parametersContainer = document.getElementById("setup");
         parametersContainer.innerHTML = "";
@@ -262,6 +270,7 @@
           var seed = document.getElementById("seed").value;
           var fpm = document.getElementById("fpm").value;
           var spawnFreq = document.getElementById("spawnFreq").value;
+          var agentGoal = document.getElementById("agentGoal").value;
           var map = document.getElementById("map").value.replace("C:\\fakepath\\", "");
 
           if(!Number.isInteger(parseInt(turns)) || turns != parseInt(turns)) {
@@ -289,7 +298,13 @@
           return;
         }
 
-          if(map == "") {
+        if(!Number.isInteger(parseInt(agentGoal)) || agentGoal != parseInt(agentGoal)) {
+          alert("The agent goal must be a valid integer!");
+          return;
+        }
+
+
+        if(map == "") {
               alert("You must choose a map!");
               return;
           }
@@ -299,9 +314,10 @@
           console.log("Seed: " + seed);
           console.log("FPM: " + fpm);
           console.log("Spawn Frequency: " + spawnFreq);
+          console.log("Agent goal: " + agentGoal);
           console.log("Map: " + map);
 
-          var url = `parameters.txt?turns=${turns}&budget=${budget}&seed=${seed}&fpm=${fpm}&map=${map}&spawnFreq=${spawnFreq}`;
+          var url = `parameters.txt?turns=${turns}&budget=${budget}&seed=${seed}&fpm=${fpm}&map=${map}&spawnFreq=${spawnFreq}&agentGoal=${agentGoal}`;
 
           var parametersContainer = document.getElementById("setup");
           parametersContainer.innerHTML = "";
@@ -327,6 +343,7 @@
           var targetRow = result.targetLocation.row;
           var targetCol = result.targetLocation.column;
           var spawnFreq = result.spawnFreq;
+          var agentGoal = result.agentGoal;
 
           var currentTurn = simulationStarted ? result.currentTurn : 0;
           var totalTurns = simulationStarted ? result.totalTurns : 0;
@@ -339,10 +356,18 @@
             }
           }
 
+          var metGoal = numSucceeded === agentGoal;
+          if(metGoal) {
+            var color = "green";
+          } else {
+            var color = "red";
+          }
+
           container.innerHTML = `
               <table style="font-size:32px">
                   <tr>
                       <th>Agents @ Target</th>
+                      <th>Num Spawned</th>
                       <th>Turns Used</th>
                       <th>Reds Used</th>
                       <th>Blues Used</th>
@@ -354,7 +379,8 @@
                       <th>Spawn Rate</th>
                   </tr>
                   <tr>
-                      <td>${numSucceeded} / ${numAgents}</td>
+                      <td style="font-weight: bold; color:${color}">${numSucceeded} / ${agentGoal}</td>
+                      <td>${numAgents}</td>
                       <td>${currentTurn} / ${totalTurns}</td>
                       <td>${redsUsed}</td>
                       <td>${bluesUsed}</td>
@@ -448,7 +474,7 @@
                   }
                   else if(agentOccupiedCell(i + 1, j + 1, agents)) {
                       var img = document.createElement('img');
-                      img.src = "agent.png";
+                      img.src = "agent_remy.png";
                       img.width = "100px";
                       img.height = "100px";
                       cell.appendChild(img);
