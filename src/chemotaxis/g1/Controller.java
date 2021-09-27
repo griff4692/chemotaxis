@@ -49,6 +49,9 @@ public class Controller extends chemotaxis.sim.Controller {
     // initialScheduleWeak[i]=color_a means put a color_a chemical at i+1 cell on the route
     private Map<Integer, Color> initialScheduleWeak;
 
+    // Game State for IDS lookahead
+    private GameState gameState;
+
     /**
      * Controller constructor
      *
@@ -63,6 +66,10 @@ public class Controller extends chemotaxis.sim.Controller {
      */
     public Controller(Point start, Point target, Integer size, ChemicalCell[][] grid, Integer simTime, Integer budget, Integer seed, SimPrinter simPrinter, Integer agentGoal, Integer spawnFreq) {
         super(start, target, size, grid, simTime, budget, seed, simPrinter, agentGoal, spawnFreq);
+        Point adjustedStart = new Point(start.x-1, start.y-1);
+        Point adjustedTarget = new Point(target.x-1, target.y-1);
+        this.gameState = new GameState(adjustedStart, adjustedTarget, agentGoal, spawnFreq, budget, grid);
+
         dist = new int[size][size][4];
         // Necessary since (0,0) on the game board is labeled (1,1)
         modifiedStart.x=start.x-1;
@@ -338,6 +345,7 @@ public class Controller extends chemotaxis.sim.Controller {
             chemicalPlacement.chemicals.add(ChemicalCell.ChemicalType.BLUE);
         }
 
+        this.gameState = this.gameState.placeChemicalAndStep(chemicalPlacement);
         return chemicalPlacement;
     }
 
