@@ -1,6 +1,5 @@
 package chemotaxis.g1.ids;
 
-import chemotaxis.g1.ids.IDSCandidate;
 import chemotaxis.sim.ChemicalCell;
 import chemotaxis.sim.ChemicalCell.ChemicalType;
 
