@@ -1,5 +1,6 @@
 package chemotaxis.g10; // TODO modify the package name to reflect your team
 
+import java.util.ArrayList;
 import java.util.Map;
 
 import chemotaxis.sim.DirectionType;
@@ -208,8 +209,21 @@ public class Agent extends chemotaxis.sim.Agent {
       }
    }
 
+   private static ArrayList<DirectionType> findAvailableMoves(Map<DirectionType, ChemicalCell> neighborMap){
+      ArrayList<DirectionType> availableMoves = new ArrayList<DirectionType>();
+      for (DirectionType direction: neighborMap.keySet()){
+         if (direction != DirectionType.CURRENT && !neighborMap.get(direction).isBlocked()){
+            availableMoves.add(direction);
+         }
+      }
+      return availableMoves;
+   }
 
    public static Object[] findOptimalMove(DirectionType previousDirection, ChemicalCell.ChemicalType chosenChemicalType, Map<DirectionType, ChemicalCell> neighborMap){
+      ArrayList<DirectionType> availableMoves = findAvailableMoves(neighborMap);
+      if (availableMoves.size() == 1){
+         return new Object[] {availableMoves.get(0), chosenChemicalType};
+      }
       DirectionType[] orthogonalDirections = getOrthogonalDirections(previousDirection);
 
       for (DirectionType orthogonalDirection: orthogonalDirections) {

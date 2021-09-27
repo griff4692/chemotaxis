@@ -17,6 +17,7 @@ public class Controller extends chemotaxis.sim.Controller {
    private ArrayList<Point> agentsLastLocation;
    private ArrayList<DirectionType> agentsLastDir;
    private ArrayList<ChemicalCell.ChemicalType> agentsCurrentChemical;
+   private ChemicalCell.ChemicalType[] chemicalList = new ChemicalCell.ChemicalType[]{ChemicalCell.ChemicalType.RED, ChemicalCell.ChemicalType.GREEN};
 //   private ChemicalCell.ChemicalType lastChemPlaced;
 
    /**
@@ -165,6 +166,8 @@ public class Controller extends chemotaxis.sim.Controller {
          lastAgentLocation = agentLocation;
          agentLocation = bestLocation;
       }
+
+
    }
 
 
@@ -216,27 +219,30 @@ public class Controller extends chemotaxis.sim.Controller {
                agentsLastNumTurns.add(agentTurnGridNode.getTurns());
                agentsLastLocation.add(agentLocation);
                agentsLastDir.add(DirectionType.CURRENT);
-               agentsCurrentChemical.add(ChemicalCell.ChemicalType.RED);
+//               agentsCurrentChemical.add(ChemicalCell.ChemicalType.RED);
             }
             agentsLastDir.set(i, getAgentDirection(agentsLastLocation.get(i), agentLocation));
 
             int turnIndex = getTurnIndex(agentLocation);
             if (turnIndex != -1) {
-               DirectionType agentExpectedDir = (DirectionType) Agent.findOptimalMove(agentsLastDir.get(i), agentsCurrentChemical.get(i), getAgentNeighborMap(grid, agentLocation))[0];
+               ChemicalCell.ChemicalType currentColor = chemicalList[turnIndex % chemicalList.length];
+               DirectionType agentExpectedDir = (DirectionType) Agent.findOptimalMove(agentsLastDir.get(i), currentColor, getAgentNeighborMap(grid, agentLocation))[0];
                DirectionType agentOptimalDir = getAgentDirection(agentLocation, turnsOnPath.get(turnIndex)[1]);
-//               System.out.println("CONTROLLER: Agent " + String.valueOf(i) + "'s calculated optimal move: " + agentExpectedDir);
-//               System.out.println("CONTROLLER: Agent " + String.valueOf(i) + "'s wanted move: " + agentOptimalDir);
+               System.out.println("CONTROLLER: Agent " + String.valueOf(i) + "'s calculated optimal move: " + agentExpectedDir);
+//               System.out.println("CONTROLLER: Agent " + String.valueOf(i) + " " + agentsLastDir.get(i).name() + " " + agentsCurrentChemical.get(i).name() + " " + String.valueOf(agentLocation.x) + String.valueOf(agentLocation.y));
+
+               System.out.println("CONTROLLER: Agent " + String.valueOf(i) + "'s wanted move: " + agentOptimalDir);
 
                if (agentExpectedDir != agentOptimalDir) {
                   chemPlacement = new ChemicalPlacement();
                   chemPlacement.location = turnsOnPath.get(turnIndex)[1];
 
-                  ChemicalCell.ChemicalType chemPlacing = agentsCurrentChemical.get(i);
-                  chemPlacement.chemicals.add(chemPlacing);
+//                  ChemicalCell.ChemicalType chemPlacing = agentsCurrentChemical.get(i);
+                  chemPlacement.chemicals.add(currentColor);
 //                  System.out.println("Placed chemical: " + chemPlacing + " at (" + String.valueOf(chemPlacement.location.x) + ", " + String.valueOf(chemPlacement.location.y) + ")");
                   agentsLastNumTurns.set(i, agentTurnGridNode.getTurns());
                   agentsLastLocation.set(i, agentLocation);
-                  agentsCurrentChemical.set(i, chemPlacing == ChemicalCell.ChemicalType.RED ? ChemicalCell.ChemicalType.GREEN : ChemicalCell.ChemicalType.RED);
+//                  agentsCurrentChemical.set(i, chemPlacing == ChemicalCell.ChemicalType.RED ? ChemicalCell.ChemicalType.GREEN : ChemicalCell.ChemicalType.RED);
                   return chemPlacement;
                }
             }
