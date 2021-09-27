@@ -19,6 +19,7 @@ public class Agent extends chemotaxis.sim.Agent {
         super(simPrinter);
     }
 
+
     /**
      * Move agent
      *
@@ -43,14 +44,21 @@ public class Agent extends chemotaxis.sim.Agent {
             newDirection = getHighestConcentrationDirection(neighborMap, ChemicalType.BLUE, previousDirection);
         }
 
-        // Get the neighbouring cell to which the agent is trying to go
-        ChemicalCell nextCell = neighborMap.get(newDirection);
-        // If it is blocked, use handleWall to find new direction
-        if (nextCell.isBlocked())
-            newDirection = handleWall(move, neighborMap, prevState);
-
+        // Check to see if the agent is trying to go backwards
+        CardinalDirection newCardinalDirection = newState.asCardinalDir(newDirection);
+        if (newCardinalDirection.reverseOf().asDirectionType() == previousDirection) {
+            newDirection = previousDirection;
+        }
         move.directionType = newDirection;
-        newState.setDirection(newDirection);
+
+        // This is a noop if the new direction is unblocked
+        move.directionType = handleWall(move, neighborMap, prevState);
+
+        // TODO (etm): This stores the previous direction, but it doesn't really store the
+        //   intended direction. So, if we want the agent to resume in the intended direction
+        //   as soon as it can (no more wall blocking), we need to store the intended direction
+        //   in the agent state as well.
+        newState.setDirection(move.directionType);
         move.currentState = newState.serialize();
         return move;
     }

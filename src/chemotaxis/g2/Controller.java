@@ -31,8 +31,8 @@ public class Controller extends chemotaxis.sim.Controller {
 	List<Point> path ;
 	List<Point> corners ;
 
-	public Controller(Point start, Point target, Integer size, ChemicalCell[][] grid, Integer simTime, Integer budget, Integer seed, SimPrinter simPrinter) {
-		super(start, target, size, grid, simTime, budget, seed, simPrinter);
+	public Controller(Point start, Point target, Integer size, ChemicalCell[][] grid, Integer simTime, Integer budget, Integer seed, SimPrinter simPrinter, Integer agentGoal, Integer spawnFreq) {
+		super(start, target, size, grid, simTime, budget, seed, simPrinter, agentGoal, spawnFreq);
 		path = getShortestPath(start, target, grid);
 		corners = findCorners(path);
 		corners.add(path.get(0));
@@ -243,6 +243,17 @@ public class Controller extends chemotaxis.sim.Controller {
 		return closestIdx;
 	}
 
+	private boolean cellOccupied(Point p, List<Point> locations) {
+		int x = p.x;
+		int y = p.y;
+		for (int i=0; i< locations.size(); i++) {
+			if ( x == locations.get(i).x && y == locations.get(i).y) {
+				return true;
+			}
+		}
+		return false;
+	}
+
 	private List<Point> needSignal (List<Point> locations) {
 		int x;
 		int y;
@@ -296,6 +307,9 @@ public class Controller extends chemotaxis.sim.Controller {
 				Point next;
 				if (inPath(agent)) {
 					next = nextCell(agent);
+					if (cellOccupied(next, locations)) {
+						next = nextCell(next);
+					}
 					newX = next.x;
 					newY = next.y;
 				} else {
@@ -315,6 +329,11 @@ public class Controller extends chemotaxis.sim.Controller {
 					}
 					newX = agent.x + xDelta;
 					newY = agent.y + yDelta;
+					while (cellOccupied(new Point(newX, newY), locations)) {
+						newX = agent.x + xDelta;
+						newY = agent.y + yDelta;
+					}
+
 				}
 			}
 
