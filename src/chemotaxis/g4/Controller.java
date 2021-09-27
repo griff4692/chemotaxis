@@ -16,14 +16,16 @@ public class Controller extends chemotaxis.sim.Controller {
 	ArrayList<Point> path = null;
 	ArrayList<Point> placementCells = null;
 	ArrayList<ChemicalType> colorPath = null;
-	ArrayList<Integer> turningIndexes;
-	ArrayList<Integer> pcIndexes;
+	int[] rollPadding;
+	ArrayList<Integer> pcIndexes = null;
 	ArrayList<Integer> refreshPadding; 
 	Analysis analyzer = null;
 
 
-	Integer time_interval = 4;
-	Integer path_interval = 5;
+	// Integer time_interval = 4;
+	Integer drop_interval = 5;
+	Integer roll_interval = 10;
+	int first_interval = drop_interval;
 	Integer chemical_color = 0;
 	Integer arrayLength = 20;
 	Integer pathComplete;
@@ -85,39 +87,64 @@ public class Controller extends chemotaxis.sim.Controller {
 			data = analyzer.analyzePath(path, arrayLength);
 		}
 
-		turningIndexes = new ArrayList<Integer>();
+		placementCells = new ArrayList<Point>();
 		getIntervals(path, true);
 
-		System.out.print("placement Cells:");
-		placementCells = new ArrayList<Point>();
-		for (int i=1; i<path.size(); i++){
-			if(i%path_interval == 0){
-				int bestPoint = i;
-				// if(data.get(i).p !=  path.get(i)){
-				// 	System.out.println("WARNING!!! NOT EQUAL" + data.get(i).p.x + "," + data.get(i).p.y + " " + path.get(i).x + "," + path.get(i).y);
-				// }
-				if(data.get(bestPoint).isMaxPercentage<data.get(i-1).isMaxPercentage){
-					bestPoint = i-1;
-				}
-				if(data.get(bestPoint).isMaxPercentage<data.get(i+1).isMaxPercentage){
-					bestPoint = i+1;
-				}
-				placementCells.add(path.get(bestPoint));
-				System.out.print(" " + path.get(bestPoint) + " ");
+		int last = path.indexOf(placementCells.get(placementCells.size()-1));
+		if(path.size()-1 != last){
+			if(last >= path.size()-3){
+				placementCells.remove(placementCells.size()-1);
 			}
-		}
-		if((path.size()-1)%path_interval!=0){
 			placementCells.add(path.get(path.size()-1));
 		}
+
+		ArrayList<int[]> rollOnIdxes = new ArrayList<int[]>();
+		for(int i=0; i<placementCells.size()-1; i++){
+			int cur = path.indexOf(placementCells.get(i));
+			if(i==0 && ((cur>spawnFreq && cur>drop_interval) || cur>roll_interval)){
+				first_interval = Math.min(cur/2, drop_interval);
+				placementCells.add(0, path.get(first_interval));
+				i--;
+				continue;
+			}
+			else if (i==0){
+				first_interval = cur;
+			}
+
+			int next = path.indexOf(placementCells.get(i+1));
+			int gap = next-cur;
+			if(gap <= 3)
+				continue;
+			else if(gap > roll_interval){
+				int[] tmp = {i+1, gap};
+				rollOnIdxes.add(tmp);
+			}
+
+			int bestPoint = cur;
+			if(data.get(bestPoint).isMaxPercentage<=data.get(cur+1).isMaxPercentage){
+				bestPoint = cur+1;
+			}
+			if(data.get(bestPoint).isMaxPercentage<=data.get(cur+2).isMaxPercentage){
+				bestPoint = cur+2;
+			}
+			placementCells.set(i, path.get(bestPoint));
+
+			System.out.print(" " + path.get(bestPoint) + " ");
+		}
 		System.out.print("\n");
+
+		rollPadding = new int[placementCells.size()];
+		for(int i=0; i<rollOnIdxes.size(); i++){
+			rollPadding[rollOnIdxes.get(i)[0]] = rollOnIdxes.get(i)[1]-1;
+		}
+
 		if(placementCells.size()>1){
 			pathComplete = 2 * path.indexOf(placementCells.get(placementCells.size()-2)) 
-								- path.indexOf(placementCells.get(placementCells.size()-1)) + path_interval;
+								- path.indexOf(placementCells.get(placementCells.size()-1)) + first_interval + rollPadding[placementCells.size()-1];
 		}
 		else
 			pathComplete = 1;
 		System.out.println("Turns for controller to complete a singel path: "+ pathComplete + "\n");
-
 
 		colorPath = new ArrayList<ChemicalType>();
 		for (int i=0; i<placementCells.size(); i++) {
@@ -136,7 +163,7 @@ public class Controller extends chemotaxis.sim.Controller {
 		refreshPadding = new ArrayList<Integer>();
 		for(int j=0; j<refreshTimes; j++){
 			if(j==0){
-				refreshPadding.add(1);
+				refreshPadding.add(0);
 				pcIndexes.add(0);
 			}
 			else{
@@ -144,7 +171,7 @@ public class Controller extends chemotaxis.sim.Controller {
 					int curIndex = path.indexOf(placementCells.get(k));
 					if(curIndex > Math.max(j*(pathComplete/refreshTimes), 15)){
 						int preIndex = path.indexOf(placementCells.get(k));
-						refreshPadding.add(2 * preIndex - curIndex + path_interval);
+						refreshPadding.add(2 * preIndex - curIndex + drop_interval);
 						pcIndexes.add(0);
 						break;
 					}
@@ -175,6 +202,10 @@ public class Controller extends chemotaxis.sim.Controller {
 			return true;
 		}
 		return false;
+	}
+
+	void setUp(){
+
 	}
 
 	Integer getIntervals(ArrayList<Point> current, boolean setTurning){
@@ -209,7 +240,7 @@ public class Controller extends chemotaxis.sim.Controller {
 			else{
 				numIntervals = numIntervals + 1;
 				if(setTurning){
-					turningIndexes.add(i+1);
+					placementCells.add(current.get(i+1));
 					System.out.println("Point after Turning " + path.get(i+1) + " ");
 				}
 			}
@@ -331,19 +362,25 @@ public class Controller extends chemotaxis.sim.Controller {
 		Point currentLocation = placementCells.get(pcIndex);
         int curIndex = path.indexOf(currentLocation);
  
-        int turnToPlace = refreshPadding.get(idx);
+        int turnToPlace = refreshPadding.get(idx) + rollPadding[pcIndex];
         if(pcIndexes.get(idx)==0){
             turnToPlace += 1;
         }
         else{
             int preIndex = path.indexOf(placementCells.get(pcIndexes.get(idx)-1));
-            turnToPlace += 2 * preIndex - curIndex + path_interval;
+            turnToPlace += 2 * preIndex - curIndex + first_interval;
+			// System.out.println("preIndex " + (2 * preIndex - curIndex + drop_interval));
         }
+
 		System.out.println("idx " + idx);
 		System.out.println("pcIndexes[idx] " + pcIndex);
 		System.out.println("currentLocation " + currentLocation);
 		System.out.println("turnToPlace " + turnToPlace);
 		System.out.println("currentTurn " + currentTurn);
+		// System.out.println("!!!!!!!!!!!!!!!!!" + grid[3][14].getConcentration(ChemicalType.BLUE));
+		// System.out.println("!!!!!!!!!!!!!!!!!" + grid[14][4].getConcentration(ChemicalType.BLUE));
+		// System.out.println("!!!!!!!!!!!!!!!!!" + grid[14][5].getConcentration(ChemicalType.BLUE));
+		// System.out.println("!!!!!!!!!!!!!!!!!" + grid[14][6].getConcentration(ChemicalType.BLUE));
         
         if(currentTurn >= turnToPlace){
             chemicalPlacement.location = currentLocation;
