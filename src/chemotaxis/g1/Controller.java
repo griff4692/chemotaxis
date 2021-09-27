@@ -100,23 +100,31 @@ public class Controller extends chemotaxis.sim.Controller {
             routes.put(i,route);
             setTurnAt(grid,i);
 
+            simPrinter.print("turns: ");
 
-            System.out.print("turns: ");
-            System.out.println(i);
-            System.out.print("steps: ");
-            System.out.println(routes.get(i).size());
-            System.out.print("route: ");
-            System.out.println(routes.get(i));
-            System.out.print("turns at: ");
-            System.out.println(turnAt.get(i));
+            simPrinter.println(i);
+            simPrinter.print("steps: ");
+
+            simPrinter.println(routes.get(i).size());
+            simPrinter.print("route: ");
+
+            simPrinter.println(routes.get(i));
+
+            simPrinter.print("turns at: ");
+
+            simPrinter.println(turnAt.get(i));
+
             // TODO (etm): Schedule is currently unused, so it's commented out
             // TODO (etm): Update this once the time allowed is known (?)
             scheduleAllAgents(i,i<(budget/agentGoal),simTime,spawnFreq,agentGoal);
 
-            System.out.print("strong strategy: ");
-            System.out.println(finalScheduleStrong);
-            System.out.print("weak strategy: ");
-            System.out.println(initialScheduleWeak);
+
+            simPrinter.print("strong strategy: ");
+            simPrinter.println(finalScheduleStrong);
+            simPrinter.print("weak strategy: ");
+
+            simPrinter.println(initialScheduleWeak);
+
         }
     }
 
@@ -317,6 +325,11 @@ public class Controller extends chemotaxis.sim.Controller {
     @Override
     public ChemicalPlacement applyChemicals(Integer currentTurn, Integer chemicalsRemaining, ArrayList<Point> locations, ChemicalCell[][] grid) {
         ChemicalPlacement chemicalPlacement = new ChemicalPlacement();
+        if (currentTurn == 1) {
+            chemicalPlacement.location = start;
+            chemicalPlacement.chemicals.add(ChemicalCell.ChemicalType.GREEN);
+            return chemicalPlacement;
+        }
         if (chemicalsRemaining == 0 || !this.routes.containsKey(this.selectedRoute)) {
             // Either no chemicals, or route doesn't exist
             return chemicalPlacement;
@@ -427,6 +440,7 @@ public class Controller extends chemotaxis.sim.Controller {
                 System.out.print(current.y);
                 System.out.println(")  ");
 
+
                 route.add(new Point(current));
                 boolean endwhile = false;
                 while (!endwhile) {
@@ -456,6 +470,7 @@ public class Controller extends chemotaxis.sim.Controller {
             System.out.print(",");
             System.out.print(current.y);
             System.out.println(")  ");
+
 
             route.add(new Point(current));
         }
