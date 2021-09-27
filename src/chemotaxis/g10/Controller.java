@@ -11,10 +11,11 @@ import chemotaxis.sim.*;
 public class Controller extends chemotaxis.sim.Controller {
 
    private TurnGridNode [][] turnGrid;
+   private ArrayList<Point> turnsOnPath;
    private ArrayList<Integer> agentsLastNumTurns;
    private ArrayList<Point> agentsLastLocation;
    private ArrayList<DirectionType> agentsLastDir;
-   private ChemicalCell.ChemicalType lastChemPlaced;
+//   private ChemicalCell.ChemicalType lastChemPlaced;
 
    /**
     * Controller constructor
@@ -33,10 +34,11 @@ public class Controller extends chemotaxis.sim.Controller {
       super(start, target, size, grid, simTime, budget, seed, simPrinter);
 
       computeTurnGrid(grid);
+      findDesiredPath(grid, start);
       agentsLastNumTurns = new ArrayList<>();
       agentsLastLocation = new ArrayList<>();
       agentsLastDir = new ArrayList<>();
-      lastChemPlaced = ChemicalCell.ChemicalType.GREEN;
+//      lastChemPlaced = ChemicalCell.ChemicalType.GREEN;
    }
 
    /**
@@ -78,6 +80,97 @@ public class Controller extends chemotaxis.sim.Controller {
       }
    }
 
+
+   private void findDesiredPath(ChemicalCell[][] grid, Point start) {
+      turnsOnPath = new ArrayList<>();
+      Point lastAgentLocation = start;
+      Point agentLocation = start;
+      int numTurnsLeft = turnGrid[start.x - 1][start.y - 1].getTurns();
+
+      while (numTurnsLeft > 1) {
+         Point bestLocation = agentLocation;
+         if (agentLocation.x != 1 && turnGrid[agentLocation.x - 2][agentLocation.y - 1] != null && turnGrid[agentLocation.x - 2][agentLocation.y - 1].getTurns() < numTurnsLeft) {
+            numTurnsLeft = turnGrid[agentLocation.x - 2][agentLocation.y - 1].getTurns();
+            bestLocation = new Point(agentLocation.x - 1, agentLocation.y);
+         }
+         if (agentLocation.y != turnGrid.length && turnGrid[agentLocation.x - 1][agentLocation.y] != null && turnGrid[agentLocation.x - 1][agentLocation.y].getTurns() < numTurnsLeft) {
+            numTurnsLeft = turnGrid[agentLocation.x - 1][agentLocation.y].getTurns();
+            bestLocation = new Point(agentLocation.x, agentLocation.y + 1);
+         }
+         if (agentLocation.x != turnGrid[0].length && turnGrid[agentLocation.x][agentLocation.y - 1] != null && turnGrid[agentLocation.x][agentLocation.y - 1].getTurns() < numTurnsLeft) {
+            numTurnsLeft = turnGrid[agentLocation.x][agentLocation.y - 1].getTurns();
+            bestLocation = new Point(agentLocation.x + 1, agentLocation.y);
+         }
+         if (agentLocation.y != 1 && turnGrid[agentLocation.x - 1][agentLocation.y - 2] != null && turnGrid[agentLocation.x - 1][agentLocation.y - 2].getTurns() < numTurnsLeft) {
+            numTurnsLeft = turnGrid[agentLocation.x - 1][agentLocation.y - 2].getTurns();
+            bestLocation = new Point(agentLocation.x, agentLocation.y - 1);
+         }
+
+         // Making sure this turn is a new move and not in the same direction as before
+         if (!(agentLocation.x == bestLocation.x && agentLocation.y == bestLocation.y)) {
+            if ((agentLocation.x == start.x && agentLocation.y == start.y && getNumNeighborsBlocked(grid, agentLocation) < 3) || (getNumNeighborsBlocked(grid, agentLocation) < 2 && !((lastAgentLocation.x == agentLocation.x && agentLocation.x == bestLocation.x) || (lastAgentLocation.y == agentLocation.y && agentLocation.y == bestLocation.y)))) {
+               turnsOnPath.add(agentLocation);
+            }
+         } else { // agent will move in same direction as before if not blocked
+            if (lastAgentLocation.x == agentLocation.x) {
+               if (lastAgentLocation.y < agentLocation.y) { // moving east
+                  if (agentLocation.y != grid.length && grid[agentLocation.x - 1][agentLocation.y].isOpen()) {
+                     bestLocation = new Point(agentLocation.x, agentLocation.y + 1);
+                  } else {
+                     bestLocation = getBestOrthogonalLocation(turnGrid[agentLocation.x - 2][agentLocation.y - 1], turnGrid[agentLocation.x][agentLocation.y - 1], agentLocation);
+                  }
+               } else { // moving west
+                  if (agentLocation.y != 1 && grid[agentLocation.x - 1][agentLocation.y - 2].isOpen()) {
+                     bestLocation = new Point(agentLocation.x, agentLocation.y - 1);
+                  } else {
+                     bestLocation = getBestOrthogonalLocation(turnGrid[agentLocation.x][agentLocation.y - 1], turnGrid[agentLocation.x - 2][agentLocation.y - 1], agentLocation);
+                  }
+               }
+            } else if (lastAgentLocation.y == bestLocation.y) {
+               if (lastAgentLocation.x < agentLocation.x) { // moving south
+                  if (agentLocation.x != grid[0].length && grid[agentLocation.x][agentLocation.y - 1].isOpen()) {
+                     bestLocation = new Point(agentLocation.x + 1, agentLocation.y);
+                  } else {
+                     bestLocation = getBestOrthogonalLocation(turnGrid[agentLocation.x - 1][agentLocation.y], turnGrid[agentLocation.x - 1][agentLocation.y - 2], agentLocation);
+                  }
+               } else { // moving north
+                  if (agentLocation.x != 1 && grid[agentLocation.x - 2][agentLocation.y - 1].isOpen()) {
+                     bestLocation = new Point(agentLocation.x - 1, agentLocation.y);
+                  } else {
+                     bestLocation = getBestOrthogonalLocation(turnGrid[agentLocation.x - 1][agentLocation.y - 2], turnGrid[agentLocation.x - 1][agentLocation.y], agentLocation);
+                  }
+               }
+            }
+         }
+
+         lastAgentLocation = agentLocation;
+         agentLocation = bestLocation;
+      }
+   }
+
+
+   private Point getBestOrthogonalLocation(TurnGridNode leftTurnGridNode, TurnGridNode rightTurnGridNode, Point agentLocation) {
+      if (leftTurnGridNode == null) {
+         Point rightPoint = rightTurnGridNode.getGridPoint();
+         return new Point(rightPoint.x + 1, rightPoint.y + 1);
+      } else if (rightTurnGridNode == null) {
+         Point leftPoint = leftTurnGridNode.getGridPoint();
+         return new Point(leftPoint.x + 1, leftPoint.y + 1);
+      }
+
+      Point leftPoint = leftTurnGridNode.getGridPoint();
+      Point rightPoint = rightTurnGridNode.getGridPoint();
+      Point leftParentPoint = leftTurnGridNode.getParentPoint();
+      Point rightParentPoint = rightTurnGridNode.getParentPoint();
+      turnsOnPath.add(agentLocation);
+      if ((Math.abs(leftParentPoint.x - leftPoint.x) + Math.abs(leftParentPoint.y - leftPoint.y)) < (Math.abs(rightParentPoint.x - rightPoint.x) + Math.abs(rightParentPoint.y - rightPoint.y))) {
+         return new Point(leftPoint.x + 1, leftPoint.y + 1);
+      } else {
+         return new Point(rightPoint.x + 1, rightPoint.y + 1);
+      }
+   }
+
+
    /**
     * Apply chemicals to the map
     *
@@ -101,43 +194,24 @@ public class Controller extends chemotaxis.sim.Controller {
                agentsLastLocation.add(agentLocation);
                agentsLastDir.add(DirectionType.CURRENT);
             }
-
             agentsLastDir.set(i, getAgentDirection(agentsLastLocation.get(i), agentLocation));
 
-            int numNeighborsBlocked = 0;
-            if (agentLocation.x == 1 || (agentLocation.x > 1 && grid[agentLocation.x - 2][agentLocation.y - 1].isBlocked())) numNeighborsBlocked++;
-            if (agentLocation.y == 1 || (agentLocation.y > 1 && grid[agentLocation.x - 1][agentLocation.y - 2].isBlocked())) numNeighborsBlocked++;
-            if (agentLocation.x == grid[0].length || (grid[0].length > agentLocation.x && grid[agentLocation.x][agentLocation.y - 1].isBlocked())) numNeighborsBlocked++;
-            if (agentLocation.y == grid.length || grid.length > agentLocation.y && grid[agentLocation.x - 1][agentLocation.y].isBlocked()) numNeighborsBlocked++;
-
-            if ((agentLocation.x != target.x || agentLocation.y != target.y) && (numNeighborsBlocked < 2 || (numNeighborsBlocked == 2 && getAgentDirection(agentsLastLocation.get(i), agentLocation) == getOppositeDirection(agentsLastDir.get(i)))) && ((agentLocation.x == start.x && agentLocation.y == start.y) || agentTurnGridNode.getTurns() != agentsLastNumTurns.get(i))) {
-////            findOptimalMove(DirectionType previousDirection, ChemicalCell.ChemicalType chosenChemicalType, Map<DirectionType, ChemicalCell> neighborMap)
-//
-//            DirectionType agentsNextDir = Agent.findOptimalMove(agentsLastDir.get(i), lastChemPlaced == ChemicalCell.ChemicalType.RED ? ChemicalCell.ChemicalType.GREEN : ChemicalCell.ChemicalType.RED, getAgentsNeighborMap(grid, agentLocation));
-//            if(agentsNextDir.equals(DirectionType.CURRENT)) agentsNextDir = agentsLastDir.get(i);
-//            System.out.println(agentLocation);
-//            System.out.println(agentsNextDir);
-//            Point agentsNextLocation = getAgentsNextLocation(agentLocation, agentsNextDir);
-//            TurnGridNode agentsNextTurnGridNode = getAgentsNextTurnGridNode(agentLocation, agentsNextDir);
-//            System.out.println("CONTROLLER: Agents calculated optimal move: " + agentsNextDir);
-//            System.out.println("Agents turn grid node: (" + String.valueOf(agentsNextTurnGridNode.getGridPoint().x + 1) + ", " + String.valueOf(agentsNextTurnGridNode.getGridPoint().y + 1) + ")");
-//            System.out.println("Agents next location: (" + String.valueOf(agentsNextLocation.x) + ", " + String.valueOf(agentsNextLocation.y) + ")");
-//            System.out.println("is blocked: " + grid[agentsNextLocation.x - 1][agentsNextLocation.y - 1].isBlocked());
-//
-//            if ((agentLocation.x != target.x || agentLocation.y != target.y) && (numNeighborsBlocked < 2 || (numNeighborsBlocked == 2 && getAgentDirection(agentsLastLocation.get(i), agentLocation) == getOppositeDirection(agentsLastDir.get(i)))) && ((agentLocation.x == start.x && agentLocation.y == start.y) || (agentsNextTurnGridNode.getTurns() > agentTurnGridNode.getTurns() || grid[agentsNextLocation.x - 1][agentsNextLocation.y - 1].isBlocked()))) {
+            int turnStep = turnsOnPath.indexOf(agentLocation);
+            if (turnStep != -1) {
                chemPlacement = new ChemicalPlacement();
-               Point parentPoint = agentTurnGridNode.getParentPoint();
-               if (parentPoint.x + 1 == agentLocation.x) {
-                  chemPlacement.location = new Point(agentLocation.x, (parentPoint.y > agentLocation.y - 1) ? (agentLocation.y + 1) : (agentLocation.y - 1));
-               } else if (parentPoint.y + 1 == agentLocation.y) {
-                  chemPlacement.location = new Point((parentPoint.x > agentLocation.x - 1) ? (agentLocation.x + 1) : (agentLocation.x - 1), agentLocation.y);
-               }
-
-               ChemicalCell.ChemicalType chemPlacing = lastChemPlaced == ChemicalCell.ChemicalType.GREEN ? ChemicalCell.ChemicalType.RED : ChemicalCell.ChemicalType.GREEN;
-               chemPlacement.chemicals.add(chemPlacing);
-               System.out.println("Placed chemical: " + chemPlacing);
-               this.lastChemPlaced = chemPlacing;
-               agentsLastNumTurns.set(i, agentTurnGridNode.getTurns());
+//               Point parentPoint = agentTurnGridNode.getParentPoint();
+//               if (parentPoint.x + 1 == agentLocation.x) {
+//                  chemPlacement.location = new Point(agentLocation.x, (parentPoint.y > agentLocation.y - 1) ? (agentLocation.y + 1) : (agentLocation.y - 1));
+//               } else if (parentPoint.y + 1 == agentLocation.y) {
+//                  chemPlacement.location = new Point((parentPoint.x > agentLocation.x - 1) ? (agentLocation.x + 1) : (agentLocation.x - 1), agentLocation.y);
+//               }
+//
+//               ChemicalCell.ChemicalType chemPlacing = lastChemPlaced == ChemicalCell.ChemicalType.GREEN ? ChemicalCell.ChemicalType.RED : ChemicalCell.ChemicalType.GREEN;
+//               chemPlacement.chemicals.add(chemPlacing);
+//               System.out.println("Placed chemical: " + chemPlacing);
+//               this.lastChemPlaced = chemPlacing;
+//               agentsLastNumTurns.set(i, agentTurnGridNode.getTurns());
+//               agentsLastLocation.set(i, agentLocation);
                return chemPlacement;
             }
             agentsLastLocation.set(i, agentLocation);
@@ -147,54 +221,129 @@ public class Controller extends chemotaxis.sim.Controller {
       return new ChemicalPlacement();
    }
 
+//   @Override
+//   public ChemicalPlacement applyChemicals(Integer currentTurn, Integer chemicalsRemaining, ArrayList<Point> locations, ChemicalCell[][] grid) {
+//      ChemicalPlacement chemPlacement;
+//      if (chemicalsRemaining > 0) {
+//         for (int i = 0; i < locations.size(); i++) {
+//            Point agentLocation = locations.get(i);
+//            TurnGridNode agentTurnGridNode = turnGrid[agentLocation.x - 1][agentLocation.y - 1];
+//
+//            if (agentsLastLocation.size() != locations.size()) {
+//               agentsLastNumTurns.add(agentTurnGridNode.getTurns());
+//               agentsLastLocation.add(agentLocation);
+//               agentsLastDir.add(DirectionType.CURRENT);
+//            }
+//            agentsLastDir.set(i, getAgentDirection(agentsLastLocation.get(i), agentLocation));
+//
+//
+//
+//            DirectionType agentExpectedDir = (DirectionType) Agent.findOptimalMove(agentsLastDir.get(i), lastChemPlaced == ChemicalCell.ChemicalType.RED ? ChemicalCell.ChemicalType.GREEN : ChemicalCell.ChemicalType.RED, getAgentNeighborMap(grid, agentLocation))[0];
+//            DirectionType agentOptimalDir = getAgentOptimalDirection(agentLocation, agentsLastDir.get(i));
+//            Point agentExpectedLocation = getAgentExpectedLocation(agentLocation, agentExpectedDir);
+//            System.out.println("CONTROLLER: Agent " + String.valueOf(i) + "'s calculated optimal move: " + agentExpectedDir);
+//            System.out.println("CONTROLLER: Agent " + String.valueOf(i) + "'s wanted move: " + agentOptimalDir);
+//
+//            if ((agentLocation.x != target.x || agentLocation.y != target.y) && (getNumNeighborsBlocked(grid, agentLocation) < 2 || (getNumNeighborsBlocked(grid, agentLocation) == 2 && getAgentDirection(agentsLastLocation.get(i), agentLocation) == getOppositeDirection(agentsLastDir.get(i)))) && (!agentExpectedDir.equals(agentOptimalDir) || grid[agentExpectedLocation.x - 1][agentExpectedLocation.y - 1].isBlocked())) {
+//               chemPlacement = new ChemicalPlacement();
+//               Point parentPoint = agentTurnGridNode.getParentPoint();
+//               if (parentPoint.x + 1 == agentLocation.x) {
+//                  chemPlacement.location = new Point(agentLocation.x, (parentPoint.y > agentLocation.y - 1) ? (agentLocation.y + 1) : (agentLocation.y - 1));
+//               } else if (parentPoint.y + 1 == agentLocation.y) {
+//                  chemPlacement.location = new Point((parentPoint.x > agentLocation.x - 1) ? (agentLocation.x + 1) : (agentLocation.x - 1), agentLocation.y);
+//               }
+//
+//               ChemicalCell.ChemicalType chemPlacing = lastChemPlaced == ChemicalCell.ChemicalType.GREEN ? ChemicalCell.ChemicalType.RED : ChemicalCell.ChemicalType.GREEN;
+//               chemPlacement.chemicals.add(chemPlacing);
+//               System.out.println("Placed chemical: " + chemPlacing);
+//               this.lastChemPlaced = chemPlacing;
+//               agentsLastNumTurns.set(i, agentTurnGridNode.getTurns());
+//               agentsLastLocation.set(i, agentLocation);
+//               return chemPlacement;
+//            }
+//            agentsLastLocation.set(i, agentLocation);
+//         }
+//      }
+//
+//      return new ChemicalPlacement();
+//   }
 
-   private Point getAgentsNextLocation(Point agentLocation, DirectionType dir) {
+
+   private DirectionType getAgentOptimalDirection(Point agentLocation, DirectionType agentDir) {
+      int currTurns = turnGrid[agentLocation.x - 1][agentLocation.y - 1].getTurns();
+      int totalMinTurns = currTurns;
+      DirectionType optimalAgentDirection = agentDir;
+
+      if (agentLocation.y != 1 && turnGrid[agentLocation.x - 1][agentLocation.y - 2] != null && turnGrid[agentLocation.x - 1][agentLocation.y - 2].getTurns() < totalMinTurns) {
+         totalMinTurns = turnGrid[agentLocation.x - 1][agentLocation.y - 2].getTurns();
+         optimalAgentDirection = DirectionType.WEST;
+      }
+      if (agentLocation.x != turnGrid[0].length && turnGrid[agentLocation.x][agentLocation.y - 1] != null && turnGrid[agentLocation.x][agentLocation.y - 1].getTurns() < totalMinTurns) {
+         totalMinTurns = turnGrid[agentLocation.x][agentLocation.y - 1].getTurns();
+         optimalAgentDirection = DirectionType.SOUTH;
+      }
+      if (agentLocation.y != turnGrid.length && turnGrid[agentLocation.x - 1][agentLocation.y] != null && turnGrid[agentLocation.x - 1][agentLocation.y].getTurns() < totalMinTurns) {
+         totalMinTurns = turnGrid[agentLocation.x - 1][agentLocation.y].getTurns();
+         optimalAgentDirection = DirectionType.EAST;
+      }
+      if (agentLocation.x != 1 && turnGrid[agentLocation.x - 2][agentLocation.y - 1] != null && turnGrid[agentLocation.x - 2][agentLocation.y - 1].getTurns() < totalMinTurns) {
+         optimalAgentDirection = DirectionType.NORTH;
+      }
+      return optimalAgentDirection;
+   }
+
+
+   private Point getAgentExpectedLocation(Point agentLocation, DirectionType dir) {
       switch (dir) {
          case NORTH:
-            if (agentLocation.y != 1) return new Point(agentLocation.x, agentLocation.y - 1);
+            if (agentLocation.y != 1) return new Point(agentLocation.x - 1, agentLocation.y);
             break;
          case EAST:
-            if (agentLocation.x != turnGrid[0].length) return new Point(agentLocation.x + 1, agentLocation.y);
+            if (agentLocation.x != turnGrid[0].length) return new Point(agentLocation.x, agentLocation.y + 1);
             break;
          case SOUTH:
-            if (agentLocation.y != turnGrid.length) return new Point(agentLocation.x, agentLocation.y + 1);
+            if (agentLocation.y != turnGrid.length) return new Point(agentLocation.x + 1, agentLocation.y);
             break;
          case WEST:
-            if (agentLocation.x != 1) return new Point(agentLocation.x - 1, agentLocation.y);
+            if (agentLocation.x != 1) return new Point(agentLocation.x, agentLocation.y - 1);
             break;
       }
       return agentLocation;
    }
 
 
-   private TurnGridNode getAgentsNextTurnGridNode(Point agentLocation, DirectionType agentsNextDir) {
-      Point nextPoint = getAgentsNextLocation(agentLocation, agentsNextDir);
-      return turnGrid[nextPoint.x - 1][nextPoint.y - 1];
+   private int getNumNeighborsBlocked(ChemicalCell[][] grid, Point agentLocation) {
+      int numNeighborsBlocked = 0;
+      if (agentLocation.x == 1 || (agentLocation.x > 1 && grid[agentLocation.x - 2][agentLocation.y - 1].isBlocked())) numNeighborsBlocked++;
+      if (agentLocation.y == 1 || (agentLocation.y > 1 && grid[agentLocation.x - 1][agentLocation.y - 2].isBlocked())) numNeighborsBlocked++;
+      if (agentLocation.x == grid[0].length || (grid[0].length > agentLocation.x && grid[agentLocation.x][agentLocation.y - 1].isBlocked())) numNeighborsBlocked++;
+      if (agentLocation.y == grid.length || grid.length > agentLocation.y && grid[agentLocation.x - 1][agentLocation.y].isBlocked()) numNeighborsBlocked++;
+      return numNeighborsBlocked;
    }
 
 
-   private Map<DirectionType, ChemicalCell> getAgentsNeighborMap(ChemicalCell[][] grid, Point agentLocation) {
+   private Map<DirectionType, ChemicalCell> getAgentNeighborMap(ChemicalCell[][] grid, Point agentLocation) {
       Map<DirectionType, ChemicalCell> neighborMap = new HashMap<>();
 
       if(agentLocation.y == 1)
-         neighborMap.put(DirectionType.NORTH, new ChemicalCell(false));
-      else
-         neighborMap.put(DirectionType.NORTH, grid[agentLocation.x - 1][agentLocation.y - 2]);
-
-      if(agentLocation.y == grid.length)
-         neighborMap.put(DirectionType.SOUTH, new ChemicalCell(false));
-      else
-         neighborMap.put(DirectionType.SOUTH, grid[agentLocation.x - 1][agentLocation.y]);
-
-      if(agentLocation.x == grid[0].length)
-         neighborMap.put(DirectionType.EAST, new ChemicalCell(false));
-      else
-         neighborMap.put(DirectionType.EAST, grid[agentLocation.x][agentLocation.y - 1]);
-
-      if(agentLocation.x == 1)
          neighborMap.put(DirectionType.WEST, new ChemicalCell(false));
       else
-         neighborMap.put(DirectionType.WEST, grid[agentLocation.x - 2][agentLocation.y - 1]);
+         neighborMap.put(DirectionType.WEST, grid[agentLocation.x - 1][agentLocation.y - 2]);
+
+      if(agentLocation.y == grid.length)
+         neighborMap.put(DirectionType.EAST, new ChemicalCell(false));
+      else
+         neighborMap.put(DirectionType.EAST, grid[agentLocation.x - 1][agentLocation.y]);
+
+      if(agentLocation.x == grid[0].length)
+         neighborMap.put(DirectionType.SOUTH, new ChemicalCell(false));
+      else
+         neighborMap.put(DirectionType.SOUTH, grid[agentLocation.x][agentLocation.y - 1]);
+
+      if(agentLocation.x == 1)
+         neighborMap.put(DirectionType.NORTH, new ChemicalCell(false));
+      else
+         neighborMap.put(DirectionType.NORTH, grid[agentLocation.x - 2][agentLocation.y - 1]);
 
       return neighborMap;
    }

@@ -29,16 +29,16 @@ public class Agent extends chemotaxis.sim.Agent {
 
 
    private byte directionToBits(DirectionType direction){
-      if (direction == DirectionType.CURRENT) {
+      if (direction.equals(DirectionType.CURRENT)) {
          return 0;
       }
-      else if (direction == DirectionType.EAST) {
+      else if (direction.equals(DirectionType.EAST)) {
          return 1;
       }
-      else if (direction == DirectionType.WEST){
+      else if (direction.equals(DirectionType.WEST)){
          return 2;
       }
-      else if (direction == DirectionType.NORTH){
+      else if (direction.equals(DirectionType.NORTH)){
          return 3;
       }
       else {
@@ -102,10 +102,10 @@ public class Agent extends chemotaxis.sim.Agent {
       else if (direction == 2){
          return DirectionType.WEST;
       }
-      else if (previousState == 3){
+      else if (direction == 3){
          return DirectionType.NORTH;
       }
-      else{
+      else {
          return DirectionType.SOUTH;
       }
    }
@@ -214,13 +214,12 @@ public class Agent extends chemotaxis.sim.Agent {
 
       for (DirectionType orthogonalDirection: orthogonalDirections) {
          if (!neighborMap.get(orthogonalDirection).isBlocked() && ifDirectionIsAbsoluteMax(orthogonalDirection, chosenChemicalType, neighborMap)){
-            System.out.println("Switching color from " + chosenChemicalType + " to " + switchColor(chosenChemicalType));
             return new Object[] {orthogonalDirection, switchColor(chosenChemicalType)};
          }
       }
 
       // if gets to this point, resort to default functionality -- still need to implement turn-right strategy
-      if (neighborMap.get(previousDirection).isBlocked()) {
+      if (!previousDirection.equals(DirectionType.CURRENT) && neighborMap.get(previousDirection).isBlocked()) {
          DirectionType directionToRight = turnRight(previousDirection);
          if (neighborMap.get(directionToRight).isBlocked()) {
             DirectionType directionToLeft = turnLeft(previousDirection);
@@ -251,14 +250,6 @@ public class Agent extends chemotaxis.sim.Agent {
       Object[] res = this.findOptimalMove(previousDirection,chosenChemicalType,neighborMap);
       DirectionType selectedMove = (DirectionType) res[0];
       chosenChemicalType = (ChemicalCell.ChemicalType) res[1];
-
-      //if the current cell is your selectedMove so far that means you're at a local maximum so far
-      //move forward one in the previous direction and switch colors in the savedState (according to orthogonal placement)
-      //switch colors and continue to find the best move on the next iteration i.e. make a turn.
-//      if(selectedMove.equals(DirectionType.CURRENT)){
-//         selectedMove = previousDirection;
-//         chosenChemicalType = this.switchColor(chosenChemicalType);
-//      }
 
       Byte newState = this.saveState(selectedMove, chosenChemicalType);
       move.directionType = selectedMove;
