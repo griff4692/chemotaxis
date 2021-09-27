@@ -205,8 +205,9 @@ public class Agent extends chemotaxis.sim.Agent {
 
         for (DirectionType directionType : neighborMap.keySet()) {
             double temp = neighborMap.get(directionType).getConcentration(ChemicalType.BLUE);
-            if (temp == 1) {
-                nextDirection = directionType;
+            boolean isReverse = prevState.asCardinalDir(directionType) == prevState.getDirection().reverseOf();
+            if (temp == 1 && !isReverse) {
+                    nextDirection = directionType;
             }
         }
 
