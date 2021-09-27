@@ -214,11 +214,13 @@ public class Agent extends chemotaxis.sim.Agent {
 
       for (DirectionType orthogonalDirection: orthogonalDirections) {
          if (!neighborMap.get(orthogonalDirection).isBlocked() && ifDirectionIsAbsoluteMax(orthogonalDirection, chosenChemicalType, neighborMap)){
+            System.out.println("absolute max in direction : " + orthogonalDirection);
             return new Object[] {orthogonalDirection, switchColor(chosenChemicalType)};
          }
       }
 
       // if gets to this point, resort to default functionality -- still need to implement turn-right strategy
+      System.out.println(previousDirection);
       if (previousDirection != null && !previousDirection.equals(DirectionType.CURRENT) && neighborMap.get(previousDirection).isBlocked()) {
          DirectionType directionToRight = turnRight(previousDirection);
          if (neighborMap.get(directionToRight).isBlocked()) {
@@ -228,6 +230,7 @@ public class Agent extends chemotaxis.sim.Agent {
             return new Object[] {directionToRight, chosenChemicalType};
          }
       }
+      System.out.println("continuing in previous direction");
       return new Object[] {previousDirection, chosenChemicalType};
    }
 
