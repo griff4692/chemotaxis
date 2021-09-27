@@ -87,30 +87,29 @@ class GameCell {
     }
 
     /**
-     * Returns the points north, south, east, and west of `p`
+     * Returns a point representing a 1-step move in the direction `dir`.
      * <p>
-     * NOTE: Points are not validated and may be out of bounds.
-     * Separate bounds checkin is required.
+     * NOTE: Points are not validate and may be out of bounds.
+     * Separate bounds checking is required.
      *
-     * @param p
+     * @param current
+     * @param dir
      * @return
      */
-    public static Point[] pointNeighbors(final Point p) {
-        int row = p.x;
-        int col = p.y;
-        // NOTE: Do NOT modify the order in which the points are returned.
-        // Other code depends on these orders
-        Point[] candidates = {
-                new Point(row - 1, col), new Point(row + 1, col),
-                new Point(row, col - 1), new Point(row, col + 1)
-        };
-        return candidates;
-    }
-
-    // Directions corresponding to the order of points returned by pointNeighbors
-    // Too bad Java doesn't have tuples and pattern matching..........
-    public static DirectionType[] pointNeighborsDirections() {
-        return new DirectionType[]{DirectionType.NORTH, DirectionType.SOUTH, DirectionType.WEST, DirectionType.EAST};
+    public static Point pointInDirection(final Point current, final DirectionType dir) {
+        switch (dir) {
+            case CURRENT:
+                return new Point(current);
+            case NORTH:
+                return new Point(current.x - 1, current.y);
+            case SOUTH:
+                return new Point(current.x + 1, current.y);
+            case WEST:
+                return new Point(current.x, current.y - 1);
+            case EAST:
+                return new Point(current.x, current.y + 1);
+        }
+        throw new RuntimeException("unexpected DirectionType enum");
     }
 }
 
@@ -120,7 +119,8 @@ public class GameState {
     private final Point target;
     private final int agentGoal;
     private final int spawnFreq;
-    private int chemicalsRemaining = 0;
+    private int agentsOnTarget;
+    private int chemicalsRemaining;
     private GameCell[][] grid;
     private ArrayList<AgentLoc> agents;
     private chemotaxis.sim.Move Move;
@@ -142,6 +142,7 @@ public class GameState {
         this.target = new Point(target);
         this.agentGoal = agentGoal;
         this.spawnFreq = spawnFreq;
+        this.agentsOnTarget = 0;
         this.chemicalsRemaining = chemicalsRemaining;
         this.grid = GameState.buildGrid(grid);
         this.agents = new ArrayList<>();
@@ -161,6 +162,7 @@ public class GameState {
         this.target = new Point(priorState.target);
         this.agentGoal = priorState.agentGoal;
         this.spawnFreq = priorState.spawnFreq;
+        this.agentsOnTarget = priorState.agentsOnTarget;
         this.chemicalsRemaining = priorState.chemicalsRemaining;
 
         // Create a clone of the chemical cell grid
@@ -221,18 +223,67 @@ public class GameState {
         }
     }
 
+    public int getCurrentTurn() {
+        return currentTurn;
+    }
+
+    public Point getStart() {
+        return start;
+    }
+
+    public Point getTarget() {
+        return target;
+    }
+
+    public int getAgentGoal() {
+        return agentGoal;
+    }
+
+    public int getSpawnFreq() {
+        return spawnFreq;
+    }
+
+    public int getAgentsOnTarget() {
+        return agentsOnTarget;
+    }
+
+    public int getChemicalsRemaining() {
+        return chemicalsRemaining;
+    }
+
+    /**
+     * Be careful! This function returns a reference to the grid to avoid
+     * making a copy. Do not modify the state of this board directly.
+     * @return
+     */
+    public GameCell[][] getGrid() {
+        return grid;
+    }
+
+    /**
+     * Be careful! Do not modify the agent state directly.
+     * @return
+     */
+    public ArrayList<AgentLoc> getAgents() {
+        return agents;
+    }
+
+    /**
+     * This function is impure and updates the `GameState` object.
+     * <p>
+     * Overview
+     * for agent in agent list
+     * if agent not at target
+     * give agent a map of neighbors
+     * get agent move
+     * update game state (vacate old cell, occupy new cell, update agent state)
+     */
     private void moveAgents() {
-        // TODO
-        // For agent in agent list (should be sorted in epoch order)
-        // If agent not at target
-        // Provide neighbors to agent
-        // Get move
-        // Update game state
         int prevEpoch = -1;
         // Agent class re-used to run every `Agent.makeMove`
         Agent agentClass = new Agent(new SimPrinter(false));
         for (AgentLoc agent : this.agents) {
-            if (agent.epoch >= prevEpoch) {
+            if (agent.epoch <= prevEpoch) {
                 throw new RuntimeException("agents out of epoch order");
             }
             prevEpoch = agent.epoch;
@@ -242,26 +293,49 @@ public class GameState {
             }
 
             // Create a map of chemical cells for the agent
-            Point[] candidates = GameCell.pointNeighbors(agent.loc);
-            DirectionType[] candidateDirections = GameCell.pointNeighborsDirections();
+            DirectionType[] dirs = {DirectionType.NORTH, DirectionType.SOUTH, DirectionType.WEST, DirectionType.EAST};
             HashMap<DirectionType, ChemicalCell> chems = new HashMap<>();
-            for (int i = 0; i < candidates.length; ++i) {
-                Point p = candidates[i];
+            for (DirectionType dir : dirs) {
+                Point p = GameCell.pointInDirection(agent.loc, dir);
                 if (this.pointOutOfBounds(p)) {
                     continue;
                 }
                 ChemicalCell cell = GameCell.cloneAttenuatedChemicalCell(this.grid[p.x][p.y].cell);
-                chems.put(candidateDirections[i], cell);
+                chems.put(dir, cell);
             }
+
             // Get the agent's move
             int randNo = 0;  // lol
             ChemicalCell currentCell = GameCell.cloneAttenuatedChemicalCell(this.grid[agent.loc.x][agent.loc.y].cell);
-            Move = agentClass.makeMove(randNo, agent.state.serialize(), currentCell, chems);
+            Move move = agentClass.makeMove(randNo, agent.state.serialize(), currentCell, chems);
+            Point movePoint = GameCell.pointInDirection(agent.loc, move.directionType);
 
-            // TODO(etm): Update the game state
+            // Agent internal state is always updated
+            agent.state = new AgentState(move.currentState);
+
+            // Validate Move
+            if (this.pointOutOfBounds(movePoint)) {
+                continue;
+            }
+
+            // Move is valid, check if agent can move there
+            GameCell moveCell = this.grid[movePoint.x][movePoint.y];
+            // Check to see if the cell is blocked (wall) or occupied by an agent
+            if (moveCell.isBlocked() || moveCell.occupied) {
+                continue;
+            }
+
+            // Vacate current cell, occupy new cell, update agent
+            this.grid[agent.loc.x][agent.loc.y].occupied = false;
+            if (movePoint.equals(this.target)) {
+                // Agent de-spawning is implemented by not marking the target cell as occupied
+                this.agentsOnTarget += 1;
+            } else {
+                this.grid[movePoint.x][movePoint.y].occupied = true;
+            }
+            // Update agent location
+            agent.loc = movePoint;
         }
-
-        throw new RuntimeException("not implemented");
     }
 
     private void diffuseGrid() {
@@ -273,12 +347,14 @@ public class GameState {
                 // Calculate the concentration of each chemical type
                 ChemicalType[] chems = {ChemicalType.BLUE, ChemicalType.RED, ChemicalType.GREEN};
                 for (ChemicalType chemType : chems) {
-                    Point[] candidates = GameCell.pointNeighbors(new Point(row, col));
                     GameCell currentCell = this.grid[row][col];
                     double points = 1.0;
                     double chemSum = currentCell.cell.getConcentration(chemType);
                     // Check neighboring cells
-                    for (Point c : candidates) {
+                    DirectionType[] dirs = {DirectionType.NORTH, DirectionType.SOUTH, DirectionType.WEST, DirectionType.EAST};
+                    for (DirectionType d : dirs) {
+                        // Candidate point
+                        Point c = GameCell.pointInDirection(new Point(row, col), d);
                         // Check to see if the point is out of bounds or blocked
                         if (this.pointOutOfBounds(c) || this.grid[c.x][c.y].isBlocked()) {
                             continue;
