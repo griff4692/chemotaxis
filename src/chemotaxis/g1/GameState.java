@@ -135,7 +135,7 @@ public class GameState {
      * @param chemicalsRemaining
      * @param grid
      */
-    private GameState(final Point start, final Point target, int agentGoal, int spawnFreq,
+    public GameState(final Point start, final Point target, int agentGoal, int spawnFreq,
                       int chemicalsRemaining, ChemicalCell[][] grid) {
         this.currentTurn = 1;
         this.start = new Point(start);
@@ -194,7 +194,7 @@ public class GameState {
      * @param placement
      * @return
      */
-    private GameState placeChemicalAndStep(ChemicalPlacement placement) {
+    public GameState placeChemicalAndStep(ChemicalPlacement placement) {
         // Copy of current state
         GameState nextState = new GameState(this);
 
