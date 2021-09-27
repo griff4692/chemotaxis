@@ -216,6 +216,10 @@ public class GameState {
     }
 
     private void placeChemical(ChemicalPlacement placement) {
+        if (this.chemicalsRemaining == 0) {
+            return;
+        }
+        chemicalsRemaining -= 1;
         Point p = placement.location;
         // Not sure why the placement has a list, but ok...
         for (ChemicalType c : placement.chemicals) {
