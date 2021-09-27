@@ -34,85 +34,81 @@ public class Agent extends chemotaxis.sim.Agent {
 	@Override
 	public Move makeMove(Integer randomNum, Byte previousState, ChemicalCell currentCell, Map<DirectionType, ChemicalCell> neighborMap) {
 
+		Move move = new Move();
+		ChemicalType chosenChemicalType;
+
 		/*
-		* Byte previousState : 3 LSBs hold previous direction
-		* 001 : North
-		* 010 : South
-		* 011 : East
-		* 100 : West
-		* 101 : Current
-		* 110 : Seen red. Ignore Blue?
+		* if prev == 0 look at blue;
+		* Check current colour. If reached maxima, turn to other colour.
+		* If both colours zero, follow green.
 		* */
 
+		/*
+		* previousstate = 0 ==> first iteration. Set LSB to 1
+		* LSB == 011 ==> Currently following BLUE
+		* LSB == 101 ==> Currently following RED
+		* 2nd bit == 1001 ==> GREEN
+		* */
 
-		Move move = new Move();
+		if(previousState == 0){
+			previousState = 3;
+		}
 
-		ChemicalType chosenChemicalTurn = ChemicalType.BLUE;
-		ChemicalType chosenChemicalType = ChemicalType.RED;
+		if((previousState & 3) == 3){
+			chosenChemicalType = ChemicalType.BLUE;
+		}
+		else if ((previousState & 5) == 5){
+			chosenChemicalType = ChemicalType.RED;
+		}
+		else
+			chosenChemicalType = ChemicalType.GREEN;
 
 
-		double minDetectableConcentration = 0.001;	/* Would have done a #define, but can't. CAUTION! Change if minimum detectable concentration
-		 changes. */
-		
-		boolean turn = false;
-
+		double highestConcentration = currentCell.getConcentration(chosenChemicalType);
+		double previousColourConcentration;
 
 		for (DirectionType directionType : neighborMap.keySet()) {
-			if (Math.abs(neighborMap.get(directionType).getConcentration(chosenChemicalTurn) - 1.0) < minDetectableConcentration ) {
+			if (highestConcentration <= neighborMap.get(directionType).getConcentration(chosenChemicalType)) {
+				highestConcentration = neighborMap.get(directionType).getConcentration(chosenChemicalType);
 				move.directionType = directionType;
-				turn = true;
-				move.currentState = storeDir(directionType);
-				break;
-
 			}
 		}
 
-		if(!turn){
-			// No blue found. Then follow previous direction
-			move.directionType = findPreviousState(previousState);
-			move.currentState = previousState;
+		if (highestConcentration >= currentCell.getConcentration(chosenChemicalType) && )
+			;
+		else{
+			// we have reached maximum. Change colour
+			previousColourConcentration = highestConcentration;
+			if((previousState & 3) == 3){
+				chosenChemicalType = ChemicalType.RED;
+				previousState = 5;
 
+				for (DirectionType directionType : neighborMap.keySet()) {
+					if (highestConcentration <= neighborMap.get(directionType).getConcentration(chosenChemicalType)) {
+						highestConcentration = neighborMap.get(directionType).getConcentration(chosenChemicalType);
+						move.directionType = directionType;
+					}
+				}
+			}
+			else if ((previousState & 5) == 5){
+				chosenChemicalType = ChemicalType.BLUE;
+				previousState = 3;
+
+				for (DirectionType directionType : neighborMap.keySet()) {
+					if (highestConcentration <= neighborMap.get(directionType).getConcentration(chosenChemicalType)) {
+						highestConcentration = neighborMap.get(directionType).getConcentration(chosenChemicalType);
+						move.directionType = directionType;
+					}
+				}
+			}
+			else
 		}
 
-		/*
-		* Add : if in current position for many turns, choose a different position.
-		*
-
-		 */
+		move.currentState = previousState;
 
 		return move;
 	}
 
 
-	public Byte storeDir(DirectionType directionType){
-		if(directionType == DirectionType.EAST){
-			return 3;
-		} else if(directionType == DirectionType.WEST){
-			return 4;
-		} else if(directionType == DirectionType.NORTH){
-			return 1;
-		} else if(directionType == DirectionType.SOUTH){
-			return 2;
-		}else{
-			return 5;
-		}
-	}
 
-	public DirectionType findPreviousState(Byte previousState){
-		if((previousState & 7) == 1){
-			return DirectionType.NORTH;
-		}
-		else if ((previousState & 7) == 2){
-			return DirectionType.SOUTH;
-		}
-		else if ((previousState & 7) == 3){
-			return DirectionType.EAST;
-		}
-		else if ((previousState & 7) == 4){
-			return DirectionType.WEST;
-		}
-		else{
-			return DirectionType.CURRENT;
-		}
-	}
 }
