@@ -30,8 +30,8 @@ public class Controller extends chemotaxis.sim.Controller {
      * @param simPrinter  simulation printer
      *
      */
-    public Controller(Point start, Point target, Integer size, ChemicalCell[][] grid, Integer simTime, Integer budget, Integer seed, SimPrinter simPrinter) {
-        super(start, target, size, grid, simTime, budget, seed, simPrinter);
+    public Controller(Point start, Point target, Integer size, ChemicalCell[][] grid, Integer simTime, Integer budget, Integer seed, SimPrinter simPrinter, Integer agentGoal, Integer spawnFreq) {
+        super(start, target, size, grid, simTime, budget, seed, simPrinter, agentGoal, spawnFreq);
         agents = new HashMap<>();
         this.start = start;
         this.target = target;
@@ -48,33 +48,40 @@ public class Controller extends chemotaxis.sim.Controller {
         Queue<Point> queue = new LinkedList<Point>();
         queue.add(new Point(endX, endY));
 
+        visited[endX][endY] = true;
+        directionMap[endX][endY] = DirectionType.CURRENT;
+
         while (!queue.isEmpty()) {
             Point curr = queue.remove();
             int x = curr.x;
             int y = curr.y;
-            visited[x][y] = true;
             if (x - 1 >= 0 && grid[x - 1][y].isOpen() && !visited[x - 1][y]) {
                 queue.add(new Point(x - 1, y));
+                visited[x-1][y] = true;
                 directionMap[x - 1][y] = DirectionType.SOUTH;
             }
 
             if (y - 1 >= 0 && grid[x][y - 1].isOpen() && !visited[x][y - 1]) {
                 queue.add(new Point(x, y - 1));
+                visited[x][y-1] = true;
                 directionMap[x][y - 1] = DirectionType.EAST;
             }
 
             if (x + 1 < size && grid[x + 1][y].isOpen() && !visited[x + 1][y]) {
                 queue.add(new Point(x + 1, y));
+                visited[x+1][y] = true;
                 directionMap[x + 1][y] = DirectionType.NORTH;
             }
 
             if (y + 1 < size && grid[x][y + 1].isOpen() && !visited[x][y + 1]) {
                 queue.add(new Point(x, y + 1));
+                visited[x][y+1] = true;
                 directionMap[x][y + 1] = DirectionType.WEST;
             }
         }
 
-        /* Prints the map that is made
+        //Prints the map that is made
+        /*
         HashMap<DirectionType, Character> debugging = new HashMap<>();
         debugging.put(DirectionType.NORTH, 'N');
         debugging.put(DirectionType.SOUTH, 'S');
@@ -88,7 +95,6 @@ public class Controller extends chemotaxis.sim.Controller {
             System.out.println();
         }
         */
-
     }
 
     public int closestToTarget(ArrayList<Point> locations) {
@@ -129,30 +135,41 @@ public class Controller extends chemotaxis.sim.Controller {
         }
 
         Point wrongDirectionAgent = null;
+        double threshold = 0.1;
         for (Point p: locations) {
             if (!p.equals(target) && agents.get(p) != directionMap[p.x - 1][p.y - 1]) {
-                wrongDirectionAgent = p;
-                break;
+                if (grid[p.x - 1][p.y - 1].getConcentration(ChemicalCell.ChemicalType.BLUE) < threshold &&
+                        grid[p.x - 1][p.y - 1].getConcentration(ChemicalCell.ChemicalType.GREEN) < threshold &&
+                        grid[p.x - 1][p.y - 1].getConcentration(ChemicalCell.ChemicalType.RED) < threshold) {
+                    wrongDirectionAgent = p;
+                    break;
+                }
             }
         }
 
+        List<ChemicalCell.ChemicalType> chemicals = new ArrayList<>();
         if (wrongDirectionAgent != null) {
             DirectionType newDirection = directionMap[wrongDirectionAgent.x - 1][wrongDirectionAgent.y - 1];
             if (newDirection == DirectionType.NORTH) {
                 chemicalPlacement.location = new Point(wrongDirectionAgent.x - 1, wrongDirectionAgent.y);
                 agents.put(wrongDirectionAgent, DirectionType.NORTH);
+                chemicals.add(ChemicalCell.ChemicalType.RED);
             }
             else if (newDirection == DirectionType.SOUTH) {
                 chemicalPlacement.location = new Point(wrongDirectionAgent.x + 1, wrongDirectionAgent.y);
                 agents.put(wrongDirectionAgent, DirectionType.SOUTH);
+                chemicals.add(ChemicalCell.ChemicalType.BLUE);
             }
             else if (newDirection == DirectionType.EAST) {
                 chemicalPlacement.location = new Point(wrongDirectionAgent.x, wrongDirectionAgent.y + 1);
                 agents.put(wrongDirectionAgent, DirectionType.EAST);
+                chemicals.add(ChemicalCell.ChemicalType.GREEN);
             }
             else if (newDirection == DirectionType.WEST) {
                 chemicalPlacement.location = new Point(wrongDirectionAgent.x, wrongDirectionAgent.y - 1);
                 agents.put(wrongDirectionAgent, DirectionType.WEST);
+                chemicals.add(ChemicalCell.ChemicalType.BLUE);
+                chemicals.add(ChemicalCell.ChemicalType.GREEN);
             }
             else {
                 chemicalPlacement.location = new Point(wrongDirectionAgent.x, wrongDirectionAgent.y);
@@ -180,10 +197,12 @@ public class Controller extends chemotaxis.sim.Controller {
             }
         }
         this.agents = newAgents;
+        /*
         List<ChemicalCell.ChemicalType> chemicals = new ArrayList<>();
         if (wrongDirectionAgent != null) {
             chemicals.add(ChemicalCell.ChemicalType.BLUE);
         }
+         */
         chemicalPlacement.chemicals = chemicals;
         return chemicalPlacement;
     }

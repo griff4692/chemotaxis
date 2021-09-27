@@ -11,6 +11,7 @@ import chemotaxis.sim.ChemicalCell.ChemicalType;
 
 public class Controller extends chemotaxis.sim.Controller {
     LinkedList<Point> path = new LinkedList<Point>();
+    private int curPlacement = 1;
     /**
      * Controller constructor
      *
@@ -23,8 +24,8 @@ public class Controller extends chemotaxis.sim.Controller {
      * @param simPrinter  simulation printer
      *
      */
-    public Controller(Point start, Point target, Integer size, ChemicalCell[][] grid, Integer simTime, Integer budget, Integer seed, SimPrinter simPrinter) {
-        super(start, target, size, grid, simTime, budget, seed, simPrinter);
+    public Controller(Point start, Point target, Integer size, ChemicalCell[][] grid, Integer simTime, Integer budget, Integer seed, SimPrinter simPrinter, Integer agentGoal, Integer spawnFreq) {
+        super(start, target, size, grid, simTime, budget, seed, simPrinter, agentGoal, spawnFreq);
         //initializations
         int [][] visited = new int[grid.length][grid[0].length];
         //0->available but not yet visited, 1->visited, -1->blocked cell
@@ -55,7 +56,7 @@ public class Controller extends chemotaxis.sim.Controller {
 
         while(!que.isEmpty() && !found)
         {
-            temp = que.poll();
+            temp = que.pollFirst();
             i=(int)temp.getX();
             j=(int)temp.getY();
             if(temp == target_zero)
@@ -141,13 +142,19 @@ public class Controller extends chemotaxis.sim.Controller {
     @Override
     public ChemicalPlacement applyChemicals(Integer currentTurn, Integer chemicalsRemaining, ArrayList<Point> locations, ChemicalCell[][] grid) {
         // get the closest point which is the one we will make go to exit:
+        
+        // Point closestAgent = getClosestAgent(locations);
+        // if(closestAgent != null) {
+        //     System.out.println("closest agent is at: " + closestAgent.toString());
+        // }
 
-        Point closestAgent = getClosestAgent(locations);
-        if(closestAgent != null) {
-            System.out.println("closest agent is at: " + closestAgent.toString());
+        // Point locToPlace = getPosCloseToGoal(closestAgent, grid);
+        Point locToPlace = this.path.get(curPlacement++);
+
+        // reset back to beginning
+        if (curPlacement == this.path.size()) {
+            curPlacement = this.path.size()-1;
         }
-
-        Point locToPlace = getPosCloseToGoal(closestAgent, grid);
 
         System.out.println("Placing green at: " + locToPlace.toString());
 
@@ -161,14 +168,25 @@ public class Controller extends chemotaxis.sim.Controller {
      * Examples: caching the original path along with distance to goal for each one
      */
     private int getManhattanDistance(int targetX, int targetY, int sourceX, int sourceY) {
-        return Math.abs((targetX - sourceX) + Math.abs((targetY - sourceY)));
+        return Math.abs(targetX - sourceX) + Math.abs(targetY - sourceY);
     }
 
     private Point getClosestAgent(ArrayList<Point> locations) {
-        return getClosestPointToTarget(target, locations);
+        // return getClosestPointToTarget(target, locations);
+        Point closest = null;
+        int furthestDistance = -1;
+        for (Point loc : locations) {
+            for (int i = 0; i < this.path.size(); i++) {
+                Point trial = this.path.get(i);
+                if (loc == trial && i > furthestDistance) {
+                    closest = new Point(trial);
+                }
+            }
+        }
+        return closest;
     }
 
-    // TODO: Change this from Manhattan distance to use the path calculated and place one closer to it
+
     private Point getPosCloseToGoal(Point agentLoc, ChemicalCell[][] grid) {
         ArrayList<Point> availablePositions = new ArrayList<>();
 
@@ -189,20 +207,27 @@ public class Controller extends chemotaxis.sim.Controller {
         if(y+1 < grid[0].length && grid[x][y+1].isOpen()) {
             availablePositions.add(new Point(agentX, agentY+1));
         }
-
+        
         return getClosestPointToTarget(target, availablePositions);
     }
 
     private Point getClosestPointToTarget(Point target, ArrayList<Point> possibleSources) {
         Integer minDistance = null;
         Point retLoc = null;
-
         for (Point loc : possibleSources) {
-            int manhattanDistance = getManhattanDistance(target.x, target.y, loc.x, loc.y);
-
+            /* int manhattanDistance = getManhattanDistance(target.x, target.y, loc.x, loc.y);
+            System.out.println(manhattanDistance);
             if(minDistance == null || manhattanDistance < minDistance.intValue()) {
                 minDistance = manhattanDistance;
                 retLoc = loc;
+            }*/
+            int nextIdx = -1;
+            for (int i = 0; i < path.size(); i++) {
+                Point trial = path.get(i);
+                if (loc == trial && i > nextIdx) {
+                    nextIdx = i;
+                    retLoc = trial;
+                } 
             }
         }
         return retLoc;

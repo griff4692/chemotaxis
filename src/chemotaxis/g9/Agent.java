@@ -34,33 +34,67 @@ public class Agent extends chemotaxis.sim.Agent {
         // TODO add your code here to move the agent
         Move move = new Move();
 
-        // blue the best, green helps, hate red
-        ChemicalCell.ChemicalType highPriority = ChemicalCell.ChemicalType.BLUE;
-        ChemicalCell.ChemicalType medPriority = ChemicalCell.ChemicalType.GREEN;
+        // if in any given state and see only larger values adjacent, stay in that state and move to larger
+        // if in any given state and see only smaller values adjacent, agent reached local max so change color
 
-        // if green and no blue, follow green
-        // green and blue, go to blue
-        double highestGreen = currentCell.getConcentration(medPriority);
-        DirectionType highestGreenDirection = DirectionType.SOUTH;
-        double highestBlue = currentCell.getConcentration(highPriority);
-        DirectionType highestBlueDirection = null;
+        if (previousState == 0) { // red
+            double highestRed   = currentCell.getConcentration(ChemicalCell.ChemicalType.RED);
+            DirectionType highestRedDirection = null;
 
-        for (DirectionType directionType : neighborMap.keySet()) {
-            if (highestGreen <= neighborMap.get(directionType).getConcentration(medPriority)) {
-                highestGreen = neighborMap.get(directionType).getConcentration(medPriority);
-                highestGreenDirection = directionType;
+            for (DirectionType directionType : neighborMap.keySet()) {
+                double redCnt = neighborMap.get(directionType).getConcentration(ChemicalCell.ChemicalType.RED);
+
+                if (highestRed < redCnt) {
+                    highestRed = redCnt;
+                    highestRedDirection = directionType;
+                }
             }
-            if (highestBlue <= neighborMap.get(directionType).getConcentration(highPriority)) {
-                highestBlue = neighborMap.get(directionType).getConcentration(highPriority);
-                highestBlueDirection = directionType;
-            }
-        }
 
-        if (highestBlue != 0) {
-            move.directionType = highestBlueDirection;
-        } else {
-            move.directionType = highestGreenDirection;
-        }
+            if (highestRedDirection == null) {
+                move.currentState = 1;
+            } else {
+                move.currentState = 0;
+                move.directionType = highestRedDirection;
+            }
+        } else if (previousState == 1) { // green
+            double highestGreen = currentCell.getConcentration(ChemicalCell.ChemicalType.GREEN);
+            DirectionType highestGreenDirection = null;
+
+            for (DirectionType directionType : neighborMap.keySet()) {
+                double greenCnt = neighborMap.get(directionType).getConcentration(ChemicalCell.ChemicalType.GREEN);
+
+                if (highestGreen < greenCnt) {
+                    highestGreen = greenCnt;
+                    highestGreenDirection = directionType;
+                }
+            }
+
+            if (highestGreenDirection == null) {
+                move.currentState = 2;
+            } else {
+                move.currentState = 1;
+                move.directionType = highestGreenDirection;
+            }
+        } else if (previousState == 2) { // blue
+            double highestBlue = currentCell.getConcentration(ChemicalCell.ChemicalType.BLUE);
+            DirectionType highestBlueDirection = null;
+
+            for (DirectionType directionType : neighborMap.keySet()) {
+                double blueCnt = neighborMap.get(directionType).getConcentration(ChemicalCell.ChemicalType.BLUE);
+
+                if (highestBlue < blueCnt) {
+                    highestBlue = blueCnt;
+                    highestBlueDirection = directionType;
+                }
+            }
+
+            if (highestBlueDirection == null) {
+                move.currentState = 0;
+            } else {
+                move.currentState = 2;
+                move.directionType = highestBlueDirection;
+            }
+        } else {}
 
         return move; // TODO modify the return statement to return your agent move
     }
