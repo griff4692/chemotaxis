@@ -48,7 +48,7 @@ public class Controller extends chemotaxis.sim.Controller {
     private ArrayList<Integer> finalScheduleStrong;
     // a initial schedule if the strategy is weak
     // initialScheduleWeak[i]=color_a means put a color_a chemical at i+1 cell on the route
-    private Map<Integer, Color> initialScheduleWeak;
+    private Map<Integer, Color> initialScheduleWeak = new HashMap<>();
 
     /**
      * Controller constructor
@@ -84,8 +84,9 @@ public class Controller extends chemotaxis.sim.Controller {
         // Divide by 3 since the default number of agents to send to the goal is 3
         // Run the shortest paths algorithm. Results are stored in `routes`
         // and keyed by the number of turns necessary for the path.
-        findshortestpath(grid,budget);
 
+        findshortestpath(grid,budget);
+        System.out.println("finish");
         // Select the fastest route within our budget.
         // Routes with more turns are faster, otherwise `findshortestpath` will terminate
         // without adding a route for that number of turns. Therefore, if key `5` exists in
@@ -112,9 +113,12 @@ public class Controller extends chemotaxis.sim.Controller {
             simPrinter.print("turns at: ");
 
             simPrinter.println(turnAt.get(i));
+
             // TODO (etm): Schedule is currently unused, so it's commented out
             // TODO (etm): Update this once the time allowed is known (?)
-            scheduleAllAgents(i,i<(budget/agentGoal),simTime,spawnFreq,agentGoal);
+
+
+            scheduleAllAgents(i,i<(budget*1.0/agentGoal),simTime,spawnFreq,agentGoal);
 
             simPrinter.print("strong strategy: ");
             simPrinter.println(finalScheduleStrong);
@@ -125,10 +129,10 @@ public class Controller extends chemotaxis.sim.Controller {
     }
 
     public void scheduleAllAgents(int turnChoicice, boolean sufficientChemical, int simTime, int spawnFreq, int agentGoal) {
-      if  (turnAt_simpleForm.get(turnChoicice).isEmpty()) {
-        return;
-      }
-      ArrayList<Integer> schedule = new ArrayList<>();
+        if  (turnAt_simpleForm.get(turnChoicice).isEmpty()) {
+            return;
+        }
+        ArrayList<Integer> schedule = new ArrayList<>();
         if (!turnAt.containsKey(turnChoicice)){
             while (turnChoicice>0 && !turnAt.containsKey(turnChoicice)) {
                 turnChoicice-=1;
@@ -434,14 +438,11 @@ public class Controller extends chemotaxis.sim.Controller {
                 System.out.print(current.x);
                 System.out.print(",");
                 System.out.print(current.y);
-                System.out.println(")  ");
+                System.out.print(")  ");
 
                 route.add(new Point(current));
                 boolean endwhile = false;
                 while (!endwhile) {
-                    for (int i = 0; i < 4; i++) {
-                        System.out.println(localdist[current.x][current.y][i]);
-                    }
                     for (int i = 0; i < 4; i++) {
                         int j = (i + direction + 4) % 4;
                         if (localdist[current.x][current.y][j] == step) {
@@ -452,7 +453,6 @@ public class Controller extends chemotaxis.sim.Controller {
                         }
                     }
                     if (!endwhile) {
-                        System.out.println("gggg");
                         localturn -= 1;
                         localdist = dist_record.get(localturn);
                     }
@@ -564,6 +564,9 @@ public class Controller extends chemotaxis.sim.Controller {
 
             if (shortestdist<10001) {
                 saveRoute(turn);
+            }
+            else {
+                routes.put(turn, new ArrayList<>());
             }
         }
     }
