@@ -98,18 +98,15 @@ public class Controller extends chemotaxis.sim.Controller {
             Collections.reverse(route);
             routes.put(i,route);
             setTurnAt(grid,i);
-            System.out.print("turns: ");
 
+
+            System.out.print("turns: ");
             System.out.println(i);
             System.out.print("steps: ");
-
             System.out.println(routes.get(i).size());
             System.out.print("route: ");
-
             System.out.println(routes.get(i));
-
             System.out.print("turns at: ");
-
             System.out.println(turnAt.get(i));
             // TODO (etm): Schedule is currently unused, so it's commented out
             // TODO (etm): Update this once the time allowed is known (?)
@@ -118,7 +115,6 @@ public class Controller extends chemotaxis.sim.Controller {
             System.out.print("strong strategy: ");
             System.out.println(finalScheduleStrong);
             System.out.print("weak strategy: ");
-
             System.out.println(initialScheduleWeak);
         }
     }
@@ -332,22 +328,28 @@ public class Controller extends chemotaxis.sim.Controller {
         // Check the location of all agents and see if any are sitting on
         // a turn point. For those that are, select the furthest turn point,
         // which is the one with the smallest index.
-        for (Point agentLocation : locations) {
-            for (int turnIx = 0; turnIx < turns.size(); ++turnIx) {
-                if (turns.get(turnIx) == 0) {
-                    continue;
-                }
-                Point turn = route.get(turnIx + 1);
+        for (int turnIx =  turns.size()-1; turnIx >=0; --turnIx) {
+            if (turns.get(turnIx) == 0) {
+                continue;
+            }
+            boolean found=false;
+            for (Point agentLocation : locations) {
+                Point turn = route.get(turnIx);
                 // Fix this annoying 1-based map indexing
                 Point zeroAgentLocation = new Point(agentLocation.x - 1, agentLocation.y - 1);
-                if (turn.equals(zeroAgentLocation) && turnIx > furthestTurnIx ) {
+                if (turn.equals(zeroAgentLocation)) {
                     furthestTurnIx = turnIx;
+                    found = true;
+                    break;
                 }
+            }
+            if (found) {
+                break;
             }
         }
         if (furthestTurnIx >= 0) {
             // Place the chemical on the next step on the path
-            Point loc = route.get(furthestTurnIx + 2);
+            Point loc = route.get(furthestTurnIx + 1);
             chemicalPlacement.location = new Point(loc.x + 1, loc.y + 1);
             chemicalPlacement.chemicals.add(ChemicalCell.ChemicalType.BLUE);
         }
