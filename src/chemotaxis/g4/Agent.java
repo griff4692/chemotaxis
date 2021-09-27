@@ -32,6 +32,8 @@ public class Agent extends chemotaxis.sim.Agent {
      */
 	@Override
 	public Move makeMove(Integer randomNum, Byte previousState, ChemicalCell currentCell, Map<DirectionType, ChemicalCell> neighborMap) {
+        double threshold = 0.05;
+
 		Move move = new Move();
         // Chop up the previous state into stored info:
         // 1-2nd bits: determine current chem - 00=INITIAL STATE (RED,NO ROLLING),01=RED,10=GREEN, 11=BLUE
@@ -82,6 +84,8 @@ public class Agent extends chemotaxis.sim.Agent {
 				move.directionType = directionType;
 			}
 		}
+        if(highestConcentration<threshold)
+            highestConcentration = 0;
         // If there is none of the sought chemical and the agent is not in the initial state,
         // chose any direction that occured in the last 2 moves
         if (highestConcentration == 0 && chemIdx != 0){
