@@ -138,7 +138,7 @@ public class Agent extends chemotaxis.sim.Agent {
    }
 
    private static DirectionType[] getOrthogonalDirections(DirectionType previousDirection){
-      if (previousDirection == DirectionType.CURRENT) {
+      if (previousDirection == null || previousDirection == DirectionType.CURRENT) {
          return new DirectionType[] { DirectionType.NORTH, DirectionType.EAST, DirectionType.SOUTH, DirectionType.WEST };
       }
       if (previousDirection == DirectionType.EAST || previousDirection == DirectionType.WEST){
@@ -223,11 +223,14 @@ public class Agent extends chemotaxis.sim.Agent {
       System.out.println(previousDirection);
       if (previousDirection != null && !previousDirection.equals(DirectionType.CURRENT) && neighborMap.get(previousDirection).isBlocked()) {
          DirectionType directionToRight = turnRight(previousDirection);
-         if (neighborMap.get(directionToRight).isBlocked()) {
-            DirectionType directionToLeft = turnLeft(previousDirection);
-            return new Object[] {directionToLeft, chosenChemicalType};
-         } else {
+         DirectionType directionToLeft = turnLeft(previousDirection);
+         DirectionType directionBackwards = turnBackwards(previousDirection);
+         if (!neighborMap.get(directionToRight).isBlocked()) {
             return new Object[] {directionToRight, chosenChemicalType};
+         } else if (!neighborMap.get(directionToLeft).isBlocked()){
+            return new Object[] {directionToLeft, chosenChemicalType};
+         } else{
+            return new Object[] {directionBackwards, chosenChemicalType};
          }
       }
       System.out.println("continuing in previous direction");
