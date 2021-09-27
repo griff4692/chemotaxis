@@ -32,6 +32,9 @@ public class Controller extends chemotaxis.sim.Controller {
 	static int INTERVAL = 4;  // drop chemical for every INTERVAL steps in the shortest path
 	int offset;  // the start turn number of current round of dropping chemicals over the shortest path
 	Point start, target;
+	boolean needReminder = false;
+	Point reminder = null;
+	ArrayList<Point> prevLocations = null;
 
 	static private ArrayList<Point> generateShortestPath(Point start, Point target, Integer size, ChemicalCell[][] grid) {
 		int[][] dis = new int[size + 1][size + 1];
@@ -75,8 +78,8 @@ public class Controller extends chemotaxis.sim.Controller {
 
 
 
-	public Controller(Point start, Point target, Integer size, ChemicalCell[][] grid, Integer simTime, Integer budget, Integer seed, SimPrinter simPrinter) {
-		super(start, target, size, grid, simTime, budget, seed, simPrinter);
+	public Controller(Point start, Point target, Integer size, ChemicalCell[][] grid, Integer simTime, Integer budget, Integer seed, SimPrinter simPrinter, Integer agentGoal, Integer spawnFreq) {
+		super(start, target, size, grid, simTime, budget, seed, simPrinter, agentGoal, spawnFreq);
 		shortestPath = generateShortestPath(start, target, size, grid);
 		selectedCells = selectCells(shortestPath, INTERVAL);
 
@@ -98,7 +101,47 @@ public class Controller extends chemotaxis.sim.Controller {
 	@Override
 	public ChemicalPlacement applyChemicals(Integer currentTurn, Integer chemicalsRemaining, ArrayList<Point> locations, ChemicalCell[][] grid) {
 		ChemicalPlacement res = new ChemicalPlacement();
-		res.chemicals.add(ChemicalType.BLUE);
+
+		// this should check to make sure all agents are on right path
+		for (int agentIndex = 0; agentIndex < locations.size(); agentIndex++) {
+			Point agentLocation = locations.get(agentIndex);
+
+			if (!shortestPath.contains(agentLocation)){
+				offset += 1;
+
+				// TODO fix the path when the agent is one cell off from the previously correct path
+//				if (prevLocations != null) {
+//					Point prevAgentLocation = prevLocations.get(agentIndex);
+//					if (shortestPath.contains(prevAgentLocation)) {
+//						int indexOfV = shortestPath.indexOf(prevAgentLocation);
+//						res.location = shortestPath.get(indexOfV + 3);
+//						res.chemicals.add(ChemicalType.BLUE);
+//
+//						// update prevLocations
+//						prevLocations = locations;
+//						return res;
+//					}
+//				}
+
+				for (int i = 0; i < 4; ++i) {
+					Point v = new Point(agentLocation.x + DIR[i][0], agentLocation.y + DIR[i][1]);
+					if (shortestPath.contains(v)) {
+						int indexOfV = shortestPath.indexOf(v);
+//						res.location = v;
+						res.location = shortestPath.get(indexOfV + 2);
+						res.chemicals.add(ChemicalType.BLUE);
+
+						// set reminder
+						needReminder = true;
+						reminder = shortestPath.get(Math.min(indexOfV + 4, shortestPath.size() - 1));
+
+						// update prevLocations
+						prevLocations = locations;
+						return res;
+					}
+				}
+			}
+		}
 
 		// start a new round when previous one is over
 		if (currentTurn > INTERVAL * selectedCells.size() + offset) {
@@ -107,14 +150,33 @@ public class Controller extends chemotaxis.sim.Controller {
 			}
 		}
 
+		// reminder
+		if (needReminder && reminder != null) {
+			res.chemicals.add(ChemicalType.BLUE);
+			res.location = reminder;
+			needReminder = false;
+			reminder = null;
+
+			// update prevLocations
+			prevLocations = locations;
+			return res;
+		}
+
+
 		if ((currentTurn - offset) % INTERVAL == 0) {
 			int d = (currentTurn - offset) / INTERVAL;
 			if (d < selectedCells.size()) {
+				res.chemicals.add(ChemicalType.BLUE);
 				res.location = selectedCells.get(d);
+
+				// update prevLocations
+				prevLocations = locations;
 				return res;
 			}
 		}
 
+		// update prevLocations
+		prevLocations = locations;
 		return res;
 	}
 }

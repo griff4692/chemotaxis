@@ -1,8 +1,9 @@
 package chemotaxis.g4;
 
 import java.awt.Point;
-import java.util.List;
-import java.util.ArrayList;
+import java.util.*;
+// import java.util.List;
+// import java.util.ArrayList;
 
 import chemotaxis.sim.ChemicalPlacement;
 import chemotaxis.sim.ChemicalCell;
@@ -11,20 +12,31 @@ import chemotaxis.sim.SimPrinter;
 
 public class Controller extends chemotaxis.sim.Controller {
 
-	/**
-	 * Controller constructor
-	 *
-	 * @param start       start cell coordinates
-	 * @param target      target cell coordinates
-	 * @param size     	  grid/map size
-	 * @param simTime     simulation time
-	 * @param budget      chemical budget
-	 * @param seed        random seed
-	 * @param simPrinter  simulation printer
-	 *
-	 */
-	public Controller(Point start, Point target, Integer size, ChemicalCell[][] grid, Integer simTime, Integer budget, Integer seed, SimPrinter simPrinter) {
-		super(start, target, size, grid, simTime, budget, seed, simPrinter);
+	ArrayList<Point> path = null;
+	ArrayList<Point> placementCells = null;
+	ArrayList<ChemicalType> colorPath = null;
+	Integer index = 0;
+
+
+	Integer time_interval = 4;
+	Integer path_interval = 5;
+	Integer chemical_color = 0;
+
+    /**
+     * Controller constructor
+     *
+     * @param start       start cell coordinates
+     * @param target      target cell coordinates
+     * @param size     	  grid/map size
+     * @param grid        game grid/map
+     * @param simTime     simulation time
+     * @param budget      chemical budget
+     * @param seed        random seed
+     * @param simPrinter  simulation printer
+     *
+     */
+	public Controller(Point start, Point target, Integer size, ChemicalCell[][] grid, Integer simTime, Integer budget, Integer seed, SimPrinter simPrinter, Integer agentGoal, Integer spawnFreq) {
+		super(start, target, size, grid, simTime, budget, seed, simPrinter, agentGoal, spawnFreq);
 	}
 
 	public int closestToTarget(ArrayList<Point> locations) {
@@ -42,63 +54,97 @@ public class Controller extends chemotaxis.sim.Controller {
 		return closestIdx;
 	}
 
-	/**
-	 * Apply chemicals to the map
-	 *
-	 * @param currentTurn         current turn in the simulation
-	 * @param chemicalsRemaining  number of chemicals remaining
-	 * @param locations     current locations of the agents
-	 * @param grid                game grid/map
-	 * @return                    a cell location and list of chemicals to apply
-	 *
-	 */
-	@Override
+	Boolean pointInBounds(Integer length, Point p){
+		if(p.x >= 1 && p.x <= length && p.y >= 1 && p.y <= length){
+			return true;
+		}
+		return false;
+	}
+	ArrayList<Point> getPath(ChemicalCell[][] grid){
+		int length = grid.length;
+
+		ArrayList<Point> path = new ArrayList<Point>();
+		path.add(start);
+
+		Queue<ArrayList<Point>> q = new LinkedList<>();
+		q.add(path);
+
+		Set<Point> reached = new HashSet<Point>();
+
+		while(true) {
+			path = q.remove();
+			Point p = path.get(path.size() - 1);
+			if(p.x == target.x && p.y == target.y){
+				return path;
+			}
+
+			ArrayList<Point> neighbors = new ArrayList<Point>();
+			neighbors.add(new Point(p.x, p.y + 1));
+			neighbors.add(new Point(p.x, p.y - 1));
+			neighbors.add(new Point(p.x + 1, p.y));
+			neighbors.add(new Point(p.x - 1, p.y));
+
+			for(Point neighbor: neighbors){
+				if(pointInBounds(length, neighbor) && !reached.contains(neighbor) && grid[neighbor.x - 1][neighbor.y - 1].isOpen()){
+					ArrayList<Point> newPath = new ArrayList<Point>(path);
+					newPath.add(neighbor);
+					q.add(newPath);
+					reached.add(neighbor);
+				}
+			}
+		}
+	}
+
+    /**
+     * Apply chemicals to the map
+     *
+     * @param currentTurn         current turn in the simulation
+     * @param chemicalsRemaining  number of chemicals remaining
+     * @param locations     current locations of the agents
+     * @param grid                game grid/map
+     * @return                    a cell location and list of chemicals to apply
+     *
+     */
+ 	@Override
 	public ChemicalPlacement applyChemicals(Integer currentTurn, Integer chemicalsRemaining, ArrayList<Point> locations, ChemicalCell[][] grid) {
-
-		Point target = this.target;
-
-		int targetX = target.x;
-		int targetY = target.y;
-
 		ChemicalPlacement chemicalPlacement = new ChemicalPlacement();
-		int closestIdx = this.closestToTarget(locations);
-		Point currentLocation = locations.get(closestIdx);
-		int currentX = currentLocation.x;
-		int currentY = currentLocation.y;
 
-		int diffx = targetX-currentX;
-		int diffy = targetY-currentY;
+		simPrinter = new SimPrinter(true);
 
-		int blueX;
-		int blueY;
+		if(path == null){
+			simPrinter.println("creating path");
+			path = getPath(grid);
 
-		if (diffx > 0) {
-			blueX = currentX + 1;
+			placementCells = new ArrayList<Point>();
+			for (int i=1; i<path.size(); i++){
+				if(i%path_interval == 0){
+					placementCells.add(path.get(i));
+				}
+			}
+			if(path.size()%4!=0){
+				placementCells.add(path.get(path.size()-1));
+			}
+
+			colorPath = new ArrayList<ChemicalType>();
+			for (int i=0; i<placementCells.size(); i++) {
+				if (i % 3 == 0) {
+					colorPath.add(ChemicalType.RED);
+				} else if (i % 3 == 1) {
+					colorPath.add(ChemicalType.GREEN);
+				} else {
+					colorPath.add(ChemicalType.BLUE);
+				}
+			}
 		}
-		else {
-			blueX = currentX - 1;
-		}
 
-		if (diffy > 0) {
-			blueY = currentX + 1;
-		}
-		else {
-			blueY = currentX - 1;
-		}
 
-		int leftEdgeX = Math.max(1, currentX - 5);
-		int rightEdgeX = Math.min(size, currentX + 5);
-		int topEdgeY = Math.max(1, currentY - 5);
-		int bottomEdgeY = Math.min(size, currentY + 5);
-
-		int randomX = this.random.nextInt(rightEdgeX - leftEdgeX + 1) + leftEdgeX;
-		int randomY = this.random.nextInt(bottomEdgeY - topEdgeY + 1) + topEdgeY ;
-
-		List<ChemicalType> chemicals = new ArrayList<>();
-		chemicals.add(ChemicalType.BLUE);
-
-		chemicalPlacement.location = new Point(blueX, blueY);
+		Point currentLocation = placementCells.get(index%placementCells.size());
+		chemicalPlacement.location = currentLocation;
+		ArrayList<ChemicalType> chemicals = new ArrayList<>();
+		chemicals.add(colorPath.get(index%colorPath.size()));
 		chemicalPlacement.chemicals = chemicals;
+		index = index + 1;
+
 
 		return chemicalPlacement;
 	}
