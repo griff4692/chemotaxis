@@ -4,7 +4,7 @@
 ## Course Summary
 
 Course: COMS 4444 Programming and Problem Solving (Fall 2021)  
-Website: http://www.cs.columbia.edu/~kar/4444f20  
+Website: http://www.cs.columbia.edu/~kar/4444f21  
 University: Columbia University  
 Instructor: Prof. Kenneth Ross  
 TA: Griffin Adams
