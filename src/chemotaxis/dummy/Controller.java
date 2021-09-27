@@ -1,4 +1,4 @@
-package chemotaxis.smart_dummy;
+package chemotaxis.dummy;
 
 import java.awt.Point;
 import java.util.List;
@@ -55,35 +55,26 @@ public class Controller extends chemotaxis.sim.Controller {
      */
  	@Override
 	public ChemicalPlacement applyChemicals(Integer currentTurn, Integer chemicalsRemaining, ArrayList<Point> locations, ChemicalCell[][] grid) {
- 		ChemicalPlacement chemicalPlacement = new ChemicalPlacement();
- 		int closestIdx = this.closestToTarget(locations);
- 		int x = locations.get(closestIdx).x;
- 		int y = locations.get(closestIdx).y;
+		ChemicalPlacement chemicalPlacement = new ChemicalPlacement();
+		int closestIdx = this.closestToTarget(locations);
+ 		Point currentLocation = locations.get(closestIdx);
+		int currentX = currentLocation.x;
+		int currentY = currentLocation.y;
 
- 		int xDelta = this.target.x - x;
- 		int yDelta = this.target.y - y;
+		int leftEdgeX = Math.max(1, currentX - 5);
+		int rightEdgeX = Math.min(size, currentX + 5);
+		int topEdgeY = Math.max(1, currentY - 5);
+		int bottomEdgeY = Math.min(size, currentY + 5);
 
- 		if(xDelta < 0) {
- 			xDelta = -1;
-		} else if(xDelta > 0) {
- 			xDelta = 1;
-		}
+		int randomX = this.random.nextInt(rightEdgeX - leftEdgeX + 1) + leftEdgeX;
+		int randomY = this.random.nextInt(bottomEdgeY - topEdgeY + 1) + topEdgeY ;
 
-		if(yDelta < 0) {
-			yDelta = -1;
-		} else if(yDelta > 0) {
-			yDelta = 1;
-		}
+		List<ChemicalType> chemicals = new ArrayList<>();
+		chemicals.add(ChemicalType.BLUE);
 
- 		List<ChemicalType> chemicals = new ArrayList<>();
- 		chemicals.add(ChemicalType.BLUE);
+		chemicalPlacement.location = new Point(randomX, randomY);
+		chemicalPlacement.chemicals = chemicals;
 
- 		int newX = x + xDelta;
- 		int newY = y + yDelta;
- 		
- 		chemicalPlacement.location = new Point(newX, newY);
- 		chemicalPlacement.chemicals = chemicals;
- 		
- 		return chemicalPlacement;
-	} 	
+		return chemicalPlacement;
+	}
 }
