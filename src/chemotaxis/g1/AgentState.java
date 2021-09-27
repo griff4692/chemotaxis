@@ -85,10 +85,10 @@ public class AgentState {
     }
 
     public ChemicalType getFollowColor() {
-        if ((this.state &= COLOR_MASK) == RED_BITS) {
+        if ((this.state & COLOR_MASK) == RED_BITS) {
             return ChemicalType.RED;
         }
-        else if ((this.state &= COLOR_MASK) == GREEN_BITS) {
+        else if ((this.state & COLOR_MASK) == GREEN_BITS) {
             return ChemicalType.RED;
         }
         return ChemicalType.BLUE;
