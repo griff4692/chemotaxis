@@ -16,8 +16,9 @@ public class Controller extends chemotaxis.sim.Controller {
 	ArrayList<Point> path = null;
 	ArrayList<Point> placementCells = null;
 	ArrayList<ChemicalType> colorPath = null;
+	ArrayList<Integer> turningIndexes;
 	ArrayList<Integer> pcIndexes;
-	ArrayList<Integer> refreshPadding;
+	ArrayList<Integer> refreshPadding; 
 	Analysis analyzer = null;
 
 
@@ -26,9 +27,6 @@ public class Controller extends chemotaxis.sim.Controller {
 	Integer chemical_color = 0;
 	Integer arrayLength = 20;
 	Integer pathComplete;
-
-	int spawnFreq = 10;
-	int agentGoal = 3;
 
     /**
      * Controller constructor
@@ -87,6 +85,9 @@ public class Controller extends chemotaxis.sim.Controller {
 			data = analyzer.analyzePath(path, arrayLength);
 		}
 
+		turningIndexes = new ArrayList<Integer>();
+		getIntervals(path, true);
+
 		System.out.print("placement Cells:");
 		placementCells = new ArrayList<Point>();
 		for (int i=1; i<path.size(); i++){
@@ -130,23 +131,27 @@ public class Controller extends chemotaxis.sim.Controller {
 		}
 
 		int refreshTimes = Math.min(pathComplete/spawnFreq, agentGoal);
+		System.out.println(refreshTimes);
 		pcIndexes = new ArrayList<Integer>();
 		refreshPadding = new ArrayList<Integer>();
 		for(int j=0; j<refreshTimes; j++){
-			if(j==0)
+			if(j==0){
 				refreshPadding.add(1);
+				pcIndexes.add(0);
+			}
 			else{
 				for(int k=2; k<placementCells.size(); k++){
 					int curIndex = path.indexOf(placementCells.get(k));
-					if(curIndex > j*(pathComplete/refreshTimes)){
+					if(curIndex > Math.max(j*(pathComplete/refreshTimes), 15)){
 						int preIndex = path.indexOf(placementCells.get(k));
 						refreshPadding.add(2 * preIndex - curIndex + path_interval);
+						pcIndexes.add(0);
 						break;
 					}
 				}
 			}
-			pcIndexes.add(0);
-			System.out.println("refresh padding " + j + " " + refreshPadding.get(j));
+
+			System.out.println("refresh padding idx:" + j + "; padding:" + refreshPadding.get(j%refreshTimes));
 		}
 	}
 
@@ -172,7 +177,7 @@ public class Controller extends chemotaxis.sim.Controller {
 		return false;
 	}
 
-	static Integer getIntervals(ArrayList<Point> current){
+	Integer getIntervals(ArrayList<Point> current, boolean setTurning){
 		ArrayList<Integer> values = new ArrayList<>();
 		for (int i=1;i<current.size();i=i+1) {
 			Point curr = current.get(i);
@@ -197,24 +202,28 @@ public class Controller extends chemotaxis.sim.Controller {
 
 		for (int i=1;i<values.size();i=i+1){
 			Integer curr = values.get(i);
-			Integer prev = values.get(i);
+			Integer prev = values.get(i-1);
 			if (curr == prev) {
 				continue;
 			}
 			else{
 				numIntervals = numIntervals + 1;
+				if(setTurning){
+					turningIndexes.add(i+1);
+					System.out.println("Point after Turning " + path.get(i+1) + " ");
+				}
 			}
 		}
 
 		return numIntervals;
 	}
 
-	static class CustomIntegerComparator implements Comparator<ArrayList<Point>> {
+	class CustomIntegerComparator implements Comparator<ArrayList<Point>> {
 
 		@Override
 		public int compare(ArrayList<Point> o1, ArrayList<Point> o2) {
-			Integer numIntervalso1 = getIntervals(o1);
-			Integer numIntervalso2 = getIntervals(o2);
+			Integer numIntervalso1 = getIntervals(o1, false);
+			Integer numIntervalso2 = getIntervals(o2, false);
 			if (numIntervalso1 < numIntervalso2){
 				return -1;}
 			else{
@@ -350,7 +359,7 @@ public class Controller extends chemotaxis.sim.Controller {
 				pcIndexes.remove(0);
 				refreshPadding.remove(0);
 				pcIndexes.add(pcIndex%placementCells.size());
-				refreshPadding.add(padding + (currentTurn/pathComplete) * pathComplete);
+				refreshPadding.add(padding + pathComplete);
 			}
         }
 		else{
