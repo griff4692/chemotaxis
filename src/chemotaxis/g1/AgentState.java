@@ -15,16 +15,17 @@ public class AgentState {
     // First two bits are used for direction
     private static final byte DIRECTION_MASK = 0x3;
 
-    // Third bit used for color agent is currently looking for
-    private static final byte COLOR_MASK = 0x1 << 2;
+    // Third and Fourth bit used for color agent is currently looking for
+    private static final byte COLOR_MASK = 0x3 << 2;
     private static final byte RED_BITS = 0x1 << 2;
+    private static final byte GREEN_BITS = 0x2 << 2;
 
-    // Fourth bit is used to track whether the agent is has selected a strategy
-    private static final byte INITIALIZED_BIT = 0x1 << 3;
+    // Fifth bit is used to track whether the agent is has selected a strategy
+    private static final byte INITIALIZED_BIT = 0x1 << 4;
 
-    // Fifth bit is used to track the strategy
-    private static final byte STRAT_MASK = 0x1 << 4;
-    private static final byte WEAK_CHEM_BITS = 0x1 << 4;
+    // Sixth bit is used to track the strategy
+    private static final byte STRAT_MASK = 0x1 << 5;
+    private static final byte WEAK_CHEM_BITS = 0x1 << 5;
 
     public enum Strategy {
         STRONG, WEAK
@@ -76,16 +77,40 @@ public class AgentState {
             case RED:
                 this.state |= RED_BITS;
                 break;
+            case GREEN:
+                this.state |= GREEN_BITS;
             default:
-                throw new RuntimeException("agent cannot follow GREEN");
+                throw new RuntimeException("Color state cannot be 11");
         }
     }
 
     public ChemicalType getFollowColor() {
-        if ((this.state &= COLOR_MASK) == RED_BITS) {
+        if ((this.state & COLOR_MASK) == RED_BITS) {
+            return ChemicalType.RED;
+        }
+        else if ((this.state & COLOR_MASK) == GREEN_BITS) {
             return ChemicalType.RED;
         }
         return ChemicalType.BLUE;
+    }
+
+    // Change the color bits that the agent is currently following
+    public void changeFollowColor(ChemicalType color) {
+        this.state &= ~COLOR_MASK;
+        switch (color) {
+            case BLUE:
+                // If current color is BLUE, change to RED
+                this.state |= RED_BITS;
+                break;
+            case RED:
+                this.state |= GREEN_BITS;
+                break;
+            case GREEN:
+                // BLUE is encoded as 0x0
+                break;
+            default:
+                throw new RuntimeException("Color state cannot be 11");
+        }
     }
 
     /**

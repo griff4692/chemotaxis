@@ -8,11 +8,8 @@ import java.util.LinkedList;
 import java.util.Map;
 import java.util.HashMap;
 
-import chemotaxis.sim.ChemicalPlacement;
-import chemotaxis.sim.ChemicalCell;
+import chemotaxis.sim.*;
 import chemotaxis.sim.ChemicalCell.ChemicalType;
-import chemotaxis.sim.DirectionType;
-import chemotaxis.sim.SimPrinter;
 
 public class Controller extends chemotaxis.sim.Controller {
     // the directions are 4 directions which each is 1-step away from x, y and has a directionType
@@ -45,8 +42,8 @@ public class Controller extends chemotaxis.sim.Controller {
      * @param simPrinter  simulation printer
      *
      */
-    public Controller(Point start, Point target, Integer size, ChemicalCell[][] grid, Integer simTime, Integer budget, Integer seed, SimPrinter simPrinter) {
-        super(start, target, size, grid, simTime, budget, seed, simPrinter);
+    public Controller(Point start, Point target, Integer size, ChemicalCell[][] grid, Integer simTime, Integer budget, Integer seed, SimPrinter simPrinter, Integer agentGoal, Integer spawnFreq) {
+        super(start, target, size, grid, simTime, budget, seed, simPrinter, agentGoal, spawnFreq);
     }
 
     // weigh the points, not must be the closest point to the target
@@ -65,6 +62,8 @@ public class Controller extends chemotaxis.sim.Controller {
 
         for (int i = 0; i < locations.size(); i ++) {
             Point location = new Point(locations.get(i).x - 1, locations.get(i).y - 1);
+            int numberOfAvailableNeighbours = findNumberOfAvailableNeighbours(location,grid);
+            Log.writeToLogFile("Agent"+(i)+" number of available neighbours:"+numberOfAvailableNeighbours);
             if (location.x == target.x - 1 && location.y == target.y - 1)
                 continue;
 
@@ -83,11 +82,20 @@ public class Controller extends chemotaxis.sim.Controller {
             }
 
             // get the shortest path and the next node position
-            Node node = this.getShortestPathLeastTurns(location, grid);
+            Node node = this.getShortestPathLeastTurns(location, grid, beforeDirection);
             ArrayList<Point> path = node.getPath();
             Point nextPosition = path.get(1);
             DirectionType nowDirection = this.getMoveDirections(location, nextPosition);
             if (nowDirection != beforeDirection) {
+                // if we make sure that the agent can turn itself, we can put no chemical
+                if (beforeDirection != DirectionType.CURRENT) {
+                    if (!isOppositeDirection(beforeDirection, nowDirection) && numberOfAvailableNeighbours == 2)
+                        continue;
+
+                    if (isOppositeDirection(beforeDirection, nowDirection) && numberOfAvailableNeighbours == 3)
+                        continue;
+                }
+
                 if (distance > path.size() - 1) {
                     distance = path.size() - 1;
                     chooseIdx = i;
@@ -106,22 +114,22 @@ public class Controller extends chemotaxis.sim.Controller {
         return result;
     }
 
-
-    public int closestToTarget(ArrayList<Point> locations) {
-        int closestDistance = 9999999;
-        int closestIdx = 0;
-        for(int i = 0; i < locations.size(); i++) {
-            int x = locations.get(i).x;
-            int y = locations.get(i).y;
-            int distance = Math.abs(x - this.target.x) + Math.abs(y - this.target.y);
-            if(distance > 0 && distance < closestDistance) {
-                closestIdx = i;
-                closestDistance = distance;
-            }
+    public int findNumberOfAvailableNeighbours(Point currentAgent,ChemicalCell[][] grid){
+        int numberOfAvailableNeighbours = 0;
+        if (currentAgent.y+1<grid.length && grid[currentAgent.x][currentAgent.y+1].isOpen()){
+            numberOfAvailableNeighbours += 1;
         }
-        return closestIdx;
+        if (currentAgent.y-1>=0 && grid[currentAgent.x][currentAgent.y-1].isOpen()){
+            numberOfAvailableNeighbours += 1;
+        }
+        if (currentAgent.x+1<grid.length && grid[currentAgent.x+1][currentAgent.y].isOpen()){
+            numberOfAvailableNeighbours += 1;
+        }
+        if (currentAgent.x-1>=0 && grid[currentAgent.x-1][currentAgent.y].isOpen()){
+            numberOfAvailableNeighbours += 1;
+        }
+        return numberOfAvailableNeighbours;
     }
-
     /**
      * Apply chemicals to the map
      *
@@ -176,9 +184,11 @@ public class Controller extends chemotaxis.sim.Controller {
         return chemicalPlacement;
     }
 
-    // use queue to do DFS to find the shortest path from current position to the target
-    // and if the length of the path is the same , we select a path which has the least turns
-    private Node getShortestPathLeastTurns(Point start, ChemicalCell[][] grid) {
+    // use queue to do BFS to find the shortest path from current position to the target
+    // and if the length of the path is the same , we select a path which has the least turns,
+    // and we will also take previous DirectionType into consideration so as make sure not to make extra turns
+    private Node getShortestPathLeastTurns(Point start, ChemicalCell[][] grid, DirectionType previousDirection) {
+        ArrayList<MoveDirection> newDirections = sortDirections(directions, previousDirection);
         Queue<Node> deque = new LinkedList<>();
         int m = grid.length;
         int n = grid[0].length;
@@ -210,7 +220,7 @@ public class Controller extends chemotaxis.sim.Controller {
             }
 
             Point currentPosition = node.getCurrentPosition();
-            for (MoveDirection direction : directions) {
+            for (MoveDirection direction : newDirections) {
                 int new_x = currentPosition.x + direction.dx;
                 int new_y = currentPosition.y + direction.dy;
                 // we always set the target to be false because it can be visited several times
@@ -371,6 +381,34 @@ public class Controller extends chemotaxis.sim.Controller {
             return turnDirections.get("ATTRACT");
 
         return 0;
+    }
+
+    private boolean isOppositeDirection(DirectionType previousDirection, DirectionType nowDirection) {
+        if (previousDirection == DirectionType.WEST && nowDirection == DirectionType.EAST)
+            return true;
+
+        if (previousDirection == DirectionType.EAST && nowDirection == DirectionType.WEST)
+            return true;
+
+        if (previousDirection == DirectionType.NORTH && nowDirection == DirectionType.SOUTH)
+            return true;
+
+        if (previousDirection == DirectionType.SOUTH && nowDirection == DirectionType.NORTH)
+            return true;
+
+        return false;
+    }
+
+    private ArrayList<MoveDirection> sortDirections(ArrayList<MoveDirection> oldDirections,DirectionType previousDirection) {
+        ArrayList<MoveDirection> newDirections = new ArrayList<MoveDirection>();
+        for (MoveDirection moveDirection : oldDirections) {
+            if (moveDirection.directionType == previousDirection)
+                newDirections.add(0, moveDirection);
+            else
+                newDirections.add(moveDirection);
+
+        }
+        return newDirections;
     }
 }
 
