@@ -18,6 +18,7 @@ public class Controller extends chemotaxis.sim.Controller {
 	private int colorCounter = 0;
 	private int currentPathIndex;
 	private int idealChemicalIncrement = 4;
+	private int beginningChems = 0;
 	
 	/*
 	 * agent goal
@@ -188,3 +189,4 @@ public class Controller extends chemotaxis.sim.Controller {
 	}
 */
 }
+
