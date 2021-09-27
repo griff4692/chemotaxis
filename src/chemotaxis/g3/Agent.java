@@ -90,26 +90,54 @@ public class Agent extends chemotaxis.sim.Agent {
 			- Initial value of previousState = 0
 		 */
 
+		/*
 		double currentConcentration = currentCell.getConcentration(ChemicalType.RED) +
 									currentCell.getConcentration(ChemicalType.GREEN) +
 									currentCell.getConcentration(ChemicalType.BLUE);
 
 		if (currentConcentration == previousState) {
-			// Start "random" motion
+
 			System.out.println("prediction matches");
 
 		} else {
-			// Store new prediction
+
 			System.out.println("prediction doesn't match");
-		}
+		}*/
+
+		System.out.println("Random Num: ");
+		System.out.println(Math.abs(randomNum%4));
 
 		//note: if all the concentrations are zero it will move in the direction
 		//of the last direction iterated through
 		double highestConcentration = currentCell.getConcentration(chosenChemicalType);
+		int zero_count = 0;
 		for (DirectionType directionType : neighborMap.keySet()) {
+			if (neighborMap.get(directionType).getConcentration(chosenChemicalType) == 0) {
+				zero_count++;
+				System.out.println(zero_count);
+			}
 			if (highestConcentration <= neighborMap.get(directionType).getConcentration(chosenChemicalType)) {
 				highestConcentration = neighborMap.get(directionType).getConcentration(chosenChemicalType);
 				move.directionType = directionType;
+			}
+		}
+
+		/* all surrounding cells have no chemical
+		Direction based on randNum%4
+			- 0: right
+			- 1: down
+			- 2: left
+			- 3: up
+		*/
+		if (zero_count == 4) {
+			if (Math.abs(randomNum)%4 == 0) {
+				move.directionType = DirectionType.EAST;
+			} else if (Math.abs(randomNum)%4 == 1) {
+				move.directionType = DirectionType.SOUTH;
+			} else if (Math.abs(randomNum)%4 == 2) {
+				move.directionType = DirectionType.WEST;
+			} else if (Math.abs(randomNum)%4 == 3) {
+				move.directionType = DirectionType.NORTH;
 			}
 		}
 		return move;
