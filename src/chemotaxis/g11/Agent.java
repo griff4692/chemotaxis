@@ -2,7 +2,7 @@ package chemotaxis.g11;
 
 import java.util.Map;
 import java.util.HashMap;
-
+import java.util.ArrayList ;
 import chemotaxis.sim.DirectionType;
 import chemotaxis.sim.ChemicalCell;
 import chemotaxis.sim.ChemicalCell.ChemicalType;
@@ -16,12 +16,11 @@ public class Agent extends chemotaxis.sim.Agent {
     /**
      * Agent constructor
      *
-     * @param simPrinter  simulation printer
-     *
+     * @param simPrinter simulation printer
      */
-	public Agent(SimPrinter simPrinter) {
-		super(simPrinter);
-	}
+    public Agent(SimPrinter simPrinter) {
+        super(simPrinter);
+    }
 
     public Double getHighestConcentration(Map<ChemicalType, Double> concentrations) {
         return Math.max(Math.max(concentrations.get(ChemicalType.RED), concentrations.get(ChemicalType.BLUE)), concentrations.get(ChemicalType.GREEN));
@@ -30,21 +29,20 @@ public class Agent extends chemotaxis.sim.Agent {
     /**
      * Move agent
      *
-     * @param randomNum        random number available for agents
-     * @param previousState    byte of previous state
-     * @param currentCell      current cell
-     * @param neighborMap      map of cell's neighbors
-     * @return                 agent move
-     *
+     * @param randomNum     random number available for agents
+     * @param previousState byte of previous state
+     * @param currentCell   current cell
+     * @param neighborMap   map of cell's neighbors
+     * @return agent move
      */
     @Override
     public Move makeMove(Integer randomNum, Byte previousState, ChemicalCell currentCell, Map<DirectionType, ChemicalCell> neighborMap) {
         /* WE suppose that for the direction we use the last 2 bits
         of the byte and we set the default mapping as stated below:
-         11: up
-         00: down
-         01: right
-         10: left
+         11: NORTH
+         00: SOUTH
+         01: EAST
+         10: WEST
         */
         HashMap<DirectionType, Integer> bitDirectionMap = new HashMap<DirectionType, Integer>();
         bitDirectionMap.put(DirectionType.NORTH, 0b11);
@@ -53,69 +51,79 @@ public class Agent extends chemotaxis.sim.Agent {
         bitDirectionMap.put(DirectionType.EAST, 0b01);
 
         Move move = new Move();
+
+        Boolean hasSeenBlue= (previousState>4 || previousState<0);
+        if (hasSeenBlue) {
+            previousState = (byte) (previousState - 128);
+        }
         move.currentState = previousState;
         Integer previousDirection = previousState & 0b11;
 
-        /*
-        ChemicalType chosenChemicalType = ChemicalType.BLUE;
 
+        ChemicalType priorityChemicalType = ChemicalType.BLUE;
 
         for (DirectionType directionType : neighborMap.keySet()) {
-            if (neighborMap.get(directionType).getConcentration(chosenChemicalType) >= 0.99) {
+            if (neighborMap.get(directionType).getConcentration(priorityChemicalType) >= 0.99) {
                 move.directionType = directionType;
                 move.currentState = (byte) (bitDirectionMap.get(move.directionType) | 0b00);
-            }
-        }
-        */
-
-        Map<ChemicalType, Double> concentrations = currentCell.getConcentrations();
-        double highestConcentration = getHighestConcentration(concentrations);
-        double currentConcentration = highestConcentration;
-        for (DirectionType directionType : neighborMap.keySet()) {
-            Map<ChemicalType, Double> neighborConcentrations = neighborMap.get(directionType).getConcentrations();
-            if (highestConcentration < getHighestConcentration(neighborConcentrations)) {
-                highestConcentration = getHighestConcentration(neighborConcentrations);
-                if (bitDirectionMap.get(directionType) + previousDirection == 3) {
-                    continue;
-                } else {
-                    move.directionType = directionType;
-                    move.currentState = (byte) (bitDirectionMap.get(move.directionType) | 0b00);
+                hasSeenBlue = true;
+            } else {
+                double highestConcentration = currentCell.getConcentration(ChemicalType.GREEN);
+                //double currentConcentration = highestConcentration;
+                double highest2 = 0.0;
+                if (neighborMap.get(directionType).getConcentration(ChemicalType.GREEN) > highestConcentration) {
+                    if (bitDirectionMap.get(directionType) + previousDirection == 3) {
+                        continue;
+                    } else {
+                        if (!hasSeenBlue) {
+                            move.directionType = directionType;
+                            highestConcentration = neighborMap.get(directionType).getConcentration(ChemicalType.GREEN);
+                            move.directionType = directionType;
+                            move.currentState = (byte) (bitDirectionMap.get(move.directionType) | 0b00);
+                        }
+                    }
                 }
             }
         }
 
-        /*
-        BLUE is SOUTH
-        GREEN is EAST
-        RED is NORTH
-        GREEN + BLUE is WEST
-         */
 
-        if (highestConcentration > 0 && currentConcentration == highestConcentration) {
-            if (concentrations.get(ChemicalType.BLUE) == highestConcentration && concentrations.get(ChemicalType.GREEN) == highestConcentration) {
-                move.directionType = DirectionType.WEST;
-                move.currentState = (byte) (bitDirectionMap.get(move.directionType) | 0b00);
-            } else if (concentrations.get(ChemicalType.RED) == highestConcentration) {
-                move.directionType = DirectionType.NORTH;
-                move.currentState = (byte) (bitDirectionMap.get(move.directionType) | 0b00);
-            } else if (concentrations.get(ChemicalType.GREEN) == highestConcentration) {
-                move.directionType = DirectionType.EAST;
-                move.currentState = (byte) (bitDirectionMap.get(move.directionType) | 0b00);
-            } else if (concentrations.get(ChemicalType.BLUE) == highestConcentration) {
+        if (move.directionType == DirectionType.CURRENT && !hasSeenBlue) {
+            ArrayList<DirectionType> possibledirections = new ArrayList<DirectionType>();
+            for (DirectionType directionType : neighborMap.keySet()) {
+                if (neighborMap.get(directionType).isOpen()) {
+                    possibledirections.add(directionType);
+                }
+            }
+            if (possibledirections.size() > 1) {
+                if (previousState == 0 && possibledirections.contains(DirectionType.NORTH)) {
+                    possibledirections.remove(DirectionType.NORTH);
+                } else if (previousState == 1 && possibledirections.contains(DirectionType.WEST)) {
+                    possibledirections.remove(DirectionType.WEST);
+                } else if (previousState == 2 && possibledirections.contains(DirectionType.EAST)) {
+                    possibledirections.remove(DirectionType.EAST);
+                } else if (previousState == 3 && possibledirections.contains(DirectionType.SOUTH)) {
+                    possibledirections.remove(DirectionType.SOUTH);
+                }
+            }
+            int position = Math.abs(randomNum % possibledirections.size());
+            move.directionType = possibledirections.get(position);
+            move.currentState = (byte) (bitDirectionMap.get(move.directionType) | 0b00);
+        } else if (move.directionType == DirectionType.CURRENT) {
+            if (previousState == 0) {
                 move.directionType = DirectionType.SOUTH;
-                move.currentState = (byte) (bitDirectionMap.get(move.directionType) | 0b00);
+            } else if (previousState == 1) {
+                move.directionType = DirectionType.EAST;
+            } else if (previousState == 2) {
+                move.directionType = DirectionType.WEST;
+            } else if (previousState == 3) {
+                move.directionType = DirectionType.NORTH;
             }
         }
 
-        if ( move.directionType == DirectionType.CURRENT ) {
-            if ( previousDirection == 0)
-            { move.directionType = DirectionType.SOUTH; }
-            else if (previousDirection == 1)
-            {move.directionType = DirectionType.EAST; }
-            else if (previousDirection == 2)
-            {move.directionType = DirectionType.WEST; }
-            else { move.directionType = DirectionType.NORTH; }
+        if (hasSeenBlue) {
+            move.currentState = (byte) (move.currentState + 128) ;
         }
+
 
         return move;
     }
