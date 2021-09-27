@@ -126,7 +126,7 @@ public class GameState {
     private chemotaxis.sim.Move Move;
 
     /**
-     * Constructor to initialize a brand new game
+     * Constructor to initialize a brand-new game
      *
      * @param start
      * @param target
@@ -395,8 +395,8 @@ public class GameState {
 
     private boolean pointOutOfBounds(final Point p) {
         return p.x < 0
-                || p.x > this.grid.length
+                || p.x >= this.grid.length
                 || p.y < 0
-                || p.y > this.grid[0].length;
+                || p.y >= this.grid[0].length;
     }
 }
