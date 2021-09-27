@@ -150,8 +150,6 @@ public class Controller extends chemotaxis.sim.Controller {
             int currentStartRound=0;
             while (agentReachTarget<agentGoal && currentStartRound<simTime-spawnFreq) {
                 boolean conflict = false;
-
-
                 for (int j = 0; j < turnAt_simpleForm.get(turnChoicice).size(); j++) {
                     if (turnAt_simpleForm.get(turnChoicice).get(j)+currentStartRound>simTime || schedule.get(turnAt_simpleForm.get(turnChoicice).get(j)+currentStartRound)!=-1) {
                         conflict = true;
