@@ -150,8 +150,8 @@ public class Controller extends chemotaxis.sim.Controller {
 	ArrayList<Integer> shortest_path;
 	Hashtable<Integer, Point> node_to_point;
 	Hashtable<Point, Integer> point_to_node;
-	Point one_third;
-	Point two_thirds;
+	Point first_pt;
+	Point second_pt;
 
     /**
      * Controller constructor
@@ -235,13 +235,13 @@ public class Controller extends chemotaxis.sim.Controller {
 		int index_two = shortest_path.size() / 3;
 
 
-		int one_third_node = shortest_path.get(index_one);
-		int two_thirds_node = shortest_path.get(index_two);
+		int first_node = shortest_path.get(index_one);
+		int second_node = shortest_path.get(index_two);
 
-		one_third = node_to_point.get(index_one);
-		System.out.println(one_third);
-		two_thirds = node_to_point.get(index_two);
-		System.out.println(two_thirds);
+		first_pt = node_to_point.get(first_node);
+		System.out.println(first_pt);
+		second_pt = node_to_point.get(second_node);
+		System.out.println(second_pt);
 
 	}
 
@@ -282,13 +282,13 @@ public class Controller extends chemotaxis.sim.Controller {
 		if(currentTurn%5 == 1){
 			List<ChemicalType> chemicals = new ArrayList<>();
 			chemicals.add(ChemicalType.RED);
-			chemicalPlacement.location = new Point(this.one_third.x, this.one_third.y);
+			chemicalPlacement.location = new Point(this.first_pt.x, this.first_pt.y);
 			chemicalPlacement.chemicals = chemicals;
 		}
 		else if(currentTurn%5 == 2){
 			List<ChemicalType> chemicals = new ArrayList<>();
 			chemicals.add(ChemicalType.GREEN);
-			chemicalPlacement.location = new Point(this.two_thirds.x, this.two_thirds.y);
+			chemicalPlacement.location = new Point(this.second_pt.x, this.second_pt.y);
 			chemicalPlacement.chemicals = chemicals;
 		}
 		else if (currentTurn%5 == 3) {
