@@ -36,9 +36,9 @@ public class Agent extends chemotaxis.sim.Agent {
 
 		Move move = new Move();
 		ChemicalType chosenChemicalType;
+		Boolean dirChanged = false;
 
 		/*
-<<<<<<< HEAD
 		* if prev == 0 look at blue;
 		* Check current colour. If reached maxima, turn to other colour.
 		* If both colours zero, follow green.
@@ -49,7 +49,7 @@ public class Agent extends chemotaxis.sim.Agent {
 		* previousstate = 0 ==> first iteration. Set LSB to 1
 		* LSB == 011 ==> Currently following BLUE
 		* LSB == 101 ==> Currently following RED
-		* 2nd bit == 1001 ==> GREEN
+		* LSB == 1001 ==> GREEN
 		* */
 
 		if(previousState == 0){
@@ -62,8 +62,9 @@ public class Agent extends chemotaxis.sim.Agent {
 		else if ((previousState & 5) == 5){
 			chosenChemicalType = ChemicalType.RED;
 		}
-		else
+		else {
 			chosenChemicalType = ChemicalType.GREEN;
+		}
 
 
 		double highestConcentration = currentCell.getConcentration(chosenChemicalType);
@@ -73,22 +74,30 @@ public class Agent extends chemotaxis.sim.Agent {
 			if (highestConcentration <= neighborMap.get(directionType).getConcentration(chosenChemicalType)) {
 				highestConcentration = neighborMap.get(directionType).getConcentration(chosenChemicalType);
 				move.directionType = directionType;
+				dirChanged = true;
 			}
 		}
 
-		if (highestConcentration >= currentCell.getConcentration(chosenChemicalType) && )
-			;
-		else{
+		if(chosenChemicalType == ChemicalType.GREEN){
+			move.currentState = previousState;
+			return move;
+		}
+
+		if (dirChanged == false){
 			// we have reached maximum. Change colour
 			previousColourConcentration = highestConcentration;
+
 			if((previousState & 3) == 3){
 				chosenChemicalType = ChemicalType.RED;
 				previousState = 5;
+
+				highestConcentration = currentCell.getConcentration(chosenChemicalType);
 
 				for (DirectionType directionType : neighborMap.keySet()) {
 					if (highestConcentration <= neighborMap.get(directionType).getConcentration(chosenChemicalType)) {
 						highestConcentration = neighborMap.get(directionType).getConcentration(chosenChemicalType);
 						move.directionType = directionType;
+						dirChanged = true;
 					}
 				}
 			}
@@ -96,20 +105,60 @@ public class Agent extends chemotaxis.sim.Agent {
 				chosenChemicalType = ChemicalType.BLUE;
 				previousState = 3;
 
+				highestConcentration = currentCell.getConcentration(chosenChemicalType);
+
 				for (DirectionType directionType : neighborMap.keySet()) {
 					if (highestConcentration <= neighborMap.get(directionType).getConcentration(chosenChemicalType)) {
 						highestConcentration = neighborMap.get(directionType).getConcentration(chosenChemicalType);
 						move.directionType = directionType;
+						dirChanged = true;
 					}
 				}
 			}
-			else
+
+
+			if (dirChanged == false){
+				// then we have encountered maxima for both colours. Check if red and blue have 0 concentrations
+				if (checkZeroConcentration(neighborMap) == 1){
+					chosenChemicalType = ChemicalType.GREEN;
+					previousState = 9;
+
+					highestConcentration = currentCell.getConcentration(chosenChemicalType);
+
+					for (DirectionType directionType : neighborMap.keySet()) {
+						if (highestConcentration <= neighborMap.get(directionType).getConcentration(chosenChemicalType)) {
+							highestConcentration = neighborMap.get(directionType).getConcentration(chosenChemicalType);
+							move.directionType = directionType;
+						}
+					}
+				}
+			}
 		}
 
 
 		move.currentState = previousState;
 
 		return move;
+	}
+
+	public int checkZeroConcentration(Map<DirectionType, ChemicalCell> neighborMap){
+		int blueZero = 0, redZero = 0;
+
+		for (DirectionType directionType : neighborMap.keySet()) {
+			if (neighborMap.get(directionType).getConcentration(ChemicalType.BLUE) > 0.001) {
+				blueZero = 1;
+			}
+
+			if (neighborMap.get(directionType).getConcentration(ChemicalType.RED) > 0.001){
+				redZero = 1;
+			}
+		}
+
+		if (redZero == 0 && blueZero == 0)
+			return 1;
+		else
+			return 0;
+
 	}
 
 
