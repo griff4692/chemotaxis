@@ -86,7 +86,6 @@ public class Controller extends chemotaxis.sim.Controller {
         // and keyed by the number of turns necessary for the path.
 
         findshortestpath(grid,budget);
-        System.out.println("finish");
         // Select the fastest route within our budget.
         // Routes with more turns are faster, otherwise `findshortestpath` will terminate
         // without adding a route for that number of turns. Therefore, if key `5` exists in
@@ -422,7 +421,6 @@ public class Controller extends chemotaxis.sim.Controller {
         Point current = new Point(modifiedTarget.x,modifiedTarget.y);
         int step = 10001;
         int direction = 0;
-        System.out.println(turn);
 
         for (int i=0;i<4;i++) {
             if (dist[modifiedTarget.x][modifiedTarget.y][i]>0 && dist[modifiedTarget.x][modifiedTarget.y][i]<step){
@@ -433,12 +431,7 @@ public class Controller extends chemotaxis.sim.Controller {
         int localturn = turn;
         if (step<10001) {
             while (!((modifiedStart.x==current.x)&&(modifiedStart.y==current.y))) {
-                System.out.print(step);
-                System.out.print("(");
-                System.out.print(current.x);
-                System.out.print(",");
-                System.out.print(current.y);
-                System.out.print(")  ");
+
 
                 route.add(new Point(current));
                 boolean endwhile = false;
@@ -460,11 +453,6 @@ public class Controller extends chemotaxis.sim.Controller {
                 current.x -= movement(direction).x;
                 current.y -= movement(direction).y;
             }
-            System.out.print("(");
-            System.out.print(current.x);
-            System.out.print(",");
-            System.out.print(current.y);
-            System.out.println(")  ");
 
             route.add(new Point(current));
         }
