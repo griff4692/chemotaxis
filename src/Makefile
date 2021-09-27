@@ -8,7 +8,8 @@ gui:
 	java -cp .:chemotaxis/org.json.jar chemotaxis.sim.Simulator --team dummy --gui -l log.txt
 
 compile:
-	javac -cp .:chemotaxis/org.json.jar chemotaxis/*/*.java
+        javac -cp .:chemotaxis/org.json.jar chemotaxis/g1/*.java
+        javac -cp .:chemotaxis/org.json.jar chemotaxis/sim/*.java
 
 g1-gui:
 	java -cp .:chemotaxis/org.json.jar chemotaxis.sim.Simulator --team g1 --gui -l log.txt
