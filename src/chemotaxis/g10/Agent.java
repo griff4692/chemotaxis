@@ -2,6 +2,7 @@ package chemotaxis.g10; // TODO modify the package name to reflect your team
 
 import java.util.ArrayList;
 import java.util.Map;
+import java.lang.Math;
 
 import chemotaxis.sim.DirectionType;
 import chemotaxis.sim.ChemicalCell;
@@ -188,16 +189,23 @@ public class Agent extends chemotaxis.sim.Agent {
       else return DirectionType.EAST;
    }
 
+   private static double roundToDecimal(double num, int decimalPlaces){
+      return (double) (Math.round(num * (10*decimalPlaces)) / (10*decimalPlaces));
+   }
+
    //returns null if all directions are 0 or if there are multiple directions of max concentration
    private static boolean ifDirectionIsAbsoluteMax(DirectionType proposedDirection, ChemicalCell.ChemicalType chosenChemicalType, Map<DirectionType, ChemicalCell> neighborMap) {
-      Double maxConcentration = neighborMap.get(proposedDirection).getConcentration(chosenChemicalType);
+      double maxConcentration = neighborMap.get(proposedDirection).getConcentration(chosenChemicalType);
 
       for (DirectionType direction : neighborMap.keySet()) {
+         if (direction == proposedDirection){
+            continue;
+         }
          ChemicalCell candidateCell = neighborMap.get(direction);//if blocked, move to next
          if (candidateCell.isBlocked()) {
             continue;
          }
-         if (candidateCell.getConcentration(chosenChemicalType) > maxConcentration) {
+         if (candidateCell.getConcentration(chosenChemicalType) >= maxConcentration) {
             return false;
          }
       }

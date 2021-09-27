@@ -235,9 +235,7 @@ public class Controller extends chemotaxis.sim.Controller {
                ChemicalCell.ChemicalType currentColor = chemicalList[turnIndex % chemicalList.length];
                DirectionType agentExpectedDir = (DirectionType) Agent.findOptimalMove(agentsLastDir.get(i), currentColor, getAgentNeighborMap(grid, agentLocation))[0];
                DirectionType agentOptimalDir = getAgentDirection(agentLocation, turnsOnPath.get(turnIndex)[1]);
-               System.out.println("CONTROLLER: Agent " + String.valueOf(i) + "'s calculated optimal move: " + agentExpectedDir);
-//               System.out.println("CONTROLLER: Agent " + String.valueOf(i) + " " + agentsLastDir.get(i).name() + " " + agentsCurrentChemical.get(i).name() + " " + String.valueOf(agentLocation.x) + String.valueOf(agentLocation.y));
-
+               System.out.println("CONTROLLER: Agent " + String.valueOf(i) + "'s calculated optimal move: " + agentExpectedDir + " " + currentColor.name());
                System.out.println("CONTROLLER: Agent " + String.valueOf(i) + "'s wanted move: " + agentOptimalDir);
 
                if (agentExpectedDir != agentOptimalDir) {
