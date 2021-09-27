@@ -43,11 +43,11 @@ public enum CardinalDirection {
     public CardinalDirection rightOf() {
         switch (this) {
             case NORTH:
-                return CardinalDirection.WEST;
-            case SOUTH:
                 return CardinalDirection.EAST;
             case EAST:
                 return CardinalDirection.SOUTH;
+            case SOUTH:
+                return CardinalDirection.WEST;
             case WEST:
                 return CardinalDirection.NORTH;
         }
