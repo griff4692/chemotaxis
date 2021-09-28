@@ -97,11 +97,15 @@ public class Controller extends chemotaxis.sim.Controller {
         // Routes with more turns are faster, otherwise `findshortestpath` will terminate
         // without adding a route for that number of turns. Therefore, if key `5` exists in
         // `routes`, it's route is strictly shorter than the route for key `4`.
+        this.selectedRoute = budget / agentGoal - 1;
+
         for (int i=0;i<budget;i++) {
             if (!routes.containsKey(i)){
+                if (this.selectedRoute>=i) {
+                    this.selectedRoute=i-1;
+                }
                 break;
             }
-            this.selectedRoute = i;
             ArrayList<Point> route = routes.get(i);
             Collections.reverse(route);
             routes.put(i,route);
