@@ -1,11 +1,10 @@
 package chemotaxis.g1.ids;
 
-import chemotaxis.sim.ChemicalCell;
+import chemotaxis.g1.GameState;
+import chemotaxis.sim.ChemicalPlacement;
 
-import java.awt.*;
 import java.util.ArrayList;
 
 public interface IDSCandidateGenerator {
-    public ArrayList<IDSCandidate> candidates(Integer currentTurn, Integer chemicalsRemaining,
-                                       ArrayList<Point> locations, ChemicalCell[][] grid);
+    ArrayList<IDSCandidate> candidates(final GameState gameState);
 }
