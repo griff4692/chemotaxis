@@ -1,5 +1,7 @@
 package chemotaxis.g10; // TODO modify the package name to reflect your team
 
+import java.math.RoundingMode;
+import java.text.DecimalFormat;
 import java.util.ArrayList;
 import java.util.Map;
 import java.lang.Math;
@@ -196,23 +198,29 @@ public class Agent extends chemotaxis.sim.Agent {
    //returns null if all directions are 0 or if there are multiple directions of max concentration
    private static boolean ifDirectionIsAbsoluteMax(DirectionType proposedDirection, ChemicalCell.ChemicalType chosenChemicalType, Map<DirectionType, ChemicalCell> neighborMap) {
       double maxConcentration = neighborMap.get(proposedDirection).getConcentration(chosenChemicalType);
+      System.out.println("maxConcentration: " + String.valueOf(maxConcentration));
 
       for (DirectionType direction : neighborMap.keySet()) {
          if (direction == proposedDirection){
+            System.out.println("continuing at " + proposedDirection);
             continue;
          }
          ChemicalCell candidateCell = neighborMap.get(direction);//if blocked, move to next
          if (candidateCell.isBlocked()) {
             continue;
          }
-         if (candidateCell.getConcentration(chosenChemicalType) >= maxConcentration) {
+         System.out.println("candidateCell.getConcentration(chosenChemicalType): " + String.valueOf(candidateCell.getConcentration(chosenChemicalType)) + " in direction " + direction);
+         if (candidateCell.getConcentration(chosenChemicalType) - maxConcentration > -0.001) {
+            System.out.println("is greater");
             return false;
          }
       }
       if (maxConcentration > 0.0) {
+         System.out.println("returning true");
          return true;
       }
       else {
+         System.out.println("returning false");
          return false;
       }
    }
@@ -236,6 +244,7 @@ public class Agent extends chemotaxis.sim.Agent {
 
       for (DirectionType orthogonalDirection: orthogonalDirections) {
          if (!neighborMap.get(orthogonalDirection).isBlocked() && ifDirectionIsAbsoluteMax(orthogonalDirection, chosenChemicalType, neighborMap)){
+            System.out.println("Switching to new chemical in direction" + orthogonalDirection);
             return new Object[] {orthogonalDirection, switchColor(chosenChemicalType)};
          }
       }
