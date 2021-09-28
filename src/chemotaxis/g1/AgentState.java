@@ -27,9 +27,6 @@ public class AgentState {
     private static final byte STRAT_MASK = 0x1 << 5;
     private static final byte WEAK_CHEM_BITS = 0x1 << 5;
 
-    //Seventh bit is used to check first agent move in strong strategy
-    private static final byte FIRST_MOVE_STRONG_BIT = 0x1 << 6;
-
     public enum Strategy {
         STRONG, WEAK
     }
@@ -195,8 +192,4 @@ public class AgentState {
         // Else do nothing since a zeroed bit is the strong strategy
         this.setInitialized();
     }
-
-    public void setFirstMoveStrongBit() { this.state |= FIRST_MOVE_STRONG_BIT; }
-
-    public boolean isFirstMoveStrong() { return (this.state & FIRST_MOVE_STRONG_BIT) == 0; }
 }

@@ -102,11 +102,21 @@ public class Agent extends chemotaxis.sim.Agent {
 
     public Move initialize(AgentState prevState, Map<DirectionType, ChemicalCell> neighborMap, ChemicalCell currentCell) {
         Move move = new Move();
-        if (currentCell.getConcentration(ChemicalType.GREEN) > 0) {
-            if (currentCell.getConcentration(ChemicalType.RED) > 0)
+        if (isChemicalNearby(neighborMap, currentCell, ChemicalType.GREEN)) {
+            if (isChemicalNearby(neighborMap, currentCell, ChemicalType.RED))
                 prevState.setStrategy(AgentState.Strategy.WEAK);
-            else
+            else {
                 prevState.setStrategy(AgentState.Strategy.STRONG);
+                DirectionType nextDirection = prevState.getDirection().asDirectionType();
+                for (DirectionType directionType : neighborMap.keySet()) {
+                    double temp = neighborMap.get(directionType).getConcentration(ChemicalType.BLUE);
+                    if (temp == 1) {
+                        nextDirection = directionType;
+                        break;
+                    }
+                }
+                move.directionType = nextDirection;
+            }
         }
         else
             prevState.setStrategy(AgentState.Strategy.WEAK);
@@ -121,6 +131,17 @@ public class Agent extends chemotaxis.sim.Agent {
         }
 
         return move;
+    }
+
+    public boolean isChemicalNearby(Map<DirectionType, ChemicalCell> neighborMap, ChemicalCell currentCell, ChemicalType chemicalType) {
+        if (currentCell.getConcentration(chemicalType) > 0)
+            return true;
+
+        for (DirectionType directionType : neighborMap.keySet())
+            if (neighborMap.get(directionType).getConcentration(chemicalType) > 0)
+                return true;
+
+        return false;
     }
 
     public Move weakFollowStrategy(AgentState prevState, Map<DirectionType, ChemicalCell> neighborMap) {
@@ -187,28 +208,20 @@ public class Agent extends chemotaxis.sim.Agent {
     public Move strongFollowStrategy(AgentState prevState, Map<DirectionType, ChemicalCell> neighborMap) {
         Move move = new Move();
         DirectionType nextDirection = prevState.getDirection().asDirectionType();
-        DirectionType reverseDirection = prevState.getDirection().reverseOf().asDirectionType();
-        boolean greenFlag = false;
 
         for (DirectionType directionType : neighborMap.keySet()) {
             double temp = neighborMap.get(directionType).getConcentration(ChemicalType.BLUE);
-            if (temp == 1) {
-                    nextDirection = directionType;
-                    break;
+            boolean isReverse = prevState.asCardinalDir(directionType) == prevState.getDirection().reverseOf();
+            if (temp == 1 && !isReverse) {
+                nextDirection = directionType;
+                break;
             }
             temp = neighborMap.get(directionType).getConcentration(ChemicalType.GREEN);
             if (temp == 1) {
                 nextDirection = directionType;
-                greenFlag = true;
                 break;
             }
         }
-
-        if (prevState.isFirstMoveStrong())
-            prevState.setFirstMoveStrongBit();
-        else
-            if (!greenFlag && nextDirection == reverseDirection)
-                nextDirection = prevState.getDirection().asDirectionType();
 
         move.directionType = nextDirection;
         move.directionType = handleWall(move, neighborMap, prevState);
