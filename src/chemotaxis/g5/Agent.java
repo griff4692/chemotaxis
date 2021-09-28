@@ -77,7 +77,7 @@ public class Agent extends chemotaxis.sim.Agent {
             // source: https://stackoverflow.com/questions/31007977/how-to-set-3-lower-bits-of-uint8-t-in-c
             // right now we're just using lowest three bits for anything
 
-            //TODO set the pledge direction to the increasingGrad directionType
+            //TODO set the pledge direction to the increasingGrad directionType and TEST
             move.currentState = (byte) increasingGradDirectionType;
             return move; //done
         }
@@ -223,7 +223,7 @@ public class Agent extends chemotaxis.sim.Agent {
         }
         return move;
     }
-    //Helper function to get relative directions for a direction
+    //Helper function to get relative directions for a given direction
     private DirectionType[] getRelativeDirections(DirectionType direction){
         switch(direction){
             //[LEFT, RIGHT, BACKWARDS]
