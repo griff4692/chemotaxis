@@ -136,10 +136,13 @@ public class GameState {
         if (this.chemicalsRemaining == 0 || placement.location == null) {
             return;
         }
-        chemicalsRemaining -= 1;
+        if (this.chemicalsRemaining < placement.chemicals.size()) {
+            return;
+        }
         Point p = new Point(placement.location.x - 1, placement.location.y - 1);
         // Not sure why the placement has a list, but ok...
         for (ChemicalType c : placement.chemicals) {
+            chemicalsRemaining -= 1;
             this.grid[p.x][p.y].cell.setConcentration(c, 1.0);
         }
     }
