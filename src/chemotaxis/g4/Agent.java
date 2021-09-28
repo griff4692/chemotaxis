@@ -30,6 +30,7 @@ public class Agent extends chemotaxis.sim.Agent {
      * @return                 agent move
      *
      */
+
 	@Override
 	public Move makeMove(Integer randomNum, Byte previousState, ChemicalCell currentCell, Map<DirectionType, ChemicalCell> neighborMap) {
 		Move move = new Move();
@@ -76,15 +77,63 @@ public class Agent extends chemotaxis.sim.Agent {
         };
         // Move in direction of highest concentration of sought chemical
         double highestConcentration = currentCell.getConcentration(chosenChemicalType);
-		for (DirectionType directionType : neighborMap.keySet()) {
-			if (highestConcentration < neighborMap.get(directionType).getConcentration(chosenChemicalType)) {
-				highestConcentration = neighborMap.get(directionType).getConcentration(chosenChemicalType);
-				move.directionType = directionType;
-			}
-		}
+        for (DirectionType directionType : neighborMap.keySet()) {
+            if (highestConcentration < neighborMap.get(directionType).getConcentration(chosenChemicalType)) {
+                highestConcentration = neighborMap.get(directionType).getConcentration(chosenChemicalType);
+                move.directionType = directionType;
+            }
+        }
+        // Prevent backwards movement
+        if ((move.directionType == DirectionType.NORTH && lastMove == DirectionType.SOUTH) ||
+                (move.directionType == DirectionType.SOUTH && lastMove == DirectionType.NORTH) ||
+                (move.directionType == DirectionType.EAST && lastMove == DirectionType.WEST) ||
+                (move.directionType == DirectionType.WEST && lastMove == DirectionType.EAST)){
+            if(neighborMap.get(lastMove).isOpen()){
+                move.directionType = lastMove;
+            }
+            else {
+                for (DirectionType directionType : neighborMap.keySet()) {
+                    if (directionType != move.directionType && neighborMap.get(directionType).isOpen()) {
+                        move.directionType = directionType;
+                    }
+                }
+            }
+        }
+        // If at maxima, change chemical type and recalculate move
+        if(highestConcentration == currentCell.getConcentration(chosenChemicalType) && highestConcentration != 0.0){
+            chosenChemicalType = switch (chosenChemicalType) {
+                case RED -> ChemicalType.GREEN;
+                case GREEN -> ChemicalType.BLUE;
+                case BLUE -> ChemicalType.RED;
+            };
+            // Move in direction of highest concentration of sought chemical
+            highestConcentration = currentCell.getConcentration(chosenChemicalType);
+            for (DirectionType directionType : neighborMap.keySet()) {
+                if (highestConcentration < neighborMap.get(directionType).getConcentration(chosenChemicalType)) {
+                    highestConcentration = neighborMap.get(directionType).getConcentration(chosenChemicalType);
+                    move.directionType = directionType;
+                }
+            }
+            // Prevent backwards movement, except for when it is the only open cell
+            if ((move.directionType == DirectionType.NORTH && lastMove == DirectionType.SOUTH) ||
+                    (move.directionType == DirectionType.SOUTH && lastMove == DirectionType.NORTH) ||
+                    (move.directionType == DirectionType.EAST && lastMove == DirectionType.WEST) ||
+                    (move.directionType == DirectionType.WEST && lastMove == DirectionType.EAST)){
+                if(neighborMap.get(lastMove).isOpen()){
+                    move.directionType = lastMove;
+                }
+                else {
+                    for (DirectionType directionType : neighborMap.keySet()) {
+                        if (directionType != move.directionType && neighborMap.get(directionType).isOpen()) {
+                            move.directionType = directionType;
+                        }
+                    }
+                }
+            }
+        }
         // If there is none of the sought chemical and the agent is not in the initial state,
-        // chose any direction that occured in the last 2 moves
-        if (highestConcentration == 0 && chemIdx != 0){
+        // chose the majority direction of the previous three moves
+        if (highestConcentration == 0.0 && chemIdx != 0){
             if(lastMove == secLastMove){
                 move.directionType = lastMove;
             }
@@ -96,27 +145,19 @@ public class Agent extends chemotaxis.sim.Agent {
             }
         }
         //If the agent is at local maxima, update currState
+        int currChem = switch (chosenChemicalType) {
+            case RED -> 1;
+            case GREEN -> 2;
+            case BLUE -> 3;
+        };
         int currState = 0;
-        if(move.directionType == DirectionType.CURRENT && chemIdx == 0){
+        if(move.directionType == DirectionType.CURRENT && previousState == 0) {
             currState = 0;
         }
-        else if(move.directionType == DirectionType.CURRENT){
-            int currChem = switch (chosenChemicalType) {
-                case RED -> 2;
-                case GREEN -> 3;
-                case BLUE -> 1;
-            };
-            currState = currChem<<6 | thdLastMoveIdx<<4 | secLastMoveIdx<<2 | lastMoveIdx;
-        }
         else if (highestConcentration == 0){
-            currState = previousState;
+            currState = (currChem<<6) | (thdLastMoveIdx<<4) | (secLastMoveIdx<<2) | (lastMoveIdx);
         }
         else{
-            int currChem = switch (chosenChemicalType) {
-                case RED -> 1;
-                case GREEN -> 2;
-                case BLUE -> 3;
-            };
             int currSecLastMove = lastMoveIdx;
             int currThdLastMove = secLastMoveIdx;
             int currLastMove = switch (move.directionType){
