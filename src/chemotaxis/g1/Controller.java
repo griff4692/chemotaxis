@@ -50,6 +50,9 @@ public class Controller extends chemotaxis.sim.Controller {
     // initialScheduleWeak[i]=color_a means put a color_a chemical at i+1 cell on the route
     private Map<Integer, Color> initialScheduleWeak = new HashMap<>();
 
+    // Game State for IDS lookahead
+    private GameState gameState;
+
     /**
      * Controller constructor
      *
@@ -64,6 +67,10 @@ public class Controller extends chemotaxis.sim.Controller {
      */
     public Controller(Point start, Point target, Integer size, ChemicalCell[][] grid, Integer simTime, Integer budget, Integer seed, SimPrinter simPrinter, Integer agentGoal, Integer spawnFreq) {
         super(start, target, size, grid, simTime, budget, seed, simPrinter, agentGoal, spawnFreq);
+        Point adjustedStart = new Point(start.x-1, start.y-1);
+        Point adjustedTarget = new Point(target.x-1, target.y-1);
+        this.gameState = new GameState(adjustedStart, adjustedTarget, agentGoal, spawnFreq, budget, grid);
+
         dist = new int[size][size][4];
         // Necessary since (0,0) on the game board is labeled (1,1)
         modifiedStart.x=start.x-1;
@@ -309,18 +316,14 @@ public class Controller extends chemotaxis.sim.Controller {
     }
 
     /**
-     * Apply chemicals to the map
-     *
-     * @param currentTurn         current turn in the simulation
-     * @param chemicalsRemaining  number of chemicals remaining
-     * @param locations           current locations of the agents
-
-     * @param grid                game grid/map
-     * @return                    a cell location and list of chemicals to apply
-     *
+     * Internal chemical placement function. Used to capture result and update game state.
+     * @param currentTurn
+     * @param chemicalsRemaining
+     * @param locations
+     * @param grid
+     * @return
      */
-    @Override
-    public ChemicalPlacement applyChemicals(Integer currentTurn, Integer chemicalsRemaining, ArrayList<Point> locations, ChemicalCell[][] grid) {
+    private ChemicalPlacement _applyChemicals(Integer currentTurn, Integer chemicalsRemaining, ArrayList<Point> locations, ChemicalCell[][] grid) {
         ChemicalPlacement chemicalPlacement = new ChemicalPlacement();
         if (currentTurn == 1) {
             chemicalPlacement.location = start;
@@ -364,7 +367,33 @@ public class Controller extends chemotaxis.sim.Controller {
             chemicalPlacement.location = new Point(loc.x + 1, loc.y + 1);
             chemicalPlacement.chemicals.add(ChemicalCell.ChemicalType.BLUE);
         }
+        return chemicalPlacement;
+    }
 
+    /**
+     * Apply chemicals to the map
+     *
+     * @param currentTurn         current turn in the simulation
+     * @param chemicalsRemaining  number of chemicals remaining
+     * @param locations           current locations of the agents
+
+     * @param grid                game grid/map
+     * @return                    a cell location and list of chemicals to apply
+     *
+     */
+    @Override
+    public ChemicalPlacement applyChemicals(Integer currentTurn, Integer chemicalsRemaining, ArrayList<Point> locations, ChemicalCell[][] grid) {
+        // TODO (etm): Debug only, remove this validation.
+        //   Throws an exception if the game state deviates from expected.
+        try {
+            this.gameState.validateEquivalence(currentTurn, chemicalsRemaining, locations, grid);
+        } catch (RuntimeException e) {
+            System.err.println("" + e);
+        }
+
+        ChemicalPlacement chemicalPlacement = this._applyChemicals(currentTurn, chemicalsRemaining, locations, grid);
+
+        this.gameState = this.gameState.placeChemicalAndStep(chemicalPlacement);
         return chemicalPlacement;
     }
 
