@@ -72,6 +72,12 @@ public class Controller extends chemotaxis.sim.Controller {
 				System.out.println();
 				System.out.printf("is max percentage: %f\n", dataPoint.isMaxPercentage);
 				System.out.printf("has good gradient percentage: %f\n", dataPoint.isGoodGradientPercentage);
+
+				System.out.println("Max reached:");
+				System.out.println(dataPoint.maxDistance);
+				System.out.println(dataPoint.willReach(4));
+				System.out.println(dataPoint.turnsWillReach(4)[0]);
+				System.out.println(dataPoint.turnsWillReach(4)[1]);
 				System.out.println();
 				System.out.println();
 			}
@@ -153,7 +159,7 @@ public class Controller extends chemotaxis.sim.Controller {
 
 
 		ChemicalPlacement chemicalPlacement = new ChemicalPlacement();
-		Point p = new Point(11,6);
+		Point p = new Point(10,13);
 		int index = path.indexOf(p);
 		System.out.println("from controller:");
 		System.out.println(grid[p.x - 1][p.y - 1].getConcentration(ChemicalType.BLUE));
