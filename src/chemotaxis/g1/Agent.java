@@ -109,8 +109,9 @@ public class Agent extends chemotaxis.sim.Agent {
                 prevState.setStrategy(AgentState.Strategy.STRONG);
                 DirectionType nextDirection = prevState.getDirection().asDirectionType();
                 for (DirectionType directionType : neighborMap.keySet()) {
-                    double temp = neighborMap.get(directionType).getConcentration(ChemicalType.BLUE);
-                    if (temp == 1) {
+                    double temp_blue = neighborMap.get(directionType).getConcentration(ChemicalType.BLUE);
+                    double temp_green = neighborMap.get(directionType).getConcentration(ChemicalType.GREEN);
+                    if (temp_blue == 1 || temp_green == 1) {
                         nextDirection = directionType;
                         break;
                     }
