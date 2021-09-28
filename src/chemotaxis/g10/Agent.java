@@ -55,7 +55,7 @@ public class Agent extends chemotaxis.sim.Agent {
       byte intermediateDirectionByte = this.directionToBits(direction);
       byte intermediateColorByte =  this.color2Byte(currentColor);
       /*Bit shift the direction Byte by one */
-      intermediateDirectionByte = (byte) (intermediateDirectionByte<<1);
+      intermediateDirectionByte = (byte) (intermediateDirectionByte<<2);
       /*Combine the two Bytes now using the bitwise OR operator*/
       byte intermediateByte =  (byte) (intermediateColorByte|intermediateDirectionByte);
 
@@ -67,8 +67,10 @@ public class Agent extends chemotaxis.sim.Agent {
       if((currentColor.equals(ChemicalCell.ChemicalType.RED))){
          return 0;
       }
-      else{
+      else if (currentColor.equals(ChemicalCell.ChemicalType.GREEN)){
          return 1;
+      } else {
+         return 2;
       }
    }
 
@@ -77,7 +79,9 @@ public class Agent extends chemotaxis.sim.Agent {
       if((currentColor.equals(ChemicalCell.ChemicalType.RED))){
          return ChemicalCell.ChemicalType.GREEN;
       }
-      else{
+      else if (currentColor.equals(ChemicalCell.ChemicalType.GREEN)){
+         return ChemicalCell.ChemicalType.BLUE;
+      } else {
          return ChemicalCell.ChemicalType.RED;
       }
    }
@@ -85,18 +89,20 @@ public class Agent extends chemotaxis.sim.Agent {
 
    private ChemicalCell.ChemicalType getCurrentColor(Byte previousState){
       byte prevState = previousState.byteValue();
-      int chemicalCellChoice = prevState&1;
+      int chemicalCellChoice = prevState&2;
       if(chemicalCellChoice == 0){
          return ChemicalCell.ChemicalType.RED;
       }
-      else{
+      else if (chemicalCellChoice == 1){
          return ChemicalCell.ChemicalType.GREEN;
+      } else {
+         return ChemicalCell.ChemicalType.BLUE;
       }
    }
 
    private DirectionType getDirectionFromState(Byte previousState){
       byte prevState = previousState.byteValue();
-      int direction = prevState>>1;
+      int direction = prevState>>2;
       if (direction == 0){
          return DirectionType.CURRENT; //this means stay there
       }

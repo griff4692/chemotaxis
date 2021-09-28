@@ -17,7 +17,7 @@ public class Controller extends chemotaxis.sim.Controller {
    private ArrayList<Point> agentsLastLocation;
    private ArrayList<DirectionType> agentsLastDir;
    private ArrayList<ChemicalCell.ChemicalType> agentsCurrentChemical;
-   private ChemicalCell.ChemicalType[] chemicalList = new ChemicalCell.ChemicalType[]{ChemicalCell.ChemicalType.RED, ChemicalCell.ChemicalType.GREEN};
+   private ChemicalCell.ChemicalType[] chemicalList = new ChemicalCell.ChemicalType[]{ChemicalCell.ChemicalType.RED, ChemicalCell.ChemicalType.GREEN, ChemicalCell.ChemicalType.BLUE};
 //   private ChemicalCell.ChemicalType lastChemPlaced;
 
    /**
