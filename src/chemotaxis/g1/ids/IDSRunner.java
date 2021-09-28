@@ -77,9 +77,10 @@ public class IDSRunner {
 
         state.depthLimit -= 1;
 
-        ArrayList<ChemicalPlacement> candidates = generator.candidates(gameState);
+        ArrayList<IDSCandidate> candidates = generator.candidates(gameState);
         ScoredPlacement currentBest = new ScoredPlacement(Double.MIN_VALUE, new ChemicalPlacement());
-        for (ChemicalPlacement c : candidates) {
+        for (IDSCandidate ic : candidates) {
+            ChemicalPlacement c = ic.getPlacement();
             GameState nextGameState = gameState.placeChemicalAndStep(c);
             ScoredPlacement move = IDSRunner.findBest(state, nextGameState, generator, heuristic);
             if (move != null && currentBest.score < move.score) {

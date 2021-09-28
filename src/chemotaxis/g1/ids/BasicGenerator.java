@@ -12,8 +12,8 @@ import java.util.ArrayList;
  * Returns candidates for every valid cell and color combination.
  */
 public class BasicGenerator implements IDSCandidateGenerator {
-    public ArrayList<ChemicalPlacement> candidates(final GameState gs) {
-        ArrayList<ChemicalPlacement> candidates = new ArrayList<>();
+    public ArrayList<IDSCandidate> candidates(final GameState gs) {
+        ArrayList<IDSCandidate> candidates = new ArrayList<>();
         GameCell[][] grid = gs.getGrid();
         for (int row = 0; row < grid.length; ++row) {
             for (int col = 0; col < gs.getGrid()[row].length; ++col) {
@@ -25,7 +25,7 @@ public class BasicGenerator implements IDSCandidateGenerator {
                     ChemicalPlacement p = new ChemicalPlacement();
                     p.location = new Point(row, col);
                     p.chemicals.add(color);
-                    candidates.add(p);
+                    candidates.add(new IDSCandidate(p));
                 }
             }
         }

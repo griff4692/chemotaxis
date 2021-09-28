@@ -6,5 +6,5 @@ import chemotaxis.sim.ChemicalPlacement;
 import java.util.ArrayList;
 
 public interface IDSCandidateGenerator {
-    ArrayList<ChemicalPlacement> candidates(final GameState gameState);
+    ArrayList<IDSCandidate> candidates(final GameState gameState);
 }
