@@ -33,6 +33,7 @@ public class Controller extends chemotaxis.sim.Controller {
 	double threshold = 0.1;
 	int vacantRound = 0;
 
+
     /**
      * Controller constructor
      *
@@ -225,6 +226,7 @@ public class Controller extends chemotaxis.sim.Controller {
 		// 		}
 		// 	}
 		// }
+
 	}
 
 	public int closestToTarget(ArrayList<Point> locations) {
@@ -509,7 +511,6 @@ public class Controller extends chemotaxis.sim.Controller {
 				vacantRound = 0;
 			}
 			return chemicalPlacement;
-
 		}
 	}
 
