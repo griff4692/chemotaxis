@@ -144,6 +144,7 @@ public class Analysis {
             dataPoint.goodGradient = goodGradient;
             dataPoint.getIsMaxPercentage();
             dataPoint.getIsGoodGradientPercentage();
+            dataPoint.getMaxDistance();
             data.add(dataPoint);
         }
         return data;
