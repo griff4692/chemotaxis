@@ -21,6 +21,17 @@ public class Controller extends chemotaxis.sim.Controller {
 	private final Point target;
 	private String[][] policy;
 	private Double[][] values;
+	private boolean firstRound;
+	private DirectionType[][] finalPolicy;
+	private boolean red;
+	private boolean blueStrategy;
+	private Set<Point> agentsStack;
+	//private ChemicalCell[][] grid1;
+	//private ChemicalCell[][] grid2;
+	//private ChemicalCell[][] grid3;
+	//private ChemicalCell[][] grid4;
+
+
 	/**
 	 * Controller constructor
 	 *
@@ -65,6 +76,39 @@ public class Controller extends chemotaxis.sim.Controller {
 		}
 		this.target = target;
 		this.findPolicy(0.8);
+		this.firstRound = true;
+		this.finalPolicy = convertPolicy(policy);
+		this.red = true;
+		int errorMargin = size;
+		int sum = this.corners.size() * agentGoal + errorMargin;
+		this.blueStrategy = (this.corners.size() * agentGoal + errorMargin < budget);
+		this.agentsStack = new HashSet<Point>();
+	}
+
+	private DirectionType[][] convertPolicy (String[][] policy) {
+		DirectionType[][] output = new DirectionType [policy[0].length][policy.length];
+		for (int i=0; i < policy[0].length; i++) {
+			for (int j=0; j < policy.length; j++) {
+				switch (policy[i][j]) {
+					case ">":
+						output[i][j] = DirectionType.EAST;
+						break;
+					case "<":
+						output[i][j] = DirectionType.WEST;
+						break;
+					case "^":
+						output[i][j] = DirectionType.NORTH;
+						break;
+					case "v":
+						output[i][j] = DirectionType.SOUTH;
+						break;
+					default:
+						output[i][j] = DirectionType.CURRENT;
+
+				}
+			}
+		}
+		return output;
 	}
 
 
@@ -88,19 +132,19 @@ public class Controller extends chemotaxis.sim.Controller {
 		}
 	}
 
-	public int closestToTarget(List<Point> locations) {
+	public Point closestToTarget(Set<Point> locations) {
 		int closestDistance = 9999999;
-		int closestIdx = 0;
-		for(int i = 0; i < locations.size(); i++) {
-			int x = locations.get(i).x;
-			int y = locations.get(i).y;
+		Point closest = new Point(0,0);
+		for(Point p : locations) {
+			int x = p.x;
+			int y = p.y;
 			int distance = Math.abs(x - this.target.x) + Math.abs(y - this.target.y);
 			if(distance > 0 && distance < closestDistance) {
-				closestIdx = i;
+				closest = p;
 				closestDistance = distance;
 			}
 		}
-		return closestIdx;
+		return closest;
 	}
 
 	/**
@@ -463,38 +507,158 @@ public class Controller extends chemotaxis.sim.Controller {
 	}
 
 	private boolean cellOccupied(Point p, List<Point> locations) {
-		int x = p.x;
-		int y = p.y;
 		for (int i=0; i< locations.size(); i++) {
-			if ( x == locations.get(i).x && y == locations.get(i).y) {
+			if ( p.equals(locations.get(i)) ) {
 				return true;
 			}
 		}
 		return false;
 	}
 
-	private List<Point> needSignal (List<Point> locations) {
-		int x;
-		int y;
-		int tempX;
-		int tempY;
-		List<Point> agents = new ArrayList<>();
-		for (int i =0; i < locations.size(); i++) {
-			if (! inPath(locations.get(i))) {
-				agents.add(locations.get(i));
+	private Set<Point> agentsAtCorner (ArrayList<Point> locations) {
+		Set<Point> agents = new HashSet<Point>();
+		for (Point agent : locations) {
+			if (! inPath(agent)) {
+				agents.add(agent);
 			}
-			x = locations.get(i).x;
-			y = locations.get(i).y;
-			for (int j =0; j < corners.size(); j++) {
-				tempX = corners.get(j).x;
-				tempY = corners.get(j).y;
-				if (x == tempX && y == tempY) {
-					agents.add(locations.get(i));
+			for (Point corner : this.corners) {
+				if (agent.equals(corner)) {
+					agents.add(agent);
 				}
 			}
 		}
 		return agents;
 	}
+
+	private boolean oppositeDirection (DirectionType currentCell, DirectionType nextCell) {
+		switch (currentCell) {
+			case EAST:
+				if (nextCell == DirectionType.WEST) {
+					System.out.println("agent is going EAST but policy says to go WEST");
+					return true;
+				}
+				break;
+			case WEST:
+				if (nextCell == DirectionType.EAST) {
+					System.out.println("agent is going WEST but policy says to go EAST");
+					return true;
+				}
+				break;
+			case NORTH:
+				if (nextCell == DirectionType.SOUTH) {
+					System.out.println("agent is going NORTH but policy says to go SOUTH");
+					return true;
+				}
+				break;
+			case SOUTH:
+				if (nextCell == DirectionType.NORTH) {
+					System.out.println("agent is going NORTH but policy says to go SOUTH");
+					return true;
+				}
+				break;
+		}
+		return false;
+	}
+
+	private Point nextLocation (Point location, DirectionType direction) {
+		int newX;
+		int newY;
+		switch (direction) {
+			case EAST:
+				newX = location.x + 1;
+				newY = location.y;
+				break;
+			case WEST:
+				newX = location.x - 1;
+				newY = location.y;
+				break;
+			case NORTH:
+				newX = location.x;
+				newY = location.y - 1;
+				break;
+			case SOUTH:
+				newX = location.x;
+				newY = location.y + 1;
+				break;
+			default:
+				newX = location.x;
+				newY = location.y;
+		}
+
+		return new Point(newX, newY);
+	}
+
+
+	private boolean validCell (int x, int y, ChemicalCell grid[][]) {
+		return (x > 0) && (x <= grid.length) && (y > 0) && (y <= grid[0].length) && grid[x][y].isOpen() ;
+	}
+
+	private DirectionType expectedMove (Point p, ChemicalCell[][] grid, boolean red) {
+		List<Double> concentrations = new ArrayList<Double>();
+		ChemicalType color = ChemicalType.GREEN;
+		if (red) {
+			color = ChemicalType.RED;
+		}
+
+		int x = p.x;
+		int y = p.y;
+		if (validCell(x - 1, y, grid)){
+			concentrations.add(grid[x-1][y].getConcentration(color));
+		} else {
+			concentrations.add(0.0);
+		}
+		if (validCell(x + 1, y, grid)){
+			concentrations.add(grid[x+1][y].getConcentration(color));
+		} else {
+			concentrations.add(0.0);
+		}
+		if (validCell(x , y - 1, grid)){
+			concentrations.add(grid[x][y-1].getConcentration(color));
+		} else {
+			concentrations.add(0.0);
+		}
+		if (validCell(x , y + 1, grid)){
+			concentrations.add(grid[x][y+1].getConcentration(color));
+		} else {
+			concentrations.add(0.0);
+		}
+		for (int k=0; k < 4; k++){
+			System.out.println(concentrations.get(k));
+		}
+		List<Double> max = new ArrayList<>();
+		max.add(0.0);
+		int id = 5;
+		for (int i=0; i< 4; i++) {
+			if (concentrations.get(i) > max.get(0)) {
+				for (int j=0; j< max.size(); j++) {
+					max.remove(j);
+				}
+				max.add(concentrations.get(i));
+				id = i;
+			} else if (concentrations.get(i) == max.get(0)) {
+				max.add(concentrations.get(i));
+				id = 4;
+			}
+		}
+		System.out.println(id);
+		switch(id) {
+			case 0:
+				System.out.println("GOING SOUTH");
+				return DirectionType.SOUTH;
+			case 1:
+				System.out.println("GOING NORTH");
+				return DirectionType.NORTH;
+			case 2:
+				System.out.println("GOING EAST");
+				return DirectionType.EAST;
+			case 3:
+				System.out.println("GOING WEST");
+				return DirectionType.WEST;
+		}
+		System.out.println("STAYING PUT");
+		return DirectionType.CURRENT;
+	}
+
 
 	/**
 	 * Apply chemicals to the map
@@ -508,35 +672,119 @@ public class Controller extends chemotaxis.sim.Controller {
 	 */
 	@Override
 	public ChemicalPlacement applyChemicals(Integer currentTurn, Integer chemicalsRemaining, ArrayList<Point> locations, ChemicalCell[][] grid) {
+
 		ChemicalPlacement chemicalPlacement = new ChemicalPlacement();
-		int closestIdx = this.closestToTarget(locations);
-		int x = locations.get(closestIdx).x;
-		int y = locations.get(closestIdx).y;
+		int newX;
+		int newY;
+		int step = 5;
 
-		int xDelta = this.target.x - x;
-		int yDelta = this.target.y - y;
+		//if (currentTurn > shortestPath.size()+2) {
+		//	this.firstRound = false;
+		//}
 
-		if(xDelta < 0) {
-			xDelta = -1;
-		} else if(xDelta > 0) {
-			xDelta = 1;
+		if (this.blueStrategy) {
+			//this.agentsStack.addAll(agentsAtCorner(locations));
+			this.agentsStack = agentsAtCorner(locations);
+			if (agentsStack.size() == 0) {
+				return chemicalPlacement;
+			} else {
+				Point agent = closestToTarget(agentsStack);
+				agentsStack.remove(closestToTarget(agentsStack));
+				// Point next = nextLocation(agent, this.finalPolicy[agent.x][agent.y]);
+
+				Point next;
+				if (inPath(agent)) {
+					next = nextCell(agent);
+					if (cellOccupied(next, locations)) {
+						next = nextCell(next);
+					}
+				} else {
+					int closestPathPointId = closestPathPoint(agent);
+					next = this.shortestPath.get(closestPathPointId);
+					int xDelta = next.x - agent.x;
+					int yDelta = next.y - agent.y;
+					if (xDelta < 0) {
+						xDelta = -1;
+					} else if (xDelta > 0) {
+						xDelta = 1;
+					}
+					if (yDelta < 0) {
+						yDelta = -1;
+					} else if (yDelta > 0) {
+						yDelta = 1;
+					}
+					newX = agent.x + xDelta;
+					newY = agent.y + yDelta;
+					while (cellOccupied(new Point(newX, newY), locations)) {
+						newX = agent.x + xDelta;
+						newY = agent.y + yDelta;
+					}
+					next = new Point(newX, newY);
+
+				}
+
+				List<ChemicalType> chemicals = new ArrayList<>();
+				chemicals.add(ChemicalType.BLUE);
+
+				chemicalPlacement.location = next;
+				chemicalPlacement.chemicals = chemicals;
+
+				return chemicalPlacement;
+			}
 		}
+		else {
 
-		if(yDelta < 0) {
-			yDelta = -1;
-		} else if(yDelta > 0) {
-			yDelta = 1;
+			if (currentTurn % step == 1 && this.firstRound) {
+				int cellId;
+				if (currentTurn >= shortestPath.size()) {
+					cellId = Math.min((currentTurn / shortestPath.size()) + 3, shortestPath.size() - 1);
+				} else {
+					cellId = Math.min(currentTurn + 3, shortestPath.size() - 1);
+				}
+				newX = shortestPath.get(cellId).x;
+				newY = shortestPath.get(cellId).y;
+
+				List<ChemicalType> chemicals = new ArrayList<>();
+				if (this.red) {
+					chemicals.add(ChemicalType.RED);
+					this.red = false;
+				} else {
+					chemicals.add(ChemicalType.GREEN);
+					this.red = true;
+				}
+
+				chemicalPlacement.location = new Point(newX, newY);
+				chemicalPlacement.chemicals = chemicals;
+
+				return chemicalPlacement;
+
+			} else {
+				// if all agents will follow the best policy, no need to add chemicals
+				for (int i = 0; i < locations.size(); i++) {
+					if (oppositeDirection(expectedMove(locations.get(i), grid, true), this.finalPolicy[locations.get(i).x][locations.get(i).y])) {
+						agentsStack.add(locations.get(i));
+					}
+				}
+			}
+
+			if (agentsStack.size() != 0) {
+				Point agent = closestToTarget(agentsStack);
+				agentsStack.remove(closestToTarget(agentsStack));
+
+				DirectionType move = this.finalPolicy[agent.x][agent.y];
+
+				List<ChemicalType> chemicals = new ArrayList<>();
+				chemicals.add(ChemicalType.BLUE);
+
+				chemicalPlacement.location = nextLocation(agent, move);
+				chemicalPlacement.chemicals = chemicals;
+
+				return chemicalPlacement;
+
+			}
 		}
-
-		List<ChemicalType> chemicals = new ArrayList<>();
-		chemicals.add(ChemicalType.BLUE);
-
-		int newX = x + xDelta;
-		int newY = y + yDelta;
-
-		chemicalPlacement.location = new Point(newX, newY);
-		chemicalPlacement.chemicals = chemicals;
 
 		return chemicalPlacement;
+
 	}
 }

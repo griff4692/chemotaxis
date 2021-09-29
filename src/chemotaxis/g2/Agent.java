@@ -37,6 +37,7 @@ public class Agent extends chemotaxis.sim.Agent {
 		Move move = new Move();
 		ChemicalType chosenChemicalType;
 		Boolean dirChanged = false;
+		int firstTurn = 0;
 
 
 		/*
@@ -55,6 +56,9 @@ public class Agent extends chemotaxis.sim.Agent {
 		 * */
 
 
+		if (previousState == 0)
+			firstTurn = 1;
+
 		chosenChemicalType = ChemicalType.BLUE;
 		double highestConcentration;
 		double minDetectableConcentration = 0.001;	/* Would have done a #define, but can't. CAUTION! Change if minimum detectable concentration
@@ -63,9 +67,11 @@ public class Agent extends chemotaxis.sim.Agent {
 		boolean turn = false;
 		int colour;
 
-
 		for (DirectionType directionType : neighborMap.keySet()) {
-			if (Math.abs(neighborMap.get(directionType).getConcentration(chosenChemicalType) - 1.0) < minDetectableConcentration ) {
+			double a = neighborMap.get(directionType).getConcentration(chosenChemicalType);
+			System.out.println(a + " directionType: " + directionType);
+			if (Math.abs(a - 1.0) < minDetectableConcentration ) {
+				System.out.println("Im here");
 				move.directionType = directionType;
 				turn = true;
 				previousState = (byte)((previousState & 248) | storeDir(directionType));
@@ -86,6 +92,7 @@ public class Agent extends chemotaxis.sim.Agent {
 				// no blue found, but strategy is follow the turns
 				move.directionType = findPreviousState(previousState);
 				move.currentState = previousState;
+
 				return move;
 			}
 
@@ -109,12 +116,24 @@ public class Agent extends chemotaxis.sim.Agent {
 			double previousColourConcentration;
 
 			for (DirectionType directionType : neighborMap.keySet()) {
-				if (highestConcentration <= neighborMap.get(directionType).getConcentration(chosenChemicalType)) {
+				double b = neighborMap.get(directionType).getConcentration(chosenChemicalType);
+				System.out.println(1 + " " + b + "directionType: " + directionType);
+				if (highestConcentration <= b) {
 					highestConcentration = neighborMap.get(directionType).getConcentration(chosenChemicalType);
+					System.out.println(2 + " found higher concentration " + highestConcentration + " direction is :" + directionType);
 					move.directionType = directionType;
 					dirChanged = true;
 				}
+
 			}
+
+			if(allZero(neighborMap, chosenChemicalType, currentCell) == 1 && firstTurn == 1){
+				move.directionType = DirectionType.CURRENT;
+				dirChanged = true;
+				return move;
+			}
+
+			System.out.println(" out of the loop, concent:  " + highestConcentration + "direction type" + move);
 
 			if (dirChanged == false) {
 				if (chosenChemicalType == ChemicalType.RED) {
@@ -176,6 +195,28 @@ public class Agent extends chemotaxis.sim.Agent {
 
 	public int findRedOrGreen(Byte previousState){
 		if((previousState & 64) == 64) // red
+			return 1;
+		else
+			return 0;
+
+	}
+
+	public int allZero(Map<DirectionType, ChemicalCell> neighborMap, ChemicalType chosenChemicalType, ChemicalCell currentCell){
+
+		int count = 0;
+		double minDetectableConcentration = 0.001, b;
+
+		for (DirectionType directionType : neighborMap.keySet()) {
+			double a = neighborMap.get(directionType).getConcentration(chosenChemicalType);
+			//System.out.println(a + " directionType: " + directionType);
+			if (Math.abs(a) < minDetectableConcentration ) {
+				//System.out.println("Im here");
+				count++;
+
+			}
+		}
+		b = currentCell.getConcentration(chosenChemicalType);
+		if (count == 4 && (Math.abs(b) < minDetectableConcentration))
 			return 1;
 		else
 			return 0;
