@@ -91,7 +91,7 @@ public class Controller extends chemotaxis.sim.Controller {
             System.out.println();
         }
         */
-        refreshRate = 3;
+        refreshRate = simTime / agentGoal;
         greenChemicalBudget = agentGoal;
         greenChemicalsPut = 0;
         chemicalsPerAgent = (budget - greenChemicalBudget) / agentGoal;
@@ -115,6 +115,7 @@ public class Controller extends chemotaxis.sim.Controller {
                 visited[x][y] = true;
                 if (steps[x][y] <= chemicalsPerAgent) {
                     greenTarget = new Point(x + 1, y + 1);
+                    System.out.println(greenTarget);
                     break;
                 }
             }
@@ -179,15 +180,6 @@ public class Controller extends chemotaxis.sim.Controller {
                 }
             }
         }
-
-        /*
-        for(Point p : onConveyerAgents.keySet()) {
-            System.out.println("MARKER");
-            System.out.println(p);
-            System.out.println(onConveyerAgents.get(p));
-        }
-         */
-
 
         for (Point p: onConveyerAgents.keySet()) {
             DirectionType currentDirection = onConveyerAgents.get(p);
