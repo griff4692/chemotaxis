@@ -51,10 +51,6 @@ public class Agent extends chemotaxis.sim.Agent {
         prevState.setDirection(move.directionType);
         move.currentState = prevState.serialize();
 
-        // TODO (etm): This stores the previous direction, but it doesn't really store the
-        //   intended direction. So, if we want the agent to resume in the intended direction
-        //   as soon as it can (no more wall blocking), we need to store the intended direction
-        //   in the agent state as well.
         return move;
     }
 
@@ -106,14 +102,28 @@ public class Agent extends chemotaxis.sim.Agent {
 
     public Move initialize(AgentState prevState, Map<DirectionType, ChemicalCell> neighborMap, ChemicalCell currentCell) {
         Move move = new Move();
-        if (isChemicalPresent(ChemicalType.GREEN, neighborMap, currentCell)) {
-            if (isChemicalPresent(ChemicalType.RED, neighborMap, currentCell))
+        if (isChemicalNearby(neighborMap, currentCell, ChemicalType.GREEN)) {
+            if (isChemicalNearby(neighborMap, currentCell, ChemicalType.RED)) {
                 prevState.setStrategy(AgentState.Strategy.WEAK);
-            else
-                prevState.setStrategy(AgentState.Strategy.STRONG);
+                prevState.setInitialized();
+            }
+            else {
+                DirectionType nextDirection = DirectionType.CURRENT;
+                for (DirectionType directionType : neighborMap.keySet()) {
+                    double temp = neighborMap.get(directionType).getConcentration(ChemicalType.GREEN);
+                    if (temp == 1) {
+                        nextDirection = directionType;
+                        prevState.setInitialized();
+                        break;
+                    }
+                }
+                move.directionType = nextDirection;
+            }
         }
-        else
+        else {
             prevState.setStrategy(AgentState.Strategy.WEAK);
+            prevState.setInitialized();
+        }
 
         if (prevState.getStrategy() == AgentState.Strategy.WEAK){
             DirectionType nextDirection = getHighestConcentrationDirectionWeak(ChemicalType.BLUE, neighborMap);
@@ -127,14 +137,14 @@ public class Agent extends chemotaxis.sim.Agent {
         return move;
     }
 
-    public boolean isChemicalPresent(ChemicalType color, Map<DirectionType, ChemicalCell> neighborMap, ChemicalCell currentCell) {
-        if (currentCell.getConcentration(color) > 0)
+    public boolean isChemicalNearby(Map<DirectionType, ChemicalCell> neighborMap, ChemicalCell currentCell, ChemicalType chemicalType) {
+        if (currentCell.getConcentration(chemicalType) > 0)
             return true;
-        for (DirectionType directionType : neighborMap.keySet()) {
-            double temp = neighborMap.get(directionType).getConcentration(color);
-            if (temp > 0)
+
+        for (DirectionType directionType : neighborMap.keySet())
+            if (neighborMap.get(directionType).getConcentration(chemicalType) > 0)
                 return true;
-        }
+
         return false;
     }
 
@@ -207,7 +217,8 @@ public class Agent extends chemotaxis.sim.Agent {
             double temp = neighborMap.get(directionType).getConcentration(ChemicalType.BLUE);
             boolean isReverse = prevState.asCardinalDir(directionType) == prevState.getDirection().reverseOf();
             if (temp == 1 && !isReverse) {
-                    nextDirection = directionType;
+                nextDirection = directionType;
+                break;
             }
         }
 
