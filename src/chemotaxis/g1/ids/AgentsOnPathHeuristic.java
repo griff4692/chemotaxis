@@ -15,7 +15,7 @@ import java.util.HashSet;
 public class AgentsOnPathHeuristic implements IDSHeuristic {
     private HashSet<Point> pathPoints;
 
-    AgentsOnPathHeuristic(ArrayList<Point> path) {
+    public AgentsOnPathHeuristic(ArrayList<Point> path) {
         this.pathPoints = new HashSet<>(path);
     }
 
@@ -26,7 +26,7 @@ public class AgentsOnPathHeuristic implements IDSHeuristic {
             if (this.pathPoints.contains(loc.loc)) {
                 continue;
             }
-            score -= 1;
+            score -= 5;
         }
         return score;
     }
