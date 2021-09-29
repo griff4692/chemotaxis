@@ -12,6 +12,7 @@ public class Controller extends chemotaxis.sim.Controller {
      *dist[i][j][d] = 0 means agent can't go to cell x,y from direction d yet
      *dist[i][j][d] = -1 means there is a block at x,y
      **/
+    private ArrayList<int[][][]> dist_record = new ArrayList<>();
     private int[][][] dist;
     Point modifiedStart = new Point();
     Point modifiedTarget = new Point();
@@ -47,7 +48,7 @@ public class Controller extends chemotaxis.sim.Controller {
     private ArrayList<Integer> finalScheduleStrong;
     // a initial schedule if the strategy is weak
     // initialScheduleWeak[i]=color_a means put a color_a chemical at i+1 cell on the route
-    private Map<Integer, Color> initialScheduleWeak;
+    private Map<Integer, Color> initialScheduleWeak = new HashMap<>();
 
     // Game State for IDS lookahead
     private GameState gameState;
@@ -90,17 +91,21 @@ public class Controller extends chemotaxis.sim.Controller {
         // Divide by 3 since the default number of agents to send to the goal is 3
         // Run the shortest paths algorithm. Results are stored in `routes`
         // and keyed by the number of turns necessary for the path.
-        findshortestpath(grid,budget);
 
+        findshortestpath(grid,budget);
         // Select the fastest route within our budget.
         // Routes with more turns are faster, otherwise `findshortestpath` will terminate
         // without adding a route for that number of turns. Therefore, if key `5` exists in
         // `routes`, it's route is strictly shorter than the route for key `4`.
+        this.selectedRoute = budget / agentGoal - 1;
+
         for (int i=0;i<budget;i++) {
             if (!routes.containsKey(i)){
+                if (this.selectedRoute>=i) {
+                    this.selectedRoute=i-1;
+                }
                 break;
             }
-            this.selectedRoute = i;
             ArrayList<Point> route = routes.get(i);
             Collections.reverse(route);
             routes.put(i,route);
@@ -118,9 +123,12 @@ public class Controller extends chemotaxis.sim.Controller {
             simPrinter.print("turns at: ");
 
             simPrinter.println(turnAt.get(i));
+
             // TODO (etm): Schedule is currently unused, so it's commented out
             // TODO (etm): Update this once the time allowed is known (?)
-            scheduleAllAgents(i,i<(budget/agentGoal),simTime,spawnFreq,agentGoal);
+
+
+            scheduleAllAgents(i,i<(budget*1.0/agentGoal),simTime,spawnFreq,agentGoal);
 
             simPrinter.print("strong strategy: ");
             simPrinter.println(finalScheduleStrong);
@@ -131,10 +139,10 @@ public class Controller extends chemotaxis.sim.Controller {
     }
 
     public void scheduleAllAgents(int turnChoicice, boolean sufficientChemical, int simTime, int spawnFreq, int agentGoal) {
-      if  (turnAt_simpleForm.get(turnChoicice).isEmpty()) {
-        return;
-      }
-      ArrayList<Integer> schedule = new ArrayList<>();
+        if  (turnAt_simpleForm.get(turnChoicice).isEmpty()) {
+            return;
+        }
+        ArrayList<Integer> schedule = new ArrayList<>();
         if (!turnAt.containsKey(turnChoicice)){
             while (turnChoicice>0 && !turnAt.containsKey(turnChoicice)) {
                 turnChoicice-=1;
@@ -153,8 +161,6 @@ public class Controller extends chemotaxis.sim.Controller {
             int currentStartRound=0;
             while (agentReachTarget<agentGoal && currentStartRound<simTime-spawnFreq) {
                 boolean conflict = false;
-
-
                 for (int j = 0; j < turnAt_simpleForm.get(turnChoicice).size(); j++) {
                     if (turnAt_simpleForm.get(turnChoicice).get(j)+currentStartRound>simTime || schedule.get(turnAt_simpleForm.get(turnChoicice).get(j)+currentStartRound)!=-1) {
                         conflict = true;
@@ -446,29 +452,38 @@ public class Controller extends chemotaxis.sim.Controller {
         Point current = new Point(modifiedTarget.x,modifiedTarget.y);
         int step = 10001;
         int direction = 0;
+
         for (int i=0;i<4;i++) {
             if (dist[modifiedTarget.x][modifiedTarget.y][i]>0 && dist[modifiedTarget.x][modifiedTarget.y][i]<step){
                 step = dist[modifiedTarget.x][modifiedTarget.y][i];
             }
         }
-
+        int[][][] localdist = dist;
+        int localturn = turn;
         if (step<10001) {
             while (!((modifiedStart.x==current.x)&&(modifiedStart.y==current.y))) {
 
 
                 route.add(new Point(current));
-                for (int i=0;i<4;i++) {
-                    int j = (i + direction +4) % 4;
-                    if (dist[current.x][current.y][j] == step) {
-                        direction = j;
-                        step-=1;
-                        break;
+                boolean endwhile = false;
+                while (!endwhile) {
+                    for (int i = 0; i < 4; i++) {
+                        int j = (i + direction + 4) % 4;
+                        if (localdist[current.x][current.y][j] == step) {
+                            direction = j;
+                            step -= 1;
+                            endwhile = true;
+                            break;
+                        }
+                    }
+                    if (!endwhile) {
+                        localturn -= 1;
+                        localdist = dist_record.get(localturn);
                     }
                 }
                 current.x -= movement(direction).x;
                 current.y -= movement(direction).y;
             }
-
 
             route.add(new Point(current));
         }
@@ -556,7 +571,22 @@ public class Controller extends chemotaxis.sim.Controller {
             if (pointsSavedForNextTurn.isEmpty()&&turn>0) {
                 return;
             }
-            saveRoute(turn);
+            int [][][] temp = new int[size][size][4];
+            for (int i=0;i<size;i++) {
+                for (int j = 0; j < size; j++) {
+                    for (int k = 0; k < 4; k++) {
+                        temp[i][j][k] = dist[i][j][k];
+                    }
+                }
+            }
+            dist_record.add(temp);
+
+            if (shortestdist<10001) {
+                saveRoute(turn);
+            }
+            else {
+                routes.put(turn, new ArrayList<>());
+            }
         }
     }
 }
