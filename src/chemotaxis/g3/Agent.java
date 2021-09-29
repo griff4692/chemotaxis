@@ -1,5 +1,6 @@
 package chemotaxis.g3;
 
+import java.util.ArrayList;
 import java.util.Map;
 
 import chemotaxis.sim.DirectionType;
@@ -104,17 +105,23 @@ public class Agent extends chemotaxis.sim.Agent {
 			System.out.println("prediction doesn't match");
 		}*/
 
-		System.out.println("Random Num: ");
-		System.out.println(Math.abs(randomNum%4));
+		//System.out.println("Random Num: ");
+		//System.out.println(Math.abs(randomNum%4));
+		if(previousState==0)
+		{
+			move.currentState = (byte)(Math.abs(randomNum%4) + 1);
+		}
+		else
+		{
+			move.currentState = previousState;
+		}
+
 
 		//note: if all the concentrations are zero it will move in the direction
 		//of the last direction iterated through
 		double highestConcentration = currentCell.getConcentration(chosenChemicalType);
-		int zero_count = 0;
 		for (DirectionType directionType : neighborMap.keySet()) {
 			if (neighborMap.get(directionType).getConcentration(chosenChemicalType) == 0) {
-				zero_count++;
-				System.out.println(zero_count);
 			}
 			if (highestConcentration <= neighborMap.get(directionType).getConcentration(chosenChemicalType)) {
 				highestConcentration = neighborMap.get(directionType).getConcentration(chosenChemicalType);
@@ -129,16 +136,41 @@ public class Agent extends chemotaxis.sim.Agent {
 			- 2: left
 			- 3: up
 		*/
-		if (zero_count == 4) {
-			if (Math.abs(randomNum)%4 == 0) {
-				move.directionType = DirectionType.EAST;
-			} else if (Math.abs(randomNum)%4 == 1) {
-				move.directionType = DirectionType.SOUTH;
-			} else if (Math.abs(randomNum)%4 == 2) {
-				move.directionType = DirectionType.WEST;
-			} else if (Math.abs(randomNum)%4 == 3) {
-				move.directionType = DirectionType.NORTH;
+		if (highestConcentration == 0) {
+			DirectionType priority;
+			if (move.currentState == 1) {
+				priority = DirectionType.SOUTH;
+			} else if (move.currentState == 2) {
+				priority = DirectionType.NORTH;
+			} else if (move.currentState == 3) {
+				priority = DirectionType.EAST;
+			} else{
+				priority = DirectionType.WEST;
+
 			}
+			if(neighborMap.get(priority).isOpen())
+			{
+				move.directionType = priority;
+			}
+			else
+			{
+				ArrayList<DirectionType> options = new ArrayList<DirectionType>();
+				for (DirectionType directionType : neighborMap.keySet()) {
+					if(neighborMap.get(directionType).isOpen())
+					{
+						options.add(directionType);
+					}
+				}
+				if(options.size() != 0)
+				{
+					move.directionType = options.get(randomNum%options.size());
+				}
+				move.currentState = (byte)(Math.abs(randomNum%4) + 1);
+			}
+		}
+		if(randomNum%3 == 2)
+		{
+			move.currentState = (byte)(Math.abs(randomNum%4) + 1);
 		}
 		return move;
 	}
