@@ -38,131 +38,148 @@ public class Agent extends chemotaxis.sim.Agent {
 		ChemicalType chosenChemicalType;
 		Boolean dirChanged = false;
 
-		/*
-		* if prev == 0 look at blue;
-		* Check current colour. If reached maxima, turn to other colour.
-		* If both colours zero, follow green.
-		* */
-
 
 		/*
-		* previousstate = 0 ==> first iteration. Set LSB to 1
-		* LSB == 011 ==> Currently following BLUE
-		* LSB == 101 ==> Currently following RED
-		* LSB == 1001 ==> GREEN
-		* */
-
-		if(previousState == 0){
-			previousState = 3;
-		}
-
-		if((previousState & 3) == 3){
-			chosenChemicalType = ChemicalType.BLUE;
-		}
-		else if ((previousState & 5) == 5){
-			chosenChemicalType = ChemicalType.RED;
-		}
-		else {
-			chosenChemicalType = ChemicalType.GREEN;
-		}
+		 * Byte previousState : 3 LSBs hold previous direction
+		 * 001 : North
+		 * 010 : South
+		 * 011 : East
+		 * 100 : West
+		 * 101 : Current
+		 * 110 : Seen red. Ignore Blue?
+		 *
+		 *
+		 * MSB 1 is on : red - green strategy on
+		 * MSB 2 is on: currently red
+		 * MSB 3 is on : currently green
+		 * */
 
 
-		double highestConcentration = currentCell.getConcentration(chosenChemicalType);
-		double previousColourConcentration;
+		chosenChemicalType = ChemicalType.BLUE;
+		double highestConcentration;
+		double minDetectableConcentration = 0.001;	/* Would have done a #define, but can't. CAUTION! Change if minimum detectable concentration
+		 changes. */
+
+		boolean turn = false;
+		int colour;
+
 
 		for (DirectionType directionType : neighborMap.keySet()) {
-			if (highestConcentration <= neighborMap.get(directionType).getConcentration(chosenChemicalType)) {
-				highestConcentration = neighborMap.get(directionType).getConcentration(chosenChemicalType);
+			if (Math.abs(neighborMap.get(directionType).getConcentration(chosenChemicalType) - 1.0) < minDetectableConcentration ) {
 				move.directionType = directionType;
-				dirChanged = true;
+				turn = true;
+				previousState = (previousState & (Byte)248) | storeDir(directionType);;
+				move.currentState = previousState;
+				break;
+
 			}
 		}
 
-		if(chosenChemicalType == ChemicalType.GREEN){
-			move.currentState = previousState;
+		if(!turn){
+			// No blue found.
+
+			if(previousState == 0){
+				//first turn and no blue . So follow red-green strategy, start with red
+				previousState = (Byte)(128 | 64) ;
+			}
+			else if ((previousState & 128) == 0){
+				// no blue found, but strategy is follow the turns
+				move.directionType = findPreviousState(previousState);
+				move.currentState = previousState;
+				return move;
+			}
+
+		}
+		else{
+			// blue found but red-green on, so we turned. Return.
+			// or, blue found and follow the turn strategy. Done here, Return.
 			return move;
 		}
 
-		if (dirChanged == false){
-			// we have reached maximum. Change colour
-			previousColourConcentration = highestConcentration;
+		if((previousState & 128) == 128) {
+			//red-green is on, follow the gradient
 
-			if((previousState & 3) == 3){
+			colour = findRedOrGreen(previousState);
+			if (colour == 1)
 				chosenChemicalType = ChemicalType.RED;
-				previousState = 5;
+			else
+				chosenChemicalType = ChemicalType.GREEN;
 
-				highestConcentration = currentCell.getConcentration(chosenChemicalType);
+			highestConcentration = currentCell.getConcentration(chosenChemicalType);
+			double previousColourConcentration;
 
-				for (DirectionType directionType : neighborMap.keySet()) {
-					if (highestConcentration <= neighborMap.get(directionType).getConcentration(chosenChemicalType)) {
-						highestConcentration = neighborMap.get(directionType).getConcentration(chosenChemicalType);
-						move.directionType = directionType;
-						dirChanged = true;
-					}
-				}
-			}
-			else if ((previousState & 5) == 5){
-				chosenChemicalType = ChemicalType.BLUE;
-				previousState = 3;
-
-				highestConcentration = currentCell.getConcentration(chosenChemicalType);
-
-				for (DirectionType directionType : neighborMap.keySet()) {
-					if (highestConcentration <= neighborMap.get(directionType).getConcentration(chosenChemicalType)) {
-						highestConcentration = neighborMap.get(directionType).getConcentration(chosenChemicalType);
-						move.directionType = directionType;
-						dirChanged = true;
-					}
+			for (DirectionType directionType : neighborMap.keySet()) {
+				if (highestConcentration <= neighborMap.get(directionType).getConcentration(chosenChemicalType)) {
+					highestConcentration = neighborMap.get(directionType).getConcentration(chosenChemicalType);
+					move.directionType = directionType;
+					dirChanged = true;
 				}
 			}
 
-
-			if (dirChanged == false){
-				// then we have encountered maxima for both colours. Check if red and blue have 0 concentrations
-				if (checkZeroConcentration(neighborMap) == 1){
+			if (dirChanged == false) {
+				if (chosenChemicalType == ChemicalType.RED) {
 					chosenChemicalType = ChemicalType.GREEN;
-					previousState = 9;
+					previousState = (previousState & (0b10011111)) | 0b00100000;
+				} else {
+					chosenChemicalType = ChemicalType.RED;
+					previousState = (previousState & (Byte) (0b10011111)) | (Byte) 0b01000000;
+				}
 
-					highestConcentration = currentCell.getConcentration(chosenChemicalType);
+				highestConcentration = currentCell.getConcentration(chosenChemicalType);
 
-					for (DirectionType directionType : neighborMap.keySet()) {
-						if (highestConcentration <= neighborMap.get(directionType).getConcentration(chosenChemicalType)) {
-							highestConcentration = neighborMap.get(directionType).getConcentration(chosenChemicalType);
-							move.directionType = directionType;
-						}
+				for (DirectionType directionType : neighborMap.keySet()) {
+					if (highestConcentration <= neighborMap.get(directionType).getConcentration(chosenChemicalType)) {
+						highestConcentration = neighborMap.get(directionType).getConcentration(chosenChemicalType);
+						move.directionType = directionType;
+						dirChanged = true;
 					}
 				}
 			}
 		}
 
-
 		move.currentState = previousState;
-
 		return move;
 	}
 
-	public int checkZeroConcentration(Map<DirectionType, ChemicalCell> neighborMap){
-		int blueZero = 0, redZero = 0;
 
-		for (DirectionType directionType : neighborMap.keySet()) {
-			if (neighborMap.get(directionType).getConcentration(ChemicalType.BLUE) > 0.001) {
-				blueZero = 1;
-			}
-
-			if (neighborMap.get(directionType).getConcentration(ChemicalType.RED) > 0.001){
-				redZero = 1;
-			}
+	public Byte storeDir(DirectionType directionType){
+		if(directionType == DirectionType.EAST){
+			return 3;
+		} else if(directionType == DirectionType.WEST){
+			return 4;
+		} else if(directionType == DirectionType.NORTH){
+			return 1;
+		} else if(directionType == DirectionType.SOUTH){
+			return 2;
+		}else{
+			return 5;
 		}
+	}
 
-		if (redZero == 0 && blueZero == 0)
+	public DirectionType findPreviousState(Byte previousState){
+		if((previousState & 7) == 1){
+			return DirectionType.NORTH;
+		}
+		else if ((previousState & 7) == 2){
+			return DirectionType.SOUTH;
+		}
+		else if ((previousState & 7) == 3){
+			return DirectionType.EAST;
+		}
+		else if ((previousState & 7) == 4){
+			return DirectionType.WEST;
+		}
+		else{
+			return DirectionType.CURRENT;
+		}
+	}
+
+	public int findRedOrGreen(Byte previousState){
+		if((previousState & 64) == 64) // red
 			return 1;
 		else
 			return 0;
 
 	}
-
-
-
-
 }
 
