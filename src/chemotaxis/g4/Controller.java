@@ -79,6 +79,12 @@ public class Controller extends chemotaxis.sim.Controller {
 				System.out.println();
 				System.out.printf("is max percentage: %f\n", dataPoint.isMaxPercentage);
 				System.out.printf("has good gradient percentage: %f\n", dataPoint.isGoodGradientPercentage);
+
+				System.out.println("Max reached:");
+				System.out.println(dataPoint.maxDistance);
+				System.out.println(dataPoint.willReach(4));
+				System.out.println(dataPoint.turnsWillReach(4)[0]);
+				System.out.println(dataPoint.turnsWillReach(4)[1]);
 				System.out.println();
 				System.out.println();
 			}
