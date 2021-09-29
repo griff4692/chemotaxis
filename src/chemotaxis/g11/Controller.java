@@ -157,7 +157,7 @@ public class Controller extends chemotaxis.sim.Controller {
 
         HashMap<Point, DirectionType> newAgents = new HashMap<Point, DirectionType>();
 
-        if (locations.contains(target)) {
+        while (locations.contains(target)) {
             onConveyerAgents.remove(target);
             locations.remove(target);
             goalInAgents++;
@@ -276,12 +276,6 @@ public class Controller extends chemotaxis.sim.Controller {
             pointsToCheck.add(new Point(placement.x, placement.y + 1));
             pointsToCheck.add(new Point(placement.x + 1, placement.y));
             pointsToCheck.add(new Point(placement.x - 1, placement.y));
-        }
-
-        for(Point p : pointsToCheck)  {
-            if(locations.contains(p)) {
-                return true;
-            }
         }
         return false;
     }
