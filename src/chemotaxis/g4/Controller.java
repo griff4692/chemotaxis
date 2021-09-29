@@ -249,8 +249,96 @@ public class Controller extends chemotaxis.sim.Controller {
 		return false;
 	}
 
-	void setUp(){
+	Boolean checkIfSame(Point p, Point q) {
+		return ((p.x==q.x) && (p.y==q.y));
+	}
 
+	Boolean checkIfCrevace(Point p, ChemicalCell[][] grid, Point old) {
+		int length = grid.length;
+		//I only need to check if 3 of the neighbors are blocked bc in order for
+		// this function to even be called, the neighbor its coming from must have been open in the first place
+		ArrayList<Point> neighbors = new ArrayList<Point>();
+		Integer total = 0;
+		Point neighbor=new Point(p.x, p.y + 1);
+		if(pointInBounds(length, neighbor) && !checkIfSame(neighbor, old)){
+			neighbors.add(neighbor);}
+		neighbor =new Point(p.x, p.y - 1);
+		if(pointInBounds(length, neighbor) && !checkIfSame(neighbor, old)){
+			neighbors.add(neighbor);}
+		neighbor =new Point(p.x + 1, p.y);
+		if(pointInBounds(length, neighbor) && !checkIfSame(neighbor, old)){
+			neighbors.add(neighbor);}
+		neighbor =new Point(p.x - 1, p.y);
+		if(pointInBounds(length, neighbor) && !checkIfSame(neighbor, old)){
+			neighbors.add(neighbor);}
+		for (int i=0; i<neighbors.size();i=i+1){
+			Point curr = neighbors.get(i);
+			if (grid[curr.x-1][curr.y-1].isBlocked()){
+				total = total + 1;
+			}
+		}
+		if (total == 4) {
+			return true;
+		}
+		else{
+			return false;
+		}
+	}
+
+	Integer countNeighborsInPath(ArrayList<Point> current){
+		Integer total = 0;
+		for (int i=1;i<current.size();i=i+1) {
+			Point p = current.get(i);
+			Point prev = current.get(i-1);
+			ArrayList<Point> neighbors = new ArrayList<Point>();
+			if (p.x != prev.x && p.y+1 != prev.y) {
+				total=total+1;}
+			if (p.x != prev.x && p.y-1 != prev.y) {
+				total=total+1;}
+			if (p.x+1 != prev.x && p.y != prev.y) {
+				total=total+1;}
+			if (p.x-1 != prev.x && p.y != prev.y) {
+				total=total+1;}}
+
+		return total;
+	}
+
+
+	Integer getIntervals(ArrayList<Point> current){
+		ArrayList<Integer> values = new ArrayList<>();
+		for (int i=1;i<current.size();i=i+1) {
+			Point curr = current.get(i);
+			Integer curr_x = curr.x;
+			Integer curr_y = curr.y;
+			Point prev = current.get(i - 1);
+			Integer prev_x = prev.x;
+			Integer prev_y = prev.y;
+
+			if (curr_x - prev_x < 0) {
+				values.add(1);
+			} else if (curr_x - prev_x > 0) {
+				values.add(2);
+			} else if (curr_y - prev_y < 0) {
+				values.add(3);
+			} else {
+				values.add(4);
+			}
+		}
+
+		Integer numIntervals = 0;
+
+		for (int i=1;i<values.size();i=i+1){
+			Integer curr = values.get(i);
+			Integer prev = values.get(i-1);
+			if (curr == prev) {
+				continue;
+			}
+			else{
+				numIntervals = numIntervals + 1;
+			}
+		}
+
+		return numIntervals;
 	}
 
 	Integer getIntervals(ArrayList<Point> current, boolean setTurning){
@@ -298,9 +386,11 @@ public class Controller extends chemotaxis.sim.Controller {
 
 		@Override
 		public int compare(ArrayList<Point> o1, ArrayList<Point> o2) {
-			Integer numIntervalso1 = getIntervals(o1, false);
-			Integer numIntervalso2 = getIntervals(o2, false);
-			if (numIntervalso1 < numIntervalso2){
+			Integer numIntervalso1 = getIntervals(o1);
+			Integer numIntervalso2 = getIntervals(o2);
+			Integer numNeighborso1 = countNeighborsInPath(o1);
+			Integer numNeighborso2 = countNeighborsInPath(o2);
+			if (numIntervalso1 - (int)0.5*numNeighborso1 + o1.size() < numIntervalso2 - (int)0.5*numNeighborso2 + o2.size()){
 				return -1;}
 			else{
 				return 1;
@@ -321,7 +411,11 @@ public class Controller extends chemotaxis.sim.Controller {
 		Set<Point> reached = new HashSet<Point>();
 
 		while(true) {
-			path = q.remove();
+			try {
+				path = q.remove();
+			}
+			catch(Exception e){
+			}
 			Point p = path.get(path.size() - 1);
 			if(p.x == target.x && p.y == target.y){
 				return path;
@@ -332,9 +426,9 @@ public class Controller extends chemotaxis.sim.Controller {
 			neighbors.add(new Point(p.x, p.y - 1));
 			neighbors.add(new Point(p.x + 1, p.y));
 			neighbors.add(new Point(p.x - 1, p.y));
-
+//
 			for(Point neighbor: neighbors){
-				if(pointInBounds(length, neighbor) && !reached.contains(neighbor) && grid[neighbor.x - 1][neighbor.y - 1].isOpen()){
+				if(pointInBounds(length, neighbor) && !reached.contains(neighbor) && grid[neighbor.x - 1][neighbor.y - 1].isOpen() && !checkIfCrevace(neighbor,grid,p)){
 					ArrayList<Point> newPath = new ArrayList<Point>(path);
 					newPath.add(neighbor);
 					q.add(newPath);
@@ -343,6 +437,7 @@ public class Controller extends chemotaxis.sim.Controller {
 			}
 		}
 	}
+
 
 	ArrayList<Point> getPathOld(ChemicalCell[][] grid){
 		int length = grid.length;
