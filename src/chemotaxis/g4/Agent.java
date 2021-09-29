@@ -89,6 +89,7 @@ public class Agent extends chemotaxis.sim.Agent {
             }
         }
         System.out.println(highestConcentration + " " + move.directionType);
+
         // Prevent backwards movement
         if ((move.directionType == DirectionType.NORTH && lastMove == DirectionType.SOUTH) ||
                 (move.directionType == DirectionType.SOUTH && lastMove == DirectionType.NORTH) ||
@@ -148,15 +149,16 @@ public class Agent extends chemotaxis.sim.Agent {
         // If there is none of the sought chemical and the agent is not in the initial state,
         // chose the majority direction of the previous three moves
         if (highestConcentration == 0.0 && chemIdx != 0){
-            if(lastMove == secLastMove){
-                move.directionType = lastMove;
-            }
-            else if(lastMove == thdLastMove){
-                move.directionType = lastMove;
-            }
-            else if (secLastMove == thdLastMove){
-                move.directionType = secLastMove;
-            }
+            move.directionType = lastMove;
+            // if(lastMove == secLastMove){
+            //     move.directionType = lastMove;
+            // }
+            // else if(lastMove == thdLastMove){
+            //     move.directionType = lastMove;
+            // }
+            // else if (secLastMove == thdLastMove){
+            //     move.directionType = secLastMove;
+            // }
         }
         System.out.println(move.directionType);
         System.out.println(chosenChemicalType);
