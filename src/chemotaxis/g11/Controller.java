@@ -25,6 +25,8 @@ public class Controller extends chemotaxis.sim.Controller {
     int greenChemicalBudget;
     int greenChemicalsPut;
     Point greenTarget;
+    int trackingErrorEpsilon;
+    int goalInAgents;
 
     /**
      * Controller constructor
@@ -91,6 +93,8 @@ public class Controller extends chemotaxis.sim.Controller {
             System.out.println();
         }
         */
+        trackingErrorEpsilon = 2;
+        goalInAgents = 0;
         refreshRate = 3;
         greenChemicalBudget = agentGoal;
         greenChemicalsPut = 0;
@@ -155,6 +159,7 @@ public class Controller extends chemotaxis.sim.Controller {
         if (locations.contains(target)) {
             onConveyerAgents.remove(target);
             locations.remove(target);
+            goalInAgents++;
         }
 
         boolean placeChemical = false;
@@ -162,7 +167,7 @@ public class Controller extends chemotaxis.sim.Controller {
         int minConveyer = Integer.MAX_VALUE;
 
         for(Point p : locations) {
-            if(!onConveyerAgents.containsKey(p) && steps[p.x - 1][p.y - 1] <= chemicalsPerAgent) {
+            if(!onConveyerAgents.containsKey(p) && steps[p.x - 1][p.y - 1] <= chemicalsPerAgent && onConveyerAgents.size() <= (agentGoal + trackingErrorEpsilon - goalInAgents)) {
                 onConveyerAgents.put(p, DirectionType.CURRENT);
             }
             if (onConveyerAgents.containsKey(p)) {
