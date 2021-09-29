@@ -7,6 +7,7 @@ import chemotaxis.g1.ids.*;
 import chemotaxis.sim.ChemicalPlacement;
 import chemotaxis.sim.ChemicalCell;
 import chemotaxis.sim.SimPrinter;
+import chemotaxis.g1.GameState;
 public class Controller extends chemotaxis.sim.Controller {
     /**
      *dist[i][j][d] = x (x>0) means it takes agents x steps to go from the starting point to the cell at line x and column y facing direction d
@@ -17,7 +18,6 @@ public class Controller extends chemotaxis.sim.Controller {
     private int[][][] dist;
     Point modifiedStart = new Point();
     Point modifiedTarget = new Point();
-
     // Key is number of chemical (paid) turns
     // The largest key that exists in the map will be the shortest route
     // If there's a key n+1 in the Map, it's distance is less than the distance of key n
@@ -46,7 +46,7 @@ public class Controller extends chemotaxis.sim.Controller {
     private int selectedRoute;
     // a final schedule if the strategy is strong
     // finalSchedule[i]=j means put a chemical at j+1 cell on the route on turn i
-    private ArrayList<Integer> finalScheduleStrong;
+    private Map<Integer,Integer> strongStrategy = new HashMap<>();
     // a initial schedule if the strategy is weak
     // initialScheduleWeak[i]=color_a means put a color_a chemical at i+1 cell on the route
     private Map<Integer, Color> initialScheduleWeak = new HashMap<>();
@@ -94,100 +94,122 @@ public class Controller extends chemotaxis.sim.Controller {
         // and keyed by the number of turns necessary for the path.
 
         findshortestpath(grid,budget);
+
         // Select the fastest route within our budget.
         // Routes with more turns are faster, otherwise `findshortestpath` will terminate
         // without adding a route for that number of turns. Therefore, if key `5` exists in
         // `routes`, it's route is strictly shorter than the route for key `4`.
-        this.selectedRoute = budget / agentGoal - 1;
 
         for (int i=0;i<budget;i++) {
-            if (!routes.containsKey(i)){
-                if (this.selectedRoute>=i) {
-                    this.selectedRoute=i-1;
-                }
+            if (!routes.containsKey(i)) {
                 break;
             }
             ArrayList<Point> route = routes.get(i);
             Collections.reverse(route);
-            routes.put(i,route);
-            setTurnAt(grid,i);
-            simPrinter.print("turns: ");
-
-            simPrinter.println(i);
-            simPrinter.print("steps: ");
-
-            simPrinter.println(routes.get(i).size());
-            simPrinter.print("route: ");
-
-            simPrinter.println(routes.get(i));
-
-            simPrinter.print("turns at: ");
-
-            simPrinter.println(turnAt.get(i));
-
-            // TODO (etm): Schedule is currently unused, so it's commented out
-            // TODO (etm): Update this once the time allowed is known (?)
-
-
-            scheduleAllAgents(i,i<(budget*1.0/agentGoal),simTime,spawnFreq,agentGoal);
-
-            simPrinter.print("strong strategy: ");
-            simPrinter.println(finalScheduleStrong);
-            simPrinter.print("weak strategy: ");
-
-            simPrinter.println(initialScheduleWeak);
+            routes.put(i, route);
+            setTurnAt(grid, i);
         }
-    }
 
-    public void scheduleAllAgents(int turnChoicice, boolean sufficientChemical, int simTime, int spawnFreq, int agentGoal) {
-        if  (turnAt_simpleForm.get(turnChoicice).isEmpty()) {
+        this.selectedRoute = budget / agentGoal - 1;
+        while (!routes.containsKey(this.selectedRoute)) {
+            this.selectedRoute-=1;
+        }
+        if (routes.get(this.selectedRoute).size()==0) {
+            strategy=StrategyChoice.weak;
             return;
         }
-        ArrayList<Integer> schedule = new ArrayList<>();
-        if (!turnAt.containsKey(turnChoicice)){
-            while (turnChoicice>0 && !turnAt.containsKey(turnChoicice)) {
-                turnChoicice-=1;
-            }
-        }
-        if (turnAt.get(turnChoicice).size()==0){
-            while (turnAt.containsKey(turnChoicice) && turnAt.get(turnChoicice).size()==0) {
-                turnChoicice+=1;
-            }
-        }
-        if (sufficientChemical) {
-            for (int j = 0; j < simTime; j++) {
-                schedule.add(-1);
-            }
-            int agentReachTarget=0;
-            int currentStartRound=0;
-            while (agentReachTarget<agentGoal && currentStartRound<simTime-spawnFreq) {
-                boolean conflict = false;
-                for (int j = 0; j < turnAt_simpleForm.get(turnChoicice).size(); j++) {
-                    if (turnAt_simpleForm.get(turnChoicice).get(j)+currentStartRound>simTime || schedule.get(turnAt_simpleForm.get(turnChoicice).get(j)+currentStartRound)!=-1) {
-                        conflict = true;
-                        break;
-                    }
-                }
 
-                if (!conflict) {
-                    for (int j = 0; j < turnAt_simpleForm.get(turnChoicice).size(); j++) {
-                        schedule.set(turnAt_simpleForm.get(turnChoicice).get(j)+currentStartRound,turnAt_simpleForm.get(turnChoicice).get(j));
-                    }
-                    agentReachTarget+=1;
-                }
-                currentStartRound += spawnFreq;
+        scheduleAllAgents(this.selectedRoute,simTime,spawnFreq,agentGoal);
+
+    }
+
+ /*   private void simWeak(Point start, Point target, int agentGoal, int spawnFreq,
+                         int chemicalsRemaining, int maxtime, ChemicalCell[][] grid) {
+        GameState diffusionSim = new GameState(start,target,agentGoal,spawnFreq,budget,grid);
+        for (int i=budget;i>0;i++) {
+            if (!routes.containsKey(i)) {
+                continue;
             }
-            if (agentReachTarget>=agentGoal){
-                strategy = StrategyChoice.strong;
-                finalScheduleStrong = new ArrayList<>(schedule);
+            boolean valid = true;
+            ChemicalCell.ChemicalType currentType = ChemicalCell.ChemicalType.BLUE;
+            int time=0;
+            ArrayList<Point> route = routes.get(i);
+            ArrayList<Integer> turn = turnAt.get(i);
+            ArrayList<Integer> turn_simple = turnAt_simpleForm.get(i);
+            while (time<maxtime) {
+                time+=1;
+                if (time<turn.size() && turn.get(time)!=0) {
+                    ChemicalPlacement chem = new ChemicalPlacement();
+                    chem.location = new Point(route.get(time));
+                    chem.chemicals.add(currentType);
+                    diffusionSim.placeChemicalAndStep(chem);
+                    switch (currentType) {
+                        case BLUE:
+                            currentType = ChemicalCell.ChemicalType.RED;
+                            break;
+                        case RED:
+                            currentType = ChemicalCell.ChemicalType.GREEN;
+                            break;
+                        default:
+                            currentType = ChemicalCell.ChemicalType.BLUE;
+                            break;
+                    }
+                }
+                else {
+
+                }
+            }
+
+
+
+        }
+    }
+*/
+
+
+
+    private void scheduleAllAgents(int turnChoice, int simTime, int spawnFreq, int agentGoal) {
+        int currentOnPath=0;
+        int time=-1;
+        int estimateEnd=0;
+        int atStart=0;
+        while (time<=simTime) {
+            if (estimateEnd>simTime) {
+                strategy = StrategyChoice.weak;
                 return;
             }
-        }
-        strategy = StrategyChoice.weak;
-        Color currentColor = Color.blue;
-        for (int j=0;j<turnAt_simpleForm.get(turnChoicice).size();j++) {
-            initialScheduleWeak.put(turnAt_simpleForm.get(turnChoicice).get(j), currentColor);
-            currentColor = currentColor.next();
+            if (currentOnPath==agentGoal) {
+                strategy = StrategyChoice.strong;
+                return;
+            }
+            time+=1;
+            if (time % spawnFreq==0) {
+                atStart+=1;
+            }
+            if (atStart==0) {
+                continue;
+            }
+
+            boolean readyToGo = true;
+            if (strongStrategy.containsKey(time)) {
+                continue;
+            }
+
+            for (int i=0;i<turnAt_simpleForm.get(turnChoice).size();i++) {
+                if (strongStrategy.containsKey(time+turnAt_simpleForm.get(turnChoice).get(i))) {
+                    readyToGo=false;
+                }
+            }
+
+            if (readyToGo) {
+                strongStrategy.put(time,0);
+                for (int i=0;i<turnAt_simpleForm.get(turnChoice).size();i++) {
+                    strongStrategy.put(time+turnAt_simpleForm.get(turnChoice).get(i),turnAt_simpleForm.get(turnChoice).get(i));
+                }
+                atStart-=1;
+                currentOnPath+=1;
+                estimateEnd = time + routes.get(turnChoice).size();
+            }
         }
     }
 
@@ -332,6 +354,22 @@ public class Controller extends chemotaxis.sim.Controller {
         // TODO: new weak strategy
 //        return getWeakPlacement(currentTurn, chemicalsRemaining, locations, grid);
         ChemicalPlacement chemicalPlacement = new ChemicalPlacement();
+        if (strategy==StrategyChoice.strong) {
+            currentTurn-=1;
+            if (strongStrategy.containsKey(currentTurn)) {
+                chemicalPlacement.location = new Point(routes.get(this.selectedRoute).get(strongStrategy.get(currentTurn)+1).x+1,
+                    routes.get(this.selectedRoute).get(strongStrategy.get(currentTurn)+1).y+1);
+                if (strongStrategy.get(currentTurn)==0) {
+                    chemicalPlacement.chemicals.add(ChemicalCell.ChemicalType.GREEN);
+                    return chemicalPlacement;
+                }
+                else {
+                    chemicalPlacement.chemicals.add(ChemicalCell.ChemicalType.BLUE);
+                    return chemicalPlacement;
+                }
+            }
+            return chemicalPlacement ;
+        }
         if (currentTurn == 1) {
             chemicalPlacement.location = start;
             chemicalPlacement.chemicals.add(ChemicalCell.ChemicalType.GREEN);

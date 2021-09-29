@@ -164,7 +164,7 @@ public class AgentState {
         throw new RuntimeException("unreachable direction state");
     }
 
-    private void setInitialized() {
+    public void setInitialized() {
         this.state |= INITIALIZED_BIT;
     }
 
@@ -173,9 +173,9 @@ public class AgentState {
     }
 
     public Strategy getStrategy() {
-        if (!this.isInitialized()) {
-            throw new RuntimeException("agent uninitialized");
-        }
+//        if (!this.isInitialized()) {
+//            throw new RuntimeException("agent uninitialized");
+//        }
         if ((this.state & STRAT_MASK) == WEAK_CHEM_BITS) {
             return Strategy.WEAK;
         }
@@ -189,7 +189,5 @@ public class AgentState {
         if (strat == Strategy.WEAK) {
             this.state |= WEAK_CHEM_BITS;
         }
-        // Else do nothing since a zeroed bit is the strong strategy
-        this.setInitialized();
     }
 }

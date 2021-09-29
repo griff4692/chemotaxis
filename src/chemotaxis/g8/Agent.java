@@ -10,93 +10,87 @@ import java.util.Map;
 import java.util.Optional;
 
 public class Agent extends chemotaxis.sim.Agent {
-
-	/**
-	 * Agent constructor
-	 *
-	 * @param simPrinter  simulation printer
-	 *
-	 */
 	public Agent(SimPrinter simPrinter) {
 		super(simPrinter);
 	}
 
+	private int decodeMode(byte x) { return x & 0b111; }
+	private boolean decodeTurn(byte x) { return (x & 0b01000000) != 0; }
+	private DirectionType decodeDT(byte x) { return DirectionType.values()[4 - ((x >> 3) & 0b111)]; }
 
-	private Optional<DirectionType> extract(int x) {
-		x &= 0b1111;
-		if ((x & 0b1000) == 0) return Optional.empty();
-		x -= 0b1000;
-		for (DirectionType dir: DirectionType.values()) {
-			if (dir.ordinal() == x) return Optional.of(dir);
-		}
-		return Optional.empty();
+	private byte encode(DirectionType dt, int mode, boolean turn) {
+		return (byte)(mode + ((4 - dt.ordinal()) << 3) + (turn ? 0b01000000 : 0));
 	}
 
-	private byte encode(DirectionType d) {
-		return (byte)(d.ordinal() + 0b1000);
+	private DirectionType turnLeft(DirectionType dt) {
+		switch (dt) {
+			case NORTH: return DirectionType.WEST;
+			case SOUTH: return DirectionType.EAST;
+			case EAST: return DirectionType.NORTH;
+			case WEST: return DirectionType.SOUTH;
+		};
+		return DirectionType.CURRENT;
 	}
-	private byte encode2(DirectionType d2, DirectionType d) {
-		return (byte)((d2.ordinal() << 4) + d.ordinal() + 0b10001000);
+	private DirectionType turnRight(DirectionType dt) {
+		switch (dt) {
+			case NORTH: return DirectionType.EAST;
+			case SOUTH: return DirectionType.WEST;
+			case EAST: return DirectionType.SOUTH;
+			case WEST: return DirectionType.NORTH;
+		};
+		return DirectionType.CURRENT;
 	}
 
-	static private DirectionType opposite(DirectionType d) {
-		if (d == DirectionType.CURRENT) return DirectionType.CURRENT;
-		if (d == DirectionType.EAST) return DirectionType.WEST;
-		if (d == DirectionType.NORTH) return DirectionType.SOUTH;
-		if (d == DirectionType.WEST) return DirectionType.EAST;
-		if (d == DirectionType.SOUTH) return DirectionType.NORTH;
-		assert false;
-		return null;
-	}
-
-	/**
-	 * Move agent
-	 *
-	 * @param randomNum        random number available for agents
-	 * @param previousState    byte of previous state
-	 * @param currentCell      current cell
-	 * @param neighborMap      map of cell's neighbors
-	 * @return                 agent move
-	 *
-	 */
 	@Override
 	public Move makeMove(Integer randomNum, Byte previousState, ChemicalCell currentCell, Map<DirectionType, ChemicalCell> neighborMap) {
 		Move move = new Move();
+		int lastMode = decodeMode(previousState);
+		DirectionType lastDT = decodeDT(previousState);
+		boolean lastTurn = decodeTurn(previousState);
+		System.out.println("Agent: " + lastDT + "  " + lastMode);
 
-		ChemicalType chosenChemicalType = ChemicalType.BLUE;
-
-		Optional<DirectionType> last = extract(previousState);
-		Optional<DirectionType> last2 = extract(previousState >> 4);
-
-		System.out.println("last: " + last + ", last2: " + last2);
-
-		double highestConcentration = -1;
-		for (DirectionType directionType : neighborMap.keySet()) {
-			if (neighborMap.get(directionType).isBlocked()) continue;
-//			if (neighborMap.get(directionType).getConcentration(ChemicalType.RED) > 0.99) {
-//				move.currentState = last2.map(this::encode).orElse((byte)0);
-//				move.directionType = directionType;
-//				return move;
-//			}
-			double multiplier = 1.0;
-			if (last.isPresent() && directionType.equals(DirectionType.CURRENT)) multiplier = 0.1;
-			if (last.isPresent() && last.get() == opposite(directionType)) multiplier = 0;
-			if (last.isPresent() && last.get() == directionType) multiplier = 1.001;
-			if (last2.isPresent() && last2.get() == opposite(directionType)) multiplier = 1.0;
-			double value = (neighborMap.get(directionType).getConcentration(chosenChemicalType) + 0.001) * multiplier;
-			if (highestConcentration <= value) {
-				highestConcentration = value;
-				move.directionType = directionType;
+		for (DirectionType dt: neighborMap.keySet()) {
+			ChemicalCell cell = neighborMap.get(dt);
+			int mode = 0;
+			if (cell.getConcentration(ChemicalType.BLUE) > 0.99) mode += 1;
+			if (cell.getConcentration(ChemicalType.RED) > 0.99) mode += 2;
+			if (cell.getConcentration(ChemicalType.GREEN) > 0.99) mode += 4;
+			if (mode != 0) {
+				System.out.println("Agent Ins: " + dt + "  " + mode);
+				move.directionType = dt;
+				move.currentState = encode(dt, mode, false);
+				return move;
 			}
 		}
-		if (move.directionType != DirectionType.CURRENT) {
-			if (last.isEmpty()) move.currentState = encode(move.directionType);
-			else if (last.get().compareTo(move.directionType) != 0) move.currentState = encode2(last.get(), move.directionType);
-			else move.currentState = previousState;
-		} else {
-			move.currentState = 0;
+
+		if (lastMode == 0) {
+			move.directionType = DirectionType.CURRENT;
+			move.currentState = previousState;
+			return move;
 		}
 
+		if (3 <= lastMode && lastMode <= 6) {
+			if (neighborMap.get(lastDT).isBlocked()) {
+				System.out.println("Agent Hit Wall!");
+				switch (lastMode) {
+					case 3: lastDT = turnLeft(lastDT); break;
+					case 4: lastDT = turnRight(lastDT); break;
+					case 5: lastDT = lastTurn ? turnLeft(lastDT) : turnRight(lastDT); break;
+					case 6: lastDT = !lastTurn ? turnLeft(lastDT) : turnRight(lastDT); break;
+				};
+			}
+		} else if (lastMode == 1) {
+			lastDT = turnLeft(lastDT);
+			while (neighborMap.get(lastDT).isBlocked()) lastDT = turnRight(lastDT);
+		} else if (lastMode == 2) {
+			lastDT = turnRight(lastDT);
+			while (neighborMap.get(lastDT).isBlocked()) lastDT = turnLeft(lastDT);
+		}
+
+
+		move.directionType = lastDT;
+		lastTurn = !lastTurn;
+		move.currentState = encode(lastDT, lastMode, lastTurn);
 		return move;
 	}
 }
