@@ -8,8 +8,10 @@ import java.util.ArrayList;
 class IDSState {
     // 900 leaves 100 ms to finish and return the result
     public final long timeLimit = 900;
+//    public final long timeLimit = Long.MAX_VALUE;
     public long startTime;
     public int depthLimit;
+    public int statesInspected = 0;
 
     IDSState() {
         this.startTime = System.currentTimeMillis();
@@ -24,6 +26,7 @@ class IDSState {
     IDSState(IDSState other) {
         this.startTime = other.startTime;
         this.depthLimit = other.depthLimit;
+        this.statesInspected = other.statesInspected;
     }
 }
 
@@ -56,18 +59,20 @@ public class IDSRunner {
         while (true) {
             state.depthLimit += 1;
             ScoredPlacement move = IDSRunner.findBest(state, gameState, generator, heuristic);
-            if (move != null && currentBest.score < move.score) {
-                currentBest = move;
-            } else {
+            if (move == null) {
                 break;
+            } else if (currentBest.score < move.score) {
+                currentBest = move;
             }
         }
+//        System.out.println("Reached depth of " + (state.depthLimit-1));
+//        System.out.println("Inspected states: " + (state.statesInspected));
         return currentBest.placement;
     }
 
     private static ScoredPlacement findBest(IDSState state, GameState gameState,
                                             IDSCandidateGenerator generator, IDSHeuristic heuristic) {
-        if (state.startTime + state.timeLimit >= System.currentTimeMillis()) {
+        if (state.startTime + state.timeLimit <= System.currentTimeMillis()) {
             // Timed out
             return null;
         } else if (state.depthLimit == 0) {
@@ -82,6 +87,8 @@ public class IDSRunner {
         for (IDSCandidate ic : candidates) {
             ChemicalPlacement c = ic.getPlacement();
             GameState nextGameState = gameState.placeChemicalAndStep(c);
+            // TODO (etm): Remove, just for curiosity sake
+            state.statesInspected += 1;
             ScoredPlacement move = IDSRunner.findBest(state, nextGameState, generator, heuristic);
             if (move == null) {
                 // Timed out; return null to unwind the recursion
