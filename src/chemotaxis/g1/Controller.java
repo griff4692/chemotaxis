@@ -329,51 +329,52 @@ public class Controller extends chemotaxis.sim.Controller {
      * @return
      */
     private ChemicalPlacement _applyChemicals(Integer currentTurn, Integer chemicalsRemaining, ArrayList<Point> locations, ChemicalCell[][] grid) {
-        return getWeakPlacement(currentTurn, chemicalsRemaining, locations, grid);
-//        ChemicalPlacement chemicalPlacement = new ChemicalPlacement();
-//        if (currentTurn == 1) {
-//            chemicalPlacement.location = start;
-//            chemicalPlacement.chemicals.add(ChemicalCell.ChemicalType.GREEN);
-//            return chemicalPlacement;
-//        }
-//        if (chemicalsRemaining == 0 || !this.routes.containsKey(this.selectedRoute)) {
-//            // Either no chemicals, or route doesn't exist
-//            return chemicalPlacement;
-//        }
-//        ArrayList<Point> route = this.routes.get(this.selectedRoute);
-//        ArrayList<Integer> turns = this.turnAt.get(this.selectedRoute);
-//
-//        // Turns are stored in reverse order, so turns[0] is the last turn
-//        int furthestTurnIx = Integer.MIN_VALUE;
-//        // Check the location of all agents and see if any are sitting on
-//        // a turn point. For those that are, select the furthest turn point,
-//        // which is the one with the smallest index.
-//        for (int turnIx =  turns.size()-1; turnIx >=0; --turnIx) {
-//            if (turns.get(turnIx) == 0) {
-//                continue;
-//            }
-//            boolean found=false;
-//            for (Point agentLocation : locations) {
-//                Point turn = route.get(turnIx);
-//                // Fix this annoying 1-based map indexing
-//                Point zeroAgentLocation = new Point(agentLocation.x - 1, agentLocation.y - 1);
-//                if (turn.equals(zeroAgentLocation)) {
-//                    furthestTurnIx = turnIx;
-//                    found = true;
-//                    break;
-//                }
-//            }
-//            if (found) {
-//                break;
-//            }
-//        }
-//        if (furthestTurnIx >= 0) {
-//            // Place the chemical on the next step on the path
-//            Point loc = route.get(furthestTurnIx + 1);
-//            chemicalPlacement.location = new Point(loc.x + 1, loc.y + 1);
-//            chemicalPlacement.chemicals.add(ChemicalCell.ChemicalType.BLUE);
-//        }
-//        return chemicalPlacement;
+        // TODO: new weak strategy
+//        return getWeakPlacement(currentTurn, chemicalsRemaining, locations, grid);
+        ChemicalPlacement chemicalPlacement = new ChemicalPlacement();
+        if (currentTurn == 1) {
+            chemicalPlacement.location = start;
+            chemicalPlacement.chemicals.add(ChemicalCell.ChemicalType.GREEN);
+            return chemicalPlacement;
+        }
+        if (chemicalsRemaining == 0 || !this.routes.containsKey(this.selectedRoute)) {
+            // Either no chemicals, or route doesn't exist
+            return chemicalPlacement;
+        }
+        ArrayList<Point> route = this.routes.get(this.selectedRoute);
+        ArrayList<Integer> turns = this.turnAt.get(this.selectedRoute);
+
+        // Turns are stored in reverse order, so turns[0] is the last turn
+        int furthestTurnIx = Integer.MIN_VALUE;
+        // Check the location of all agents and see if any are sitting on
+        // a turn point. For those that are, select the furthest turn point,
+        // which is the one with the smallest index.
+        for (int turnIx =  turns.size()-1; turnIx >=0; --turnIx) {
+            if (turns.get(turnIx) == 0) {
+                continue;
+            }
+            boolean found=false;
+            for (Point agentLocation : locations) {
+                Point turn = route.get(turnIx);
+                // Fix this annoying 1-based map indexing
+                Point zeroAgentLocation = new Point(agentLocation.x - 1, agentLocation.y - 1);
+                if (turn.equals(zeroAgentLocation)) {
+                    furthestTurnIx = turnIx;
+                    found = true;
+                    break;
+                }
+            }
+            if (found) {
+                break;
+            }
+        }
+        if (furthestTurnIx >= 0) {
+            // Place the chemical on the next step on the path
+            Point loc = route.get(furthestTurnIx + 1);
+            chemicalPlacement.location = new Point(loc.x + 1, loc.y + 1);
+            chemicalPlacement.chemicals.add(ChemicalCell.ChemicalType.BLUE);
+        }
+        return chemicalPlacement;
     }
 
     /**
