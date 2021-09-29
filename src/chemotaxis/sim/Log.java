@@ -61,6 +61,14 @@ public class Log {
 		}		
 	}
 
+	public static void writeResults(String content) {
+		try {
+			fileWriter.write(content + "\n");
+		} catch(IOException e) {
+			e.printStackTrace();
+		}
+	}
+
 	public static void closeLogFile() {
 		if(fileWriter == null)
 			return;

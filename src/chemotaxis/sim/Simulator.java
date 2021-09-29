@@ -47,6 +47,7 @@ public class Simulator {
 	private static double fpm = 15;
 	private static boolean showGUI = false;
 	private static boolean verifyMap = false;
+	private static boolean logResults = false;
 	
 	// Defaults
 	private static boolean validMap = true;
@@ -63,7 +64,6 @@ public class Simulator {
 	private static int currentTurn = 0;
 	private static String version = "2.0";
 	private static String projectPath, sourcePath, staticsPath, guiPath;
-    
 
 	private static void setup() {
 		projectPath = new File(".").getAbsolutePath().substring(0, 
@@ -89,7 +89,9 @@ public class Simulator {
                     }
                     else if(args[i].equals("-g") || args[i].equals("--gui"))
                         showGUI = true;
-                    else if(args[i].equals("-c") || args[i].equals("--check"))
+					else if(args[i].equals("-p") || args[i].equals("--logResults")) {
+						logResults = true;
+					} else if(args[i].equals("-c") || args[i].equals("--check"))
                     	verifyMap = true;
                     else if(args[i].equals("-l") || args[i].equals("--log")) {
                         i++;
@@ -155,6 +157,11 @@ public class Simulator {
 		if(random == null) {
 			random = new Random(seed);
 		}
+
+		if(logResults) {
+			Log.assignLoggingStatus(false);
+			Log.assignVerbosityStatus(false);
+		}
 	}
 	
 	private static void readMap() throws FileNotFoundException, IOException {
@@ -162,7 +169,7 @@ public class Simulator {
 			File mapFile;
 			Scanner scanner;
 			try {
-				mapFile = new File(sourcePath + File.separator + "maps" + File.separator + teamName + File.separator + mapName);				
+				mapFile = new File(sourcePath + File.separator + "maps" + File.separator + mapName);
 				scanner = new Scanner(mapFile);
 			} catch(FileNotFoundException e) {
                 throw new FileNotFoundException("Map file was not found!");
@@ -377,9 +384,7 @@ public class Simulator {
 	}
 	
 	private static void createSimulation() throws IOException, JSONException {
-		
 		server = null;
-		
 		Log.writeToLogFile("\n");
         Log.writeToLogFile("Project: Chemotaxis");
         Log.writeToLogFile("Simulator Version: " + version);
@@ -412,6 +417,7 @@ public class Simulator {
 	 */
 	private static void runSimulation() throws IOException, JSONException {
 		boolean mapIsValid = checkMap();
+		long startTime = System.currentTimeMillis();
 		if(mapIsValid) {
 			if(verifyMap) {
 				if(mapSize <= 50)
@@ -432,9 +438,12 @@ public class Simulator {
 
 		currentTurn = 0;
 		int numReached = 0;
-	
-		updateGUI(server, getGUIState(currentTurn, true));
-		
+
+
+		if(server != null) {
+			updateGUI(server, getGUIState(currentTurn, true));
+		}
+
 		for(int i = 1; i <= turns; i++) {
 			currentTurn++;
 
@@ -504,7 +513,9 @@ public class Simulator {
 				Log.writeToLogFile("Unable to load or run agent: " + e.getMessage());
 			}
 
-			updateGUI(server, getGUIState(currentTurn, true));
+			if(server != null) {
+				updateGUI(server, getGUIState(currentTurn, true));
+			}
 			
 			diffuseCells();
 
@@ -532,9 +543,15 @@ public class Simulator {
 
 		}
 
-		updateGUI(server, getGUIState(currentTurn, false));
+		if(server != null) {
+			updateGUI(server, getGUIState(currentTurn, false));
+		}
+
+		long endTime = System.currentTimeMillis();
+		int secondsElapsed = (int) Math.round((endTime - startTime) / 1000.0);
 
 		Log.writeToLogFile("Experiment Information...");
+		Log.writeToLogFile("Seconds elapsed: " + secondsElapsed);
 		Log.writeToLogFile("Budget: " + budget);
 		Log.writeToLogFile("Spawn Frequency: " + spawnFreq);
 		Log.writeToLogFile("Seed: " + seed);
@@ -544,7 +561,24 @@ public class Simulator {
 		Log.writeToLogFile("Chemicals Used: " + chemsUsed + " / " + budget);
 		Log.writeToLogFile("Spawned " + agentLocations.size() + " agents --> " + numReached + " / " + agentGoal + " reached the target.");
 		Log.writeToLogFile("Final time: " + currentTurn + "/" + turns);
-		
+
+		Log.writeResults("team_name:" + teamName);
+		Log.writeResults("seconds_elapsed:" + secondsElapsed);
+		Log.writeResults("map:" + mapName);
+		Log.writeResults("budget:" + budget);
+		Log.writeResults("seed:" + seed);
+		Log.writeResults("spawn_freq:" + spawnFreq);
+		Log.writeResults("possible_turns:" + turns);
+		Log.writeResults("chems_used:" + chemsUsed);
+		for(ChemicalType chemical : chemicalsUsed.keySet()) {
+			Log.writeResults(chemical.name().toLowerCase() + "_used:" + chemicalsUsed.get(chemical));
+		}
+		Log.writeResults("turns_used:" + currentTurn);
+		Log.writeResults("agents_reached:" + numReached);
+		Log.writeResults("agent_goal:" + agentGoal);
+		Log.writeResults("agents_spawned:" + agentLocations.size());
+		Log.closeLogFile();
+
 		if(!showGUI)
 			System.exit(1);
 	}
