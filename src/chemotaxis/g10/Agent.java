@@ -1,5 +1,6 @@
 package chemotaxis.g10; // TODO modify the package name to reflect your team
 
+import java.util.ArrayList;
 import java.util.Map;
 
 import chemotaxis.sim.DirectionType;
@@ -15,46 +16,58 @@ public class Agent extends chemotaxis.sim.Agent {
     * @param simPrinter  simulation printer
     *
     */
+
+   private final ChemicalCell.ChemicalType [] CHEM_TYPES = {
+           ChemicalCell.ChemicalType.RED,
+           ChemicalCell.ChemicalType.GREEN,
+           ChemicalCell.ChemicalType.BLUE
+   };
+
+   private final ChemicalCell.ChemicalType [] DIR_TYPES = {
+           ChemicalCell.ChemicalType.RED,
+           ChemicalCell.ChemicalType.GREEN,
+           ChemicalCell.ChemicalType.BLUE
+   };
+
+   final double CHANGE_CHEM_THRESHOLD = 0.01;
+
+
    public Agent(SimPrinter simPrinter) {
       super(simPrinter);
    }
 
-   private DirectionType getDirectionFromState(Byte previousState){
-      if (previousState == null){
+   private DirectionType getDirectionFromState(Byte previousState) {
+      if (previousState == 0){
          return DirectionType.CURRENT;
       }
-
-      if (previousState == 1){
-         return DirectionType.EAST;
-      }
-      else if (previousState == 2){
-         return DirectionType.WEST;
-      }
-      else if (previousState == 3){
+      else if (previousState == 1){
          return DirectionType.NORTH;
       }
-      else if (previousState == 4){
+      else if (previousState == 2){
          return DirectionType.SOUTH;
       }
+      else if (previousState == 3){
+         return DirectionType.EAST;
+      }
       else {
-         return DirectionType.CURRENT;
+         return DirectionType.WEST;
       }
    }
 
-   private Byte getStateFromDirection(DirectionType direction){
-      if (direction == DirectionType.CURRENT){
+   private Byte getStateFromDirection(DirectionType direction) {
+      if (direction == DirectionType.CURRENT) {
          return 0;
       }
-      else if (direction == DirectionType.EAST){
+      if (direction == DirectionType.NORTH){
          return 1;
       }
-      else if (direction == DirectionType.WEST){
+      else if (direction == DirectionType.SOUTH){
          return 2;
       }
-      else if (direction == DirectionType.NORTH){
+      else if (direction == DirectionType.EAST){
          return 3;
       }
-      else {
+      else{
          return 4;
       }
    }
@@ -70,43 +83,83 @@ public class Agent extends chemotaxis.sim.Agent {
     *
     */
    @Override
-   public Move makeMove(Integer randomNum, Byte previousState, ChemicalCell currentCell, Map<DirectionType, ChemicalCell> neighborMap) {
-
+   public Move makeMove(Integer randomNum, Byte previousState, ChemicalCell currentCell, Map<DirectionType, ChemicalCell> neighborMap)
+   {
       Move move = new Move();
-      ChemicalCell.ChemicalType chosenChemicalType = ChemicalCell.ChemicalType.RED;
-      DirectionType directionToMove = getDirectionFromState(previousState);
-      Byte newState = previousState;
 
-      int numNeighborsBlocked = 0;
-      for (DirectionType directionType : neighborMap.keySet()) {
-         if (neighborMap.get(directionType).isBlocked()) {
-            numNeighborsBlocked++;
-         }
-         else if(neighborMap.get(directionType).getConcentration(chosenChemicalType) == 1.0){
-            directionToMove = directionType;
-            newState = getStateFromDirection(directionToMove);
-         }
-      }
+      // Extract data from memory
+      int chemState = previousState & 3;
+      ChemicalCell.ChemicalType chemType = CHEM_TYPES[chemState];
+      int prevMoveDirState = (previousState >> 2) & 7;
+      DirectionType opPrevMoveDir = getOppositeDirection(getDirectionFromState((byte) prevMoveDirState));
 
-      if (numNeighborsBlocked == 3 || numNeighborsBlocked == 2) {
-         for (DirectionType directionType : neighborMap.keySet()) {
-            DirectionType oppDirectionToMove = null;
-            if (previousState == 1 || previousState == 3) {
-               oppDirectionToMove = getDirectionFromState((byte) (previousState + 1));
-            } else if (previousState == 2 || previousState == 4) {
-               oppDirectionToMove = getDirectionFromState((byte) (previousState - 1));
-            }
-
-            if ((numNeighborsBlocked == 3 && neighborMap.get(directionType).isOpen()) || (numNeighborsBlocked == 2 && neighborMap.get(directionType).isOpen() && directionType != oppDirectionToMove)) {
-               directionToMove = directionType;
-               newState = getStateFromDirection(directionToMove);
-            }
+      // Check if at top of grad
+      Double currConc = currentCell.getConcentration(chemType);
+      boolean top = true;
+      for (Map.Entry<DirectionType, ChemicalCell> entry : neighborMap.entrySet()) {
+         if (entry.getKey() != opPrevMoveDir && currConc <= entry.getValue().getConcentration(chemType)) {
+            top = false;
+            break;
          }
       }
 
-      move.directionType = directionToMove;
-      move.currentState = newState;
+      if (top) {
+         chemState = (chemState + 1) % 3;
+         chemType = CHEM_TYPES[chemState];
+      }
 
+      // Check for open cells (pipe-case)
+      ArrayList<Map.Entry<DirectionType, ChemicalCell>> openCells = new ArrayList<>();
+      for (Map.Entry<DirectionType, ChemicalCell> entry : neighborMap.entrySet()) {
+         if (entry.getValue().isOpen()) {
+            openCells.add(entry);
+         }
+      }
+
+      if(openCells.size() == 1) {
+         move.directionType = openCells.get(0).getKey();
+         move.currentState = (byte) ((getStateFromDirection(move.directionType) << 2) | chemState);
+      }
+      else if(openCells.size() == 2) {
+         for(Map.Entry<DirectionType, ChemicalCell> entry : openCells) {
+            if(entry.getKey() != opPrevMoveDir) {
+               move.directionType = entry.getKey();
+               move.currentState = (byte) ((getStateFromDirection(move.directionType) << 2) | chemState);
+               break;
+            }
+         }
+      }
+      else {
+         // Walk up grad
+         Double maxConc = currentCell.getConcentration(chemType);
+         DirectionType dirToMove = DirectionType.CURRENT;
+
+         Double conc;
+         DirectionType dir;
+         for (Map.Entry<DirectionType, ChemicalCell> entry : neighborMap.entrySet()) {
+            conc = entry.getValue().getConcentration(chemType);
+            dir = entry.getKey();
+            if (/*dir != opPrevMoveDir &&*/ conc > maxConc) {
+               maxConc = conc;
+               dirToMove = dir;
+            }
+         }
+
+         move.directionType = dirToMove;
+         move.currentState = (byte) ((getStateFromDirection(move.directionType) << 2) | chemState);
+
+         System.out.format("Ending function: dir=%s state=%s\n", move.directionType.toString(), move.currentState.toString());
+      }
       return move;
+   }
+
+
+
+   private DirectionType getOppositeDirection(DirectionType dir) {
+      if (dir == DirectionType.NORTH) return DirectionType.SOUTH;
+      if (dir == DirectionType.SOUTH) return DirectionType.NORTH;
+      if (dir == DirectionType.EAST) return DirectionType.WEST;
+      if (dir == DirectionType.WEST) return DirectionType.EAST;
+      return DirectionType.CURRENT;
    }
 }
