@@ -17,7 +17,7 @@ public class Controller extends chemotaxis.sim.Controller {
     private int[][][] dist;
     Point modifiedStart = new Point();
     Point modifiedTarget = new Point();
-
+    private int currentTurn = 0;
     // Key is number of chemical (paid) turns
     // The largest key that exists in the map will be the shortest route
     // If there's a key n+1 in the Map, it's distance is less than the distance of key n
@@ -355,6 +355,19 @@ public class Controller extends chemotaxis.sim.Controller {
      */
     private ChemicalPlacement _applyChemicals(Integer currentTurn, Integer chemicalsRemaining, ArrayList<Point> locations, ChemicalCell[][] grid) {
         ChemicalPlacement chemicalPlacement = new ChemicalPlacement();
+        if (strategy==StrategyChoice.strong) {
+            if (strongStrategy.containsKey(currentTurn)) {
+                chemicalPlacement.location = routes.get(this.selectedRoute).get(strongStrategy.get(currentTurn));
+                if (strongStrategy.get(currentTurn)==1) {
+                    chemicalPlacement.chemicals.add(ChemicalCell.ChemicalType.GREEN);
+                    return chemicalPlacement;
+                }
+                else {
+                    chemicalPlacement.chemicals.add(ChemicalCell.ChemicalType.BLUE);
+                    return chemicalPlacement;
+                }
+            }
+        }
         if (currentTurn == 1) {
             chemicalPlacement.location = start;
             chemicalPlacement.chemicals.add(ChemicalCell.ChemicalType.GREEN);
