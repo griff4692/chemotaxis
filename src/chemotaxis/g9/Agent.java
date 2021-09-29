@@ -20,69 +20,96 @@ public class Agent extends chemotaxis.sim.Agent {
     }
 
     /**
-     * Finds largest red cell direction
+     * Return number corresponding to each direction
      *
-     * @param currentCell      current cell
-     * @param neighborMap      map of cell's neighbors
+     * @param bestMove    move agent has decided to take
+     * @return            number corresponding to agent's next move
      */
-    public DirectionType findHighestRed(ChemicalCell currentCell, Map<DirectionType, ChemicalCell> neighborMap) {
-        double highestRed   = currentCell.getConcentration(ChemicalCell.ChemicalType.RED);
-        DirectionType highestRedDirection = null;
-
-        for (DirectionType directionType : neighborMap.keySet()) {
-            double redCnt = neighborMap.get(directionType).getConcentration(ChemicalCell.ChemicalType.RED);
-
-            if (highestRed < redCnt) {
-                highestRed = redCnt;
-                highestRedDirection = directionType;
-            }
+    public int direction(DirectionType bestMove) {
+        if (bestMove == DirectionType.NORTH) {
+            return 1;
+        } else if (bestMove == DirectionType.EAST) {
+            return 2;
+        } else if (bestMove == DirectionType.SOUTH) {
+            return 3;
+        } else { // WEST
+            return 4;
         }
-
-        return highestRedDirection;
     }
 
     /**
-     * Finds largest green cell direction
+     * Return agent's next byte corresponding to "last move" and "don't look"
      *
-     * @param currentCell      current cell
-     * @param neighborMap      map of cell's neighbors
+     * @param move             move agent has decided to take
+     * @param previousState    previous state of the agent
+     * @param switchColor      should agent change color? if yes, increment next state's 10 multiplier
+     * @return                 next move as an encoded byte
      */
-    public DirectionType findHighestGreen(ChemicalCell currentCell, Map<DirectionType, ChemicalCell> neighborMap) {
-        double highestGreen   = currentCell.getConcentration(ChemicalCell.ChemicalType.GREEN);
-        DirectionType highestGreenDirection = null;
+    public byte nextMove(DirectionType move, Byte previousState, boolean switchColor) {
+        int x = previousState / 10;
 
-        for (DirectionType directionType : neighborMap.keySet()) {
-            double greenCnt = neighborMap.get(directionType).getConcentration(ChemicalCell.ChemicalType.GREEN);
-
-            if (highestGreen < greenCnt) {
-                highestGreen = greenCnt;
-                highestGreenDirection = directionType;
+        if (switchColor) {
+            x++;
+            if (x == 3) {
+                return (byte) direction(move);
+            } else {
+                return (byte) ((x * 10) + direction(move));
             }
+        } else {
+            System.out.println("Next move should be " + (byte)((x * 10) + direction(move)));
+            return (byte) ((x * 10) + direction(move));
         }
-
-        return highestGreenDirection;
     }
 
     /**
-     * Finds largest blue cell direction
+     * Return forbidden move
      *
+     * @param previousState    previous state of the agent
+     * @return                 forbidden move to be removed from neighborMap in for loop checks
+     */
+    public DirectionType forbiddenMove(Byte previousState) {
+        int dir = previousState % 10;
+        if (dir == 1) {
+            return DirectionType.SOUTH;
+        } else if (dir == 2) {
+            return DirectionType.WEST;
+        } else if (dir == 3) {
+            return DirectionType.NORTH;
+        } else if (dir == 4) {
+            return DirectionType.EAST;
+        } else {
+            return null;
+        }
+    }
+
+    /**
+     * Finds the largest move for given color
+     *
+     * @param color            search color
      * @param currentCell      current cell
      * @param neighborMap      map of cell's neighbors
+     * @param previousState    previous state of the agent
+     * @return                 best direction to go next
      */
-    public DirectionType findHighestBlue(ChemicalCell currentCell, Map<DirectionType, ChemicalCell> neighborMap) {
-        double highestBlue   = currentCell.getConcentration(ChemicalCell.ChemicalType.BLUE);
-        DirectionType highestBlueDirection = null;
+    public DirectionType findBestMove(ChemicalCell.ChemicalType color, ChemicalCell currentCell, Map<DirectionType, ChemicalCell> neighborMap, Byte previousState) {
+        double highestCnt = currentCell.getConcentration(color);
+        DirectionType highestDirection = null;
+
+        DirectionType forbiddenDirection = forbiddenMove(previousState);
+        if (forbiddenDirection != null) {
+            neighborMap.remove(forbiddenDirection);
+        }
 
         for (DirectionType directionType : neighborMap.keySet()) {
-            double blueCnt = neighborMap.get(directionType).getConcentration(ChemicalCell.ChemicalType.BLUE);
+            double squareCnt = neighborMap.get(directionType).getConcentration(color);
 
-            if (highestBlue < blueCnt) {
-                highestBlue = blueCnt;
-                highestBlueDirection = directionType;
+            if (highestCnt < squareCnt) {
+                highestCnt = squareCnt;
+                highestDirection = directionType;
             }
         }
 
-        return highestBlueDirection;
+        return highestDirection;
     }
 
     /**
@@ -100,39 +127,44 @@ public class Agent extends chemotaxis.sim.Agent {
         // TODO add your code here to move the agent
         Move move = new Move();
 
-        System.out.println("LOOKING FOR " + (previousState == 0 ? "RED" : (previousState == 1 ? "GREEN" : "BLUE")));
-
         // if in any given state and see only larger values adjacent, stay in that state and move to larger
         // if in any given state and see only smaller values adjacent, agent reached local max so change color
 
-        if (previousState == 0) { // red
-            DirectionType highestRedDirection = findHighestRed(currentCell, neighborMap);
+        System.out.print("PREVIOUS STATE " + previousState + " ");
+        int prevStateMul = previousState / 10;
+
+        if (prevStateMul == 0) { // red
+            DirectionType highestRedDirection = findBestMove(ChemicalCell.ChemicalType.RED, currentCell, neighborMap, previousState);
+            System.out.println("HIGHEST RED " + highestRedDirection);
+
             if (highestRedDirection == null) {
-                move.currentState = 1;
-                move.directionType = findHighestGreen(currentCell, neighborMap);
+                move.directionType = findBestMove(ChemicalCell.ChemicalType.GREEN, currentCell, neighborMap, previousState);
+                move.currentState = nextMove(move.directionType, previousState, true);
             } else {
-                move.currentState = 0;
                 move.directionType = highestRedDirection;
+                move.currentState = nextMove(highestRedDirection, previousState, false);
             }
-        } else if (previousState == 1) { // green
-            DirectionType highestGreenDirection = findHighestGreen(currentCell, neighborMap);
+        } else if (prevStateMul == 1) { // green
+            DirectionType highestGreenDirection = findBestMove(ChemicalCell.ChemicalType.GREEN, currentCell, neighborMap, previousState);
+            System.out.println("HIGHEST GREEN " + highestGreenDirection);
 
             if (highestGreenDirection == null) {
-                move.currentState = 2;
-                move.directionType = findHighestBlue(currentCell, neighborMap);
+                move.directionType = findBestMove(ChemicalCell.ChemicalType.BLUE, currentCell, neighborMap, previousState);
+                move.currentState = nextMove(move.directionType, previousState, true);
             } else {
-                move.currentState = 1;
                 move.directionType = highestGreenDirection;
+                move.currentState = nextMove(highestGreenDirection, previousState, false);
             }
-        } else if (previousState == 2) { // blue
-            DirectionType highestBlueDirection = findHighestBlue(currentCell, neighborMap);
+        } else if (prevStateMul == 2) { // blue
+            DirectionType highestBlueDirection = findBestMove(ChemicalCell.ChemicalType.BLUE, currentCell, neighborMap, previousState);
+            System.out.println("HIGHEST BLUE " + highestBlueDirection);
 
             if (highestBlueDirection == null) {
-                move.currentState = 0;
-                move.directionType = findHighestRed(currentCell, neighborMap);
+                move.directionType = findBestMove(ChemicalCell.ChemicalType.RED, currentCell, neighborMap, previousState);
+                move.currentState = nextMove(move.directionType, previousState, true);
             } else {
-                move.currentState = 2;
                 move.directionType = highestBlueDirection;
+                move.currentState = nextMove(highestBlueDirection, previousState, false);
             }
         } else {}
 
