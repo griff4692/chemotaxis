@@ -365,7 +365,7 @@ public class Controller extends chemotaxis.sim.Controller {
                     return chemicalPlacement;
                 }
             }
-            return chemicalPlacement;
+            return chemicalPlacement ;
         }
         if (currentTurn == 1) {
             chemicalPlacement.location = start;
