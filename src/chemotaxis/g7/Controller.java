@@ -141,7 +141,6 @@ public class Controller extends chemotaxis.sim.Controller {
             // refresh the index so that we know agent goes on to which step
             beforeNode.setIndex(beforeIndex + 1);
             agentsPath.put(i, beforeNode);
-
             DirectionType nowDirection = this.getMoveDirections(location, nextPosition);
 
             // if agent in the start position,
@@ -166,17 +165,39 @@ public class Controller extends chemotaxis.sim.Controller {
             // intendTurnDirection means how the chemical will affect the agent,
             // while supposeTurnDirection means which direction we expect it to turn
             // if the two is equal, which means we don't need to apply a chemical
-            int intendTurnDirection = this.getIntendTurnDirection(grid, location, beforeDirection);
-            int supposeTurnDirection = this.getChemicalType(beforeDirection, nowDirection);
+            int intendTurnDirection;
+            int supposeTurnDirection;
+            if ((location.x == start.x - 1 && location.y == start.y - 1) || beforeDirection != DirectionType.CURRENT) {
+                intendTurnDirection = this.getIntendTurnDirection(grid, location, beforeDirection);
+                supposeTurnDirection = this.getChemicalType(beforeDirection, nowDirection);
+            } else{
+                Point beforebeforeLocation = location;
+                for (int k = beforeIndex; k >= 0; k --) {
+                    beforebeforeLocation = expectPath.get(k);
+                    if (!beforebeforeLocation.equals(location)) {
+                        break;
+                    }
+                }
+                DirectionType beforebeforeDirection = this.getMoveDirections(beforebeforeLocation, location);
+                intendTurnDirection = this.getIntendTurnDirection(grid, location, beforebeforeDirection);
+                supposeTurnDirection = this.getChemicalType(beforebeforeDirection, nowDirection);
+                System.out.println("agent" + i + beforebeforeDirection + "stuck, intend to move" + intendTurnDirection + "suppose:" + supposeTurnDirection);
+            }
+
+            if ((location.x != start.x -1 || location.y != start.y - 1) && beforeDirection == DirectionType.CURRENT) {
+                System.out.println(String.valueOf(i) + "stopped, now:" + nowDirection.toString());
+                System.out.println("intend:" + intendTurnDirection + "suppose:" + supposeTurnDirection);
+            }
             // if the location isn't the start point, and we find that the agent goes blocked(beforeDirection = CURRENT),
             // we will know that there must be two agents want to the opposite way,
             // so we apply a blue chemical to let the agent go opposite to avoid the collision
             if (location.x != start.x - 1 || location.y != start.y - 1) {
                 if (supposeTurnDirection == 4)
-                    if (beforeDirection != DirectionType.CURRENT || intendTurnDirection == 4)
-                        continue;
-                    else
-                        supposeTurnDirection = 3;
+                    continue;
+//                    if (beforeDirection != DirectionType.CURRENT || intendTurnDirection != 4)
+//                        continue;
+//                    else
+//                        supposeTurnDirection = 3;
             }
             // if expectedDirection(nowDirection) equals to the before direction, but it tries to turn,
             // actually we need to fix it afterwards, afraid of using a chemical can cause other agents go unexpectedly
@@ -191,8 +212,12 @@ public class Controller extends chemotaxis.sim.Controller {
                     if (!isOppositeDirection(beforeDirection, nowDirection) && numberOfAvailableNeighbours == 2)
                         continue;
 
-                    if (isOppositeDirection(beforeDirection, nowDirection) && numberOfAvailableNeighbours == 3)
+                    if (isOppositeDirection(beforeDirection, nowDirection) && numberOfAvailableNeighbours == 1)
                         continue;
+                } else {
+                    if (numberOfAvailableNeighbours == 1) {
+                        continue;
+                    }
                 }
 
                 if (intendTurnDirection == supposeTurnDirection) {
@@ -256,7 +281,7 @@ public class Controller extends chemotaxis.sim.Controller {
         ChemicalPlacement chemicalPlacement = new ChemicalPlacement();
         // choose a point that needs to turn and apply the chemicals
         ArrayList<Integer> result = this.chooseOnePointNeedToTurn(locations, grid);
-        System.out.println("the result of applyChemicals are" + result.toString());
+        System.out.println("the result of applyChemicals is" + result.toString());
         if (result.isEmpty()) {
             previousLocations = locations;
             return chemicalPlacement;
