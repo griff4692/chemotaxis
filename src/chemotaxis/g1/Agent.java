@@ -103,24 +103,27 @@ public class Agent extends chemotaxis.sim.Agent {
     public Move initialize(AgentState prevState, Map<DirectionType, ChemicalCell> neighborMap, ChemicalCell currentCell) {
         Move move = new Move();
         if (isChemicalNearby(neighborMap, currentCell, ChemicalType.GREEN)) {
-            if (isChemicalNearby(neighborMap, currentCell, ChemicalType.RED))
+            if (isChemicalNearby(neighborMap, currentCell, ChemicalType.RED)) {
                 prevState.setStrategy(AgentState.Strategy.WEAK);
+                prevState.setInitialized();
+            }
             else {
-                prevState.setStrategy(AgentState.Strategy.STRONG);
-                DirectionType nextDirection = prevState.getDirection().asDirectionType();
+                DirectionType nextDirection = DirectionType.CURRENT;
                 for (DirectionType directionType : neighborMap.keySet()) {
-                    double temp_blue = neighborMap.get(directionType).getConcentration(ChemicalType.BLUE);
-                    double temp_green = neighborMap.get(directionType).getConcentration(ChemicalType.GREEN);
-                    if (temp_blue == 1 || temp_green == 1) {
+                    double temp = neighborMap.get(directionType).getConcentration(ChemicalType.GREEN);
+                    if (temp == 1) {
                         nextDirection = directionType;
+                        prevState.setInitialized();
                         break;
                     }
                 }
                 move.directionType = nextDirection;
             }
         }
-        else
+        else {
             prevState.setStrategy(AgentState.Strategy.WEAK);
+            prevState.setInitialized();
+        }
 
         if (prevState.getStrategy() == AgentState.Strategy.WEAK){
             DirectionType nextDirection = getHighestConcentrationDirectionWeak(ChemicalType.BLUE, neighborMap);
@@ -214,11 +217,6 @@ public class Agent extends chemotaxis.sim.Agent {
             double temp = neighborMap.get(directionType).getConcentration(ChemicalType.BLUE);
             boolean isReverse = prevState.asCardinalDir(directionType) == prevState.getDirection().reverseOf();
             if (temp == 1 && !isReverse) {
-                nextDirection = directionType;
-                break;
-            }
-            temp = neighborMap.get(directionType).getConcentration(ChemicalType.GREEN);
-            if (temp == 1) {
                 nextDirection = directionType;
                 break;
             }
