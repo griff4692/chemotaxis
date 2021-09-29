@@ -159,12 +159,14 @@ public class Controller extends chemotaxis.sim.Controller {
 
         boolean placeChemical = false;
 
+        int minConveyer = Integer.MAX_VALUE;
+
         for(Point p : locations) {
             if(!onConveyerAgents.containsKey(p) && steps[p.x - 1][p.y - 1] <= chemicalsPerAgent) {
                 onConveyerAgents.put(p, DirectionType.CURRENT);
             }
             if (onConveyerAgents.containsKey(p)) {
-                if (onConveyerAgents.get(p) != directionMap[p.x - 1][p.y - 1]) {
+                if (onConveyerAgents.get(p) != directionMap[p.x - 1][p.y - 1] && steps[p.x - 1][p.y - 1] <= minConveyer) {
                     Point placement = getChemicalPlacement(p.x - 1, p.y - 1, p);
                     if (checkIfAgentExists(placement, p, locations)) {
                         continue;
@@ -172,7 +174,8 @@ public class Controller extends chemotaxis.sim.Controller {
                     chemicalPlacement.location = placement;
                     onConveyerAgents.replace(p, directionMap[p.x - 1][p.y - 1]);
                     placeChemical = true;
-                    break;
+                    minConveyer = steps[p.x - 1][p.y - 1];
+                    //break;
                 }
             }
         }
@@ -213,10 +216,12 @@ public class Controller extends chemotaxis.sim.Controller {
         }
         else if ((currentTurn - 1) % refreshRate == 0) {
             if (greenChemicalsPut < greenChemicalBudget) {
-                Point placement = this.greenTarget;
-                chemicalPlacement.location = placement;
-                chemicals.add(ChemicalCell.ChemicalType.GREEN);
-                greenChemicalsPut++;
+                if (!greenTarget.equals(start)) {
+                    Point placement = this.greenTarget;
+                    chemicalPlacement.location = placement;
+                    chemicals.add(ChemicalCell.ChemicalType.GREEN);
+                    greenChemicalsPut++;
+                }
             }
         }
 
