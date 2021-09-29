@@ -25,6 +25,8 @@ public class Controller extends chemotaxis.sim.Controller {
     int greenChemicalBudget;
     int greenChemicalsPut;
     Point greenTarget;
+    int trackingErrorEpsilon;
+    int goalInAgents;
 
     /**
      * Controller constructor
@@ -91,7 +93,9 @@ public class Controller extends chemotaxis.sim.Controller {
             System.out.println();
         }
         */
-        refreshRate = 3;
+        trackingErrorEpsilon = 2;
+        goalInAgents = 0;
+        refreshRate = simTime / agentGoal;
         greenChemicalBudget = agentGoal;
         greenChemicalsPut = 0;
         chemicalsPerAgent = (budget - greenChemicalBudget) / agentGoal;
@@ -115,6 +119,7 @@ public class Controller extends chemotaxis.sim.Controller {
                 visited[x][y] = true;
                 if (steps[x][y] <= chemicalsPerAgent) {
                     greenTarget = new Point(x + 1, y + 1);
+                    System.out.println(greenTarget);
                     break;
                 }
             }
@@ -152,19 +157,22 @@ public class Controller extends chemotaxis.sim.Controller {
 
         HashMap<Point, DirectionType> newAgents = new HashMap<Point, DirectionType>();
 
-        if (locations.contains(target)) {
+        while (locations.contains(target)) {
             onConveyerAgents.remove(target);
             locations.remove(target);
+            goalInAgents++;
         }
 
         boolean placeChemical = false;
 
+        int minConveyer = Integer.MAX_VALUE;
+
         for(Point p : locations) {
-            if(!onConveyerAgents.containsKey(p) && steps[p.x - 1][p.y - 1] <= chemicalsPerAgent) {
+            if(!onConveyerAgents.containsKey(p) && steps[p.x - 1][p.y - 1] <= chemicalsPerAgent && onConveyerAgents.size() <= (agentGoal + trackingErrorEpsilon - goalInAgents)) {
                 onConveyerAgents.put(p, DirectionType.CURRENT);
             }
             if (onConveyerAgents.containsKey(p)) {
-                if (onConveyerAgents.get(p) != directionMap[p.x - 1][p.y - 1]) {
+                if (onConveyerAgents.get(p) != directionMap[p.x - 1][p.y - 1] && steps[p.x - 1][p.y - 1] <= minConveyer) {
                     Point placement = getChemicalPlacement(p.x - 1, p.y - 1, p);
                     if (checkIfAgentExists(placement, p, locations)) {
                         continue;
@@ -172,19 +180,11 @@ public class Controller extends chemotaxis.sim.Controller {
                     chemicalPlacement.location = placement;
                     onConveyerAgents.replace(p, directionMap[p.x - 1][p.y - 1]);
                     placeChemical = true;
-                    break;
+                    minConveyer = steps[p.x - 1][p.y - 1];
+                    //break;
                 }
             }
         }
-
-        /*
-        for(Point p : onConveyerAgents.keySet()) {
-            System.out.println("MARKER");
-            System.out.println(p);
-            System.out.println(onConveyerAgents.get(p));
-        }
-         */
-
 
         for (Point p: onConveyerAgents.keySet()) {
             DirectionType currentDirection = onConveyerAgents.get(p);
@@ -213,10 +213,12 @@ public class Controller extends chemotaxis.sim.Controller {
         }
         else if ((currentTurn - 1) % refreshRate == 0) {
             if (greenChemicalsPut < greenChemicalBudget) {
-                Point placement = this.greenTarget;
-                chemicalPlacement.location = placement;
-                chemicals.add(ChemicalCell.ChemicalType.GREEN);
-                greenChemicalsPut++;
+                if (!greenTarget.equals(start)) {
+                    Point placement = this.greenTarget;
+                    chemicalPlacement.location = placement;
+                    chemicals.add(ChemicalCell.ChemicalType.GREEN);
+                    greenChemicalsPut++;
+                }
             }
         }
 
@@ -274,12 +276,6 @@ public class Controller extends chemotaxis.sim.Controller {
             pointsToCheck.add(new Point(placement.x, placement.y + 1));
             pointsToCheck.add(new Point(placement.x + 1, placement.y));
             pointsToCheck.add(new Point(placement.x - 1, placement.y));
-        }
-
-        for(Point p : pointsToCheck)  {
-            if(locations.contains(p)) {
-                return true;
-            }
         }
         return false;
     }

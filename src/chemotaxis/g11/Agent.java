@@ -59,7 +59,6 @@ public class Agent extends chemotaxis.sim.Agent {
         move.currentState = previousState;
         Integer previousDirection = previousState & 0b11;
 
-
         ChemicalType priorityChemicalType = ChemicalType.BLUE;
 
         for (DirectionType directionType : neighborMap.keySet()) {
@@ -67,21 +66,13 @@ public class Agent extends chemotaxis.sim.Agent {
                 move.directionType = directionType;
                 move.currentState = (byte) (bitDirectionMap.get(move.directionType) | 0b00);
                 hasSeenBlue = true;
-            } else {
+            } else if (!hasSeenBlue){
                 double highestConcentration = currentCell.getConcentration(ChemicalType.GREEN);
-                //double currentConcentration = highestConcentration;
-                double highest2 = 0.0;
-                if (neighborMap.get(directionType).getConcentration(ChemicalType.GREEN) > highestConcentration) {
-                    if (bitDirectionMap.get(directionType) + previousDirection == 3) {
-                        continue;
-                    } else {
-                        if (!hasSeenBlue) {
-                            move.directionType = directionType;
-                            highestConcentration = neighborMap.get(directionType).getConcentration(ChemicalType.GREEN);
-                            move.directionType = directionType;
-                            move.currentState = (byte) (bitDirectionMap.get(move.directionType) | 0b00);
-                        }
-                    }
+                if (neighborMap.get(directionType).getConcentration(ChemicalType.GREEN) > highestConcentration && bitDirectionMap.get(directionType) + previousDirection != 3) {
+                    move.directionType = directionType;
+                    highestConcentration = neighborMap.get(directionType).getConcentration(ChemicalType.GREEN);
+                    move.directionType = directionType;
+                    move.currentState = (byte) (bitDirectionMap.get(move.directionType) | 0b00);
                 }
             }
         }
@@ -105,6 +96,16 @@ public class Agent extends chemotaxis.sim.Agent {
                     possibledirections.remove(DirectionType.SOUTH);
                 }
             }
+            if (previousState == 0 && possibledirections.contains(DirectionType.SOUTH)) {
+                possibledirections.add(DirectionType.SOUTH);
+            } else if (previousState == 1 && possibledirections.contains(DirectionType.EAST)) {
+                possibledirections.add(DirectionType.EAST);
+            } else if (previousState == 2 && possibledirections.contains(DirectionType.WEST)) {
+                possibledirections.add(DirectionType.WEST);
+            } else if (previousState == 3 && possibledirections.contains(DirectionType.NORTH)) {
+                possibledirections.add(DirectionType.NORTH);
+            }
+
             int position = Math.abs(randomNum % possibledirections.size());
             move.directionType = possibledirections.get(position);
             move.currentState = (byte) (bitDirectionMap.get(move.directionType) | 0b00);
