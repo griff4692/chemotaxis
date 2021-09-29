@@ -66,8 +66,7 @@ public class Agent extends chemotaxis.sim.Agent {
    private byte color2Byte(ChemicalCell.ChemicalType currentColor){
       if((currentColor.equals(ChemicalCell.ChemicalType.RED))){
          return 0;
-      }
-      else if (currentColor.equals(ChemicalCell.ChemicalType.GREEN)){
+      } else if (currentColor.equals(ChemicalCell.ChemicalType.GREEN)){
          return 1;
       } else {
          return 2;
@@ -89,7 +88,7 @@ public class Agent extends chemotaxis.sim.Agent {
 
    private ChemicalCell.ChemicalType getCurrentColor(Byte previousState){
       byte prevState = previousState.byteValue();
-      int chemicalCellChoice = prevState&2;
+      int chemicalCellChoice = prevState&3;
       if(chemicalCellChoice == 0){
          return ChemicalCell.ChemicalType.RED;
       }
@@ -204,29 +203,24 @@ public class Agent extends chemotaxis.sim.Agent {
    //returns null if all directions are 0 or if there are multiple directions of max concentration
    private static boolean ifDirectionIsAbsoluteMax(DirectionType proposedDirection, ChemicalCell.ChemicalType chosenChemicalType, Map<DirectionType, ChemicalCell> neighborMap) {
       double maxConcentration = neighborMap.get(proposedDirection).getConcentration(chosenChemicalType);
-      System.out.println("maxConcentration: " + String.valueOf(maxConcentration));
+      if (maxConcentration == 0) return false;
 
       for (DirectionType direction : neighborMap.keySet()) {
          if (direction == proposedDirection){
-            System.out.println("continuing at " + proposedDirection);
             continue;
          }
          ChemicalCell candidateCell = neighborMap.get(direction);//if blocked, move to next
          if (candidateCell.isBlocked()) {
             continue;
          }
-         System.out.println("candidateCell.getConcentration(chosenChemicalType): " + String.valueOf(candidateCell.getConcentration(chosenChemicalType)) + " in direction " + direction);
          if (candidateCell.getConcentration(chosenChemicalType) - maxConcentration > -0.001) {
-            System.out.println("is greater");
             return false;
          }
       }
       if (maxConcentration > 0.0) {
-         System.out.println("returning true");
          return true;
       }
       else {
-         System.out.println("returning false");
          return false;
       }
    }
@@ -250,7 +244,6 @@ public class Agent extends chemotaxis.sim.Agent {
 
       for (DirectionType orthogonalDirection: orthogonalDirections) {
          if (!neighborMap.get(orthogonalDirection).isBlocked() && ifDirectionIsAbsoluteMax(orthogonalDirection, chosenChemicalType, neighborMap)){
-            System.out.println("Switching to new chemical in direction" + orthogonalDirection);
             return new Object[] {orthogonalDirection, switchColor(chosenChemicalType)};
          }
       }
