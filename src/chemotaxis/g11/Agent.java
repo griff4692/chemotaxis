@@ -68,7 +68,7 @@ public class Agent extends chemotaxis.sim.Agent {
                 hasSeenBlue = true;
             } else if (!hasSeenBlue){
                 double highestConcentration = currentCell.getConcentration(ChemicalType.GREEN);
-                if (neighborMap.get(directionType).getConcentration(ChemicalType.GREEN) > highestConcentration) {
+                if (neighborMap.get(directionType).getConcentration(ChemicalType.GREEN) > highestConcentration && bitDirectionMap.get(directionType) + previousDirection != 3) {
                     move.directionType = directionType;
                     highestConcentration = neighborMap.get(directionType).getConcentration(ChemicalType.GREEN);
                     move.directionType = directionType;
