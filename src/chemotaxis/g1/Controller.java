@@ -94,31 +94,30 @@ public class Controller extends chemotaxis.sim.Controller {
         // and keyed by the number of turns necessary for the path.
 
         findshortestpath(grid,budget);
+
         // Select the fastest route within our budget.
         // Routes with more turns are faster, otherwise `findshortestpath` will terminate
         // without adding a route for that number of turns. Therefore, if key `5` exists in
         // `routes`, it's route is strictly shorter than the route for key `4`.
+
+        for (int i=0;i<budget;i++) {
+            if (!routes.containsKey(i)) {
+                break;
+            }
+            ArrayList<Point> route = routes.get(i);
+            Collections.reverse(route);
+            routes.put(i, route);
+            setTurnAt(grid, i);
+        }
+
         this.selectedRoute = budget / agentGoal - 1;
-
-
-
-        ArrayList<Point> route = routes.get(this.selectedRoute);
-        Collections.reverse(route);
-        routes.put(this.selectedRoute,route);
-        setTurnAt(grid,this.selectedRoute);
-
-        /*simPrinter.print("turns: ");
-        simPrinter.println(this.selectedRoute);
-        simPrinter.print("steps: ");
-        simPrinter.println(routes.get(i).size());
-        simPrinter.print("route: ");
-        simPrinter.println(routes.get(i));
-        simPrinter.print("turns at: ");
-        simPrinter.println(turnAt.get(i));*/
-
-            // TODO (etm): Schedule is currently unused, so it's commented out
-            // TODO (etm): Update this once the time allowed is known (?)
-
+        while (!routes.containsKey(this.selectedRoute)) {
+            this.selectedRoute-=1;
+        }
+        if (routes.get(this.selectedRoute).size()==0) {
+            strategy=StrategyChoice.weak;
+            return;
+        }
 
         scheduleAllAgents(this.selectedRoute,simTime,spawnFreq,agentGoal);
 
@@ -175,38 +174,36 @@ public class Controller extends chemotaxis.sim.Controller {
         int estimateEnd=0;
         int atStart=0;
         while (time<=simTime) {
-            time+=1;
-            if (time % spawnFreq==0) {
-                atStart+=1;
-            }
-            if (currentOnPath==agentGoal) {
-                if (estimateEnd<=simTime) {
-                    strategy = StrategyChoice.strong;
-                }
-                else {
-                    strategy = StrategyChoice.weak;
-                }
-                return;
-            }
-            if (atStart==0) {
-                continue;
-            }
             if (estimateEnd>simTime) {
                 strategy = StrategyChoice.weak;
                 return;
             }
+            if (currentOnPath==agentGoal) {
+                strategy = StrategyChoice.strong;
+                return;
+            }
+            time+=1;
+            if (time % spawnFreq==0) {
+                atStart+=1;
+            }
+            if (atStart==0) {
+                continue;
+            }
+
             boolean readyToGo = true;
             if (strongStrategy.containsKey(time)) {
                 continue;
             }
-            for (int i=0;i<turnAt_simpleForm.size();i++) {
+
+            for (int i=0;i<turnAt_simpleForm.get(turnChoice).size();i++) {
                 if (strongStrategy.containsKey(time+turnAt_simpleForm.get(turnChoice).get(i))) {
                     readyToGo=false;
                 }
             }
+
             if (readyToGo) {
                 strongStrategy.put(time,1);
-                for (int i=0;i<turnAt_simpleForm.size();i++) {
+                for (int i=0;i<turnAt_simpleForm.get(turnChoice).size();i++) {
                     strongStrategy.put(time+turnAt_simpleForm.get(turnChoice).get(i),turnAt_simpleForm.get(turnChoice).get(i));
                 }
                 atStart-=1;
