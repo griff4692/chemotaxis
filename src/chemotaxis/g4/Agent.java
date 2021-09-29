@@ -41,6 +41,7 @@ public class Agent extends chemotaxis.sim.Agent {
         // 5-6 bits: determine second last move
         // 7-8 bits: determine last move
         int chemIdx = (192 & previousState) >> 6;
+        System.out.println("\n chemIdx" + chemIdx);
         int thdLastMoveIdx = (48 & previousState) >> 4;
         int secLastMoveIdx = (12 & previousState) >> 2;
         int lastMoveIdx = 3 & previousState;
@@ -52,6 +53,7 @@ public class Agent extends chemotaxis.sim.Agent {
             case 3 -> ChemicalType.BLUE;
             default -> ChemicalType.RED;
         };
+        System.out.println("chosenChemicalType " + chosenChemicalType);
 
         DirectionType thdLastMove = switch (thdLastMoveIdx) {
             case 0 -> DirectionType.WEST;
@@ -60,6 +62,7 @@ public class Agent extends chemotaxis.sim.Agent {
             case 3 -> DirectionType.SOUTH;
             default -> DirectionType.EAST;
         };
+
 
         DirectionType secLastMove = switch (secLastMoveIdx) {
             case 0 -> DirectionType.WEST;
@@ -78,12 +81,14 @@ public class Agent extends chemotaxis.sim.Agent {
         };
         // Move in direction of highest concentration of sought chemical
         double highestConcentration = currentCell.getConcentration(chosenChemicalType);
+        System.out.println(chosenChemicalType + " " + highestConcentration);
         for (DirectionType directionType : neighborMap.keySet()) {
             if (highestConcentration < neighborMap.get(directionType).getConcentration(chosenChemicalType)) {
                 highestConcentration = neighborMap.get(directionType).getConcentration(chosenChemicalType);
                 move.directionType = directionType;
             }
         }
+        System.out.println(highestConcentration + " " + move.directionType);
         // Prevent backwards movement
         if ((move.directionType == DirectionType.NORTH && lastMove == DirectionType.SOUTH) ||
                 (move.directionType == DirectionType.SOUTH && lastMove == DirectionType.NORTH) ||
@@ -100,10 +105,15 @@ public class Agent extends chemotaxis.sim.Agent {
                     }
                 }
             }
+
+            chosenChemicalType = switch (chosenChemicalType) {
+                case RED -> ChemicalType.GREEN;
+                case GREEN -> ChemicalType.BLUE;
+                case BLUE -> ChemicalType.RED;
+            };
         }
         // If at maxima, change chemical type and recalculate move
-        if(highestConcentration == 1.0 ||
-            (highestConcentration == currentCell.getConcentration(chosenChemicalType) && highestConcentration != 0.0)){
+        if(highestConcentration == currentCell.getConcentration(chosenChemicalType) && highestConcentration != 0.0){
             chosenChemicalType = switch (chosenChemicalType) {
                 case RED -> ChemicalType.GREEN;
                 case GREEN -> ChemicalType.BLUE;

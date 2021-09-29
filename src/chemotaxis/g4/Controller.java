@@ -16,7 +16,7 @@ public class Controller extends chemotaxis.sim.Controller {
 	ArrayList<Point> path = null;
 	ArrayList<Point> placementCells = null;
 	ArrayList<ChemicalType> colorPath = null;
-	int[] rollPadding;
+	int[] placementPadding;
 	ArrayList<Integer> pcIndexes = null;
 	ArrayList<Integer> refreshPadding; 
 	Analysis analyzer = null;
@@ -94,25 +94,20 @@ public class Controller extends chemotaxis.sim.Controller {
 		// If there is turnning point inside target cell's cover range, remove it.
 		int last = path.indexOf(placementCells.get(placementCells.size()-1));
 		if(path.size()-1 != last){
-			if(last >= path.size()-3){
+			if(last >= path.size()-2){
 				placementCells.remove(placementCells.size()-1);
 			}
 			placementCells.add(path.get(path.size()-1));
 		}
 
-		// Say A --15 cells --> B; so the rolling mode is on
-		// temporary array to store: [B's index, Distance from A to B]
-		ArrayList<int[]> rollOnIdxes = new ArrayList<int[]>();
+		placementPadding = new int[placementCells.size()];
+		int prev = 0;
 		// For each placement cells check the following two cells
 		// and find the one with largest percentage of remaining as local max.
-		for(int i=0; i<placementCells.size()-1; i++){
+		for(int i=0; i<placementCells.size(); i++){
 			int cur = path.indexOf(placementCells.get(i));
 
-			// Checking the initial drop
-			// Making sure that it isn't super far away from the source
-			// Questionable testing: try to make sure that the current spawn won't block the next one; May not make sense.
-			if(i==0 && ((cur>Math.max(spawnFreq, drop_interval)) || cur>roll_interval)){
-				first_interval = Math.min(cur/2, drop_interval); // this is the variable used for later turnToPlace claculation
+			if(i==0 && cur>roll_interval){
 				placementCells.add(0, path.get(first_interval));
 				i--;
 				continue;
@@ -122,39 +117,59 @@ public class Controller extends chemotaxis.sim.Controller {
 			}
 
 			// Check the gap btw two placment cells
-			int next = path.indexOf(placementCells.get(i+1));
-			int gap = next-cur;
-			if(gap <= 3) // if too small do nothing
-				continue; // TO-DO: the intention is to remove one of the point too near to each other, but need many checks so not yet done
+			// int next = path.indexOf(placementCells.get(i+1));
+			
+			// Say A --15 cells --> B; so the rolling mode is on
+			// add [B's index, Distance from A to B]
 			// Turn the rolling mode on
-			else if(gap > roll_interval){ 
-				int[] tmp = {i+1, gap};
-				rollOnIdxes.add(tmp);
+			int gap = cur-prev;
+			if(gap > roll_interval){ 
+				placementPadding[i] += 2*gap;
 			}
+			else if(gap <= 3) // if too small do nothing
+			{
+				
+			if(i==0){
+				placementPadding[i] += 1;
+				System.out.println(i + " " + placementPadding[i]);
+				}
+				else{
+					placementPadding[i] += 2 * prev - cur + first_interval;
+				}
+				System.out.println(i + " " + placementPadding[i]);
+				prev = cur;
+				continue; // TO-DO: the intention is to remove one of the point too near to each other, but need many checks so not yet done
+		}
 
 			int bestPoint = cur;
-			if(data.get(bestPoint).isMaxPercentage<=data.get(cur+1).isMaxPercentage){
-				bestPoint = cur+1;
+			if(cur != path.size()-1){
+				if(data.get(bestPoint).isMaxPercentage<=data.get(cur+1).isMaxPercentage){
+					bestPoint = cur+1;
+				}
+				if(data.get(bestPoint).isMaxPercentage<=data.get(cur+2).isMaxPercentage){
+					bestPoint = cur+2;
+				}
+				placementCells.set(i, path.get(bestPoint));
 			}
-			if(data.get(bestPoint).isMaxPercentage<=data.get(cur+2).isMaxPercentage){
-				bestPoint = cur+2;
-			}
-			placementCells.set(i, path.get(bestPoint));
 
 			System.out.print(" " + path.get(bestPoint) + " ");
+
+			if(i==0){
+				placementPadding[i] += 1;
+				System.out.println(i + " " + placementPadding[i]);
+			}
+			else{
+				placementPadding[i] += 2 * prev - cur + first_interval;
+			}
+			System.out.println(i + " " + placementPadding[i]);
+			prev = cur;
 		}
 		System.out.print("\n");
-
-		// When rolling On, the time of to place next cell will delay, so need padding
-		rollPadding = new int[placementCells.size()];
-		for(int i=0; i<rollOnIdxes.size(); i++){
-			rollPadding[rollOnIdxes.get(i)[0]] = rollOnIdxes.get(i)[1];
-		}
-
+		for(int k=0; k<placementPadding.length; k++)
+			System.out.println(placementPadding[k]);
 		// Calculate the turns needed to finish one round of chemical placing
-		if(placementCells.size()>1){
-			pathComplete = 2 * path.indexOf(placementCells.get(placementCells.size()-2)) 
-								- path.indexOf(placementCells.get(placementCells.size()-1)) + first_interval + rollPadding[placementCells.size()-1];
+		if(placementCells.size()>0){
+			pathComplete = placementPadding[placementCells.size()-1];
 		}
 		else
 			pathComplete = 1;
@@ -175,6 +190,7 @@ public class Controller extends chemotaxis.sim.Controller {
 		// The goal is to refreshing without interfering the previous one
 		// So multiple boundaries are set. The numbers are chosen carefully, but totally open to adjustment
 		// To-Do: Didn't find a way that it can guarantee the agentGoal.
+		System.out.println(pathComplete);
 		int refreshTimes = Math.min(pathComplete/spawnFreq, agentGoal);
 		System.out.println(refreshTimes);
 		pcIndexes = new ArrayList<Integer>();
@@ -382,17 +398,9 @@ public class Controller extends chemotaxis.sim.Controller {
 
 		int pcIndex = pcIndexes.get(idx);
 		Point currentLocation = placementCells.get(pcIndex);
-        int curIndex = path.indexOf(currentLocation);
+        // int curIndex = path.indexOf(currentLocation);
  
-        int turnToPlace = refreshPadding.get(idx) + rollPadding[pcIndex];
-        if(pcIndexes.get(idx)==0){
-            turnToPlace += 1;
-        }
-        else{
-            int preIndex = path.indexOf(placementCells.get(pcIndexes.get(idx)-1));
-            turnToPlace += 2 * preIndex - curIndex + first_interval;
-			// System.out.println("preIndex " + (2 * preIndex - curIndex + drop_interval));
-        }
+        int turnToPlace = refreshPadding.get(idx) + placementPadding[pcIndex];
 
 		System.out.println("idx " + idx);
 		System.out.println("pcIndexes[idx] " + pcIndex);
