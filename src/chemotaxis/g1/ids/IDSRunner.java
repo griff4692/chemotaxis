@@ -6,9 +6,9 @@ import chemotaxis.sim.ChemicalPlacement;
 import java.util.ArrayList;
 
 class IDSState {
+    // 900 leaves 100 ms to finish and return the result
     public final long timeLimit = 900;
     public long startTime;
-    // 900 leaves 100 ms to finish and return the result
     public int depthLimit;
 
     IDSState() {
@@ -67,7 +67,7 @@ public class IDSRunner {
 
     private static ScoredPlacement findBest(IDSState state, GameState gameState,
                                             IDSCandidateGenerator generator, IDSHeuristic heuristic) {
-        if (state.startTime + state.timeLimit < System.currentTimeMillis()) {
+        if (state.startTime + state.timeLimit >= System.currentTimeMillis()) {
             // Timed out
             return null;
         } else if (state.depthLimit == 0) {
@@ -83,13 +83,13 @@ public class IDSRunner {
             ChemicalPlacement c = ic.getPlacement();
             GameState nextGameState = gameState.placeChemicalAndStep(c);
             ScoredPlacement move = IDSRunner.findBest(state, nextGameState, generator, heuristic);
-            if (move != null && currentBest.score < move.score) {
-                move.placement = c;
-                currentBest = move;
-            } else {
+            if (move == null) {
                 // Timed out; return null to unwind the recursion
                 currentBest = null;
                 break;
+            } else if (currentBest.score < move.score) {
+                move.placement = c;
+                currentBest = move;
             }
         }
         state.depthLimit += 1;
