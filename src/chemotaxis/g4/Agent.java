@@ -46,38 +46,61 @@ public class Agent extends chemotaxis.sim.Agent {
         int secLastMoveIdx = (12 & previousState) >> 2;
         int lastMoveIdx = 3 & previousState;
 
-        ChemicalType chosenChemicalType = switch (chemIdx) {
-            case 0 -> ChemicalType.RED;
-            case 1 -> ChemicalType.RED;
-            case 2 -> ChemicalType.GREEN;
-            case 3 -> ChemicalType.BLUE;
-            default -> ChemicalType.RED;
+        ChemicalType chosenChemicalType;
+        switch (chemIdx) {
+            case 0: chosenChemicalType= ChemicalType.RED;
+                break;
+            case 1: chosenChemicalType= ChemicalType.BLUE;
+                break;
+            case 2: chosenChemicalType= ChemicalType.GREEN;
+                break;
+            case 3: chosenChemicalType= ChemicalType.RED;
+                break;
+            default: chosenChemicalType= ChemicalType.RED;
+                break;
         };
         System.out.println("chosenChemicalType " + chosenChemicalType);
 
-        DirectionType thdLastMove = switch (thdLastMoveIdx) {
-            case 0 -> DirectionType.WEST;
-            case 1 -> DirectionType.EAST;
-            case 2 -> DirectionType.NORTH;
-            case 3 -> DirectionType.SOUTH;
-            default -> DirectionType.EAST;
+        DirectionType thdLastMove;
+        switch (thdLastMoveIdx) {
+            case 0: thdLastMove = DirectionType.WEST;
+                break;
+            case 1: thdLastMove = DirectionType.EAST;
+                break;
+            case 2: thdLastMove = DirectionType.NORTH;
+                break;
+            case 3: thdLastMove = DirectionType.SOUTH;
+                break;
+            default: thdLastMove = DirectionType.EAST;
+                break;
         };
 
-
-        DirectionType secLastMove = switch (secLastMoveIdx) {
-            case 0 -> DirectionType.WEST;
-            case 1 -> DirectionType.EAST;
-            case 2 -> DirectionType.NORTH;
-            case 3 -> DirectionType.SOUTH;
-            default -> DirectionType.EAST;
+        DirectionType secLastMove;
+        switch (secLastMoveIdx) {
+            case 0: secLastMove = DirectionType.WEST;
+                break;
+            case 1: secLastMove = DirectionType.EAST;
+                break;
+            case 2: secLastMove = DirectionType.NORTH;
+                break;
+            case 3: secLastMove = DirectionType.SOUTH;
+                break;
+            default: secLastMove = DirectionType.EAST;
+                break;
         };
 
-        DirectionType lastMove = switch (lastMoveIdx) {
-            case 0 -> DirectionType.WEST;
-            case 1 -> DirectionType.EAST;
-            case 2 -> DirectionType.NORTH;
-            case 3 -> DirectionType.SOUTH;
-            default -> DirectionType.EAST;
+        DirectionType lastMove;
+        switch (lastMoveIdx) {
+            case 0: lastMove = DirectionType.WEST;
+                break;
+            case 1: lastMove = DirectionType.EAST;
+                break;
+            case 2: lastMove = DirectionType.NORTH;
+                break;
+            case 3: lastMove = DirectionType.SOUTH;
+                break;
+            default: lastMove = DirectionType.EAST;
+                break;
         };
         // Move in direction of highest concentration of sought chemical
         double highestConcentration = currentCell.getConcentration(chosenChemicalType);
@@ -105,12 +128,17 @@ public class Agent extends chemotaxis.sim.Agent {
             else {
                 for(int i=0; i<4; i++){
                     DirectionType directionType;
-                    directionType = switch (i) {
-                        case 0 -> DirectionType.NORTH;
-                        case 1 -> DirectionType.SOUTH;
-                        case 2 -> DirectionType.EAST;
-                        case 3 -> DirectionType.WEST;
-                        default -> DirectionType.NORTH;
+                    switch (i) {
+                        case 0: directionType = DirectionType.NORTH;
+                            break;
+                        case 1: directionType = DirectionType.SOUTH;
+                            break;
+                        case 2: directionType = DirectionType.EAST;
+                            break;
+                        case 3 : directionType = DirectionType.WEST;
+                            break;
+                        default: directionType = DirectionType.NORTH;
+                            break;
                     };
                     if (directionType != lastMove && neighborMap.get(directionType).isOpen()) {
                         move.directionType = directionType;
@@ -126,19 +154,25 @@ public class Agent extends chemotaxis.sim.Agent {
                 // }
             }
 
-            chosenChemicalType = switch (chosenChemicalType) {
-                case RED -> ChemicalType.GREEN;
-                case GREEN -> ChemicalType.BLUE;
-                case BLUE -> ChemicalType.RED;
+            switch (chosenChemicalType) {
+                case RED: chosenChemicalType = ChemicalType.GREEN;
+                    break;
+                case GREEN: chosenChemicalType = ChemicalType.BLUE;
+                    break;
+                case BLUE: chosenChemicalType = ChemicalType.RED;
+                    break;
             };
         }
         // If at maxima, change chemical type and recalculate move
         if(highestConcentration == currentCell.getConcentration(chosenChemicalType) && highestConcentration != 0.0){
             System.out.println("If at maxima, change chemical type and recalculate move");
-            chosenChemicalType = switch (chosenChemicalType) {
-                case RED -> ChemicalType.GREEN;
-                case GREEN -> ChemicalType.BLUE;
-                case BLUE -> ChemicalType.RED;
+            switch (chosenChemicalType) {
+                case RED: chosenChemicalType = ChemicalType.GREEN;
+                    break;
+                case GREEN: chosenChemicalType = ChemicalType.BLUE;
+                    break;
+                case BLUE: chosenChemicalType = ChemicalType.RED;
+                    break;
             };
             // Move in direction of highest concentration of sought chemical
             highestConcentration = currentCell.getConcentration(chosenChemicalType);
@@ -184,10 +218,16 @@ public class Agent extends chemotaxis.sim.Agent {
         // System.out.println(chosenChemicalType);
         // System.out.println(highestConcentration);
         //If the agent is at local maxima, update currState
-        int currChem = switch (chosenChemicalType) {
-            case RED -> 1;
-            case GREEN -> 2;
-            case BLUE -> 3;
+        int currChem;
+        switch (chosenChemicalType) {
+            case RED: currChem = 1;
+                break;
+            case GREEN: currChem = 2;
+                break;
+            case BLUE: currChem = 3;
+                break;
+            default: currChem = 0;
+                break;
         };
         int currState = 0;
         if(move.directionType == DirectionType.CURRENT && previousState == 0) {
@@ -199,12 +239,19 @@ public class Agent extends chemotaxis.sim.Agent {
         else{
             int currSecLastMove = lastMoveIdx;
             int currThdLastMove = secLastMoveIdx;
-            int currLastMove = switch (move.directionType){
-                case WEST -> 0;
-                case EAST -> 1;
-                case NORTH -> 2;
-                case SOUTH -> 3;
-                case CURRENT -> lastMoveIdx;
+            int currLastMove;
+            switch (move.directionType){
+                case WEST: currLastMove = 0;
+                    break;
+                case EAST: currLastMove = 1;
+                    break;
+                case NORTH: currLastMove = 2;
+                    break;
+                case SOUTH: currLastMove = 3;
+                    break;
+                case CURRENT: currLastMove = lastMoveIdx;
+                    break;
+                default: currLastMove = lastMoveIdx;
             };
             currState = (currChem<<6) | (currThdLastMove<<4) | (currSecLastMove<<2) | (currLastMove);
         }
