@@ -31,6 +31,7 @@ public class Controller extends chemotaxis.sim.Controller {
 	Integer arrayLength = 20;
 	Integer pathComplete;
 	double threshold = 0.1;
+	int vacantRound = 0;
 
     /**
      * Controller constructor
@@ -124,13 +125,16 @@ public class Controller extends chemotaxis.sim.Controller {
 			cur = path.indexOf(placementCells.get(i));
 			// Distance from A to B]
 			int gap = cur-prev;
+			System.out.print(" " + placementCells.get(i) + " ");
 
 			int next = cur;
 			if(i < placementCells.size()-1 && gap < roll_interval){
 				next = path.indexOf(placementCells.get(i+1));
 				if(data.get(next).maxDistance>=next-cur && i < placementCells.size()-2){
-					int nextNext = path.indexOf(placementCells.get(i+1));
+					int nextNext = path.indexOf(placementCells.get(i+2));
+					System.out.print("nn-cur: " + (nextNext-cur));
 					if(data.get(nextNext).maxDistance > nextNext-cur){
+						System.out.print(" removed" + placementCells.get(i+1) + " ");
 						placementCells.remove(i+1);
 					}
 				}
@@ -139,7 +143,7 @@ public class Controller extends chemotaxis.sim.Controller {
 			// Say A --15 cells --> B; so the rolling mode is on
 			// Turn the rolling mode on
 			if(gap >= roll_interval){ 
-				placementPadding[i] += 2*gap;
+				placementPadding[i] += 2*(gap-1);
 			}
 
 			int bestPoint = cur;
@@ -399,12 +403,19 @@ public class Controller extends chemotaxis.sim.Controller {
 			pcIndexes.add(0);
 			System.out.println("Refreshing! grid[firstDrop.x-1][firstDrop.y]: " + firstDrop.x + ", " + firstDrop.y + "; Concentration " + curFirstCnct);
 		}
+
  
 		if(pcIndexes.size()>0)
         	return determineLocation(currentTurn, 0);
-		else
+		else{
+			vacantRound++;
+			if(vacantRound>50){
+				threshold += 0.05;
+				vacantRound = 0;
+			}
 			return chemicalPlacement;
 
+		}
 	}
 
 	// prioritize the "first" or "oldest" path placement, 
@@ -417,11 +428,11 @@ public class Controller extends chemotaxis.sim.Controller {
  
         int turnToPlace = refreshPadding.get(idx) + placementPadding[pcIndex];
 
-		System.out.println("idx " + idx);
-		System.out.println("pcIndexes[idx] " + pcIndex);
-		System.out.println("currentLocation " + currentLocation);
-		System.out.println("turnToPlace " + turnToPlace);
-		System.out.println("currentTurn " + currentTurn);
+		// System.out.println("idx " + idx);
+		// System.out.println("pcIndexes[idx] " + pcIndex);
+		// System.out.println("currentLocation " + currentLocation);
+		// System.out.println("turnToPlace " + turnToPlace);
+		// System.out.println("currentTurn " + currentTurn);
 
         
         if(currentTurn >= turnToPlace){
@@ -432,7 +443,7 @@ public class Controller extends chemotaxis.sim.Controller {
             pcIndexes.set(idx, ++pcIndex);
 			System.out.println("Chemical Placed at " + currentLocation);
 			if(pcIndex>=placementCells.size()){
-				int padding = refreshPadding.get(idx);
+				// int padding = refreshPadding.get(idx);
 				if(idx!=0)
 					System.err.println("WARNING: Chemical placement sequence messed up");
 				pcIndexes.remove(0);
