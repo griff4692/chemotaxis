@@ -173,9 +173,9 @@ public class AgentState {
     }
 
     public Strategy getStrategy() {
-        if (!this.isInitialized()) {
-            throw new RuntimeException("agent uninitialized");
-        }
+//        if (!this.isInitialized()) {
+//            throw new RuntimeException("agent uninitialized");
+//        }
         if ((this.state & STRAT_MASK) == WEAK_CHEM_BITS) {
             return Strategy.WEAK;
         }
