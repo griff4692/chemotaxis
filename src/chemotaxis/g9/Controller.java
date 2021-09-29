@@ -13,9 +13,13 @@ public class Controller extends chemotaxis.sim.Controller {
 	List<Point> shortestPathList;
 	private int incrementBy;
 	private int colorCounter = 0;
-	private int currentPathIndex = 0;
+	private int currentPathIndex = -1;
 	private int idealChemicalIncrement = 5;
 	private int beginningChems = 0;
+	private int waitCounter = 1;
+	private boolean reverse = false;
+	private List<Point> placementPath;
+
 	/**
 	 * Controller constructor
 	 *
@@ -31,8 +35,25 @@ public class Controller extends chemotaxis.sim.Controller {
 	 */
 	public Controller(Point start, Point target, Integer size, ChemicalCell[][] grid, Integer simTime, Integer budget, Integer seed, SimPrinter simPrinter, Integer agentGoal, Integer spawnFreq) {
 		super(start, target, size, grid, simTime, budget, seed, simPrinter, agentGoal, spawnFreq);
+		System.out.println("hello");
 		this.shortestPathList = shortestPath(grid);	
 		this.incrementBy = decidePlacementStrategy(this.shortestPathList, idealChemicalIncrement, budget, spawnFreq);
+		this.placementPath = generatePlacementPath(this.shortestPathList, this.incrementBy);
+	}
+	
+	public List<Point> generatePlacementPath(List<Point> shortestPath, int incrementBy) {
+		List<Point> placementList = new ArrayList<Point>();
+		int i = 0;
+		while (true) {
+			i += incrementBy;
+			if (i >= shortestPath.size()) {
+				i = shortestPath.size() - 1;
+			}
+			placementList.add(shortestPath.get(i));
+			if (i == shortestPath.size() - 1)
+				break;
+		}
+		return placementList;
 	}
 	
 	// will this need to keep track of simTime?
@@ -46,12 +67,11 @@ public class Controller extends chemotaxis.sim.Controller {
 		// budget --; // take out for the beginning chemical
 		budget --; // take out another for the ending chemical
 		int pathLength = shortestPathList.size();
-		float singlePathIncrement = pathLength / budget;
+		int singlePathIncrement = (int) Math.ceil(pathLength / budget);
+		System.out.format("%d, %d, %d", pathLength, budget, singlePathIncrement);
 		// ideal chemical increment will not make it the full path.
-		if (singlePathIncrement > idealChemicalIncrement)
-			return (int) Math.ceil(singlePathIncrement);
+		return (singlePathIncrement > idealChemicalIncrement) ? singlePathIncrement : idealChemicalIncrement;
 		// here, we need to choose some criteria to lower the idealChemicalIncrement based on the expected loops (single path or multiple) / saturation we want.
-		return idealChemicalIncrement;
 	};
   /**
    * Apply chemicals to the map
@@ -65,36 +85,59 @@ public class Controller extends chemotaxis.sim.Controller {
    */
  	@Override
 	public ChemicalPlacement applyChemicals(Integer currentTurn, Integer chemicalsRemaining, ArrayList<Point> locations, ChemicalCell[][] grid) {
-		ChemicalPlacement chemicalPlacement = new ChemicalPlacement();
+ 		int waitAfter = 3;
+ 		waitCounter += 1;
+ 		if (waitCounter % (waitAfter + 1) < waitAfter) {
+			return new ChemicalPlacement();
+		}
+		if (!reverse) {
+			currentPathIndex += 1;
+			if (currentPathIndex >= this.placementPath.size()) {
+				reverse = !reverse;
+				currentPathIndex = this.placementPath.size() - 2;
+				incrementColor(reverse);
+				incrementColor(reverse);
+			}
+		} else {
+			currentPathIndex -= 1;
+			if (currentPathIndex < 0) {
+				reverse = !reverse;
+				currentPathIndex = 1;
+				incrementColor(reverse);
+				incrementColor(reverse);
+
+			}
+		}
+ 		
+ 		return placeChemical(reverse);
+ 		
+ 	}
+ 	
+ 	public ChemicalType incrementColor(boolean isReverse) {
+		ChemicalType[] rotation = {ChemicalType.RED, ChemicalType.GREEN, ChemicalType.BLUE};		
+		ChemicalType colorToPick = rotation[colorCounter];
+		colorCounter = (colorCounter + ((!isReverse) ? 1 : -1)) % rotation.length;
+
+		if (colorCounter < 0) {
+			colorCounter += rotation.length;
+		}
+		return colorToPick;
+ 	}
+ 	
+ 	public ChemicalPlacement placeChemical(boolean isReverse) {	
+ 		ChemicalPlacement chemicalPlacement = new ChemicalPlacement();
 		List<ChemicalType> chemicals = new ArrayList<>();
-		ChemicalType[] rotation = {ChemicalType.RED, ChemicalType.GREEN, ChemicalType.BLUE};
-		// increment steps
-		// handle wraparound cases 
-		int pathLength = this.shortestPathList.size();
-		// if we are on the last step, move to the first step, and make sure we reset the color counter
-		if (currentPathIndex == pathLength - 1) {
-			currentPathIndex = 0;
-			colorCounter = 0;
-		} else if (currentPathIndex > pathLength - 1 - incrementBy) { // if we are about to wrap around, put us at the last step.
-			currentPathIndex = pathLength - 1 - incrementBy;
-		}		
 		// drop at current location
-		Point pointToPlace;
-		System.out.println("POINT: " + currentPathIndex);
-		
 		/*if(currentPathIndex < incrementBy && beginningChems > 0){
             currentPathIndex += beginningChems;
         } else {
         	currentPathIndex += incrementBy;
-        }*/
-		currentPathIndex += incrementBy;
-		
-		pointToPlace = this.shortestPathList.get(currentPathIndex);
+        }*/		
+		Point pointToPlace = this.placementPath.get(currentPathIndex);
 		chemicalPlacement.location = new Point(pointToPlace.x + 1, pointToPlace.y + 1);
 		
 		// pick right chemical in sequence
-		chemicals.add(rotation[colorCounter]);
-		colorCounter = (colorCounter + 1) % 3;
+		chemicals.add(incrementColor(isReverse));
 		
 		chemicalPlacement.chemicals = chemicals;
 		return chemicalPlacement;
@@ -136,5 +179,6 @@ public class Controller extends chemotaxis.sim.Controller {
 			 }
 			
 		 }
-		 throw new Error("shouldn't get here");
+		 System.err.print("Should not have been here");
+		 return new ArrayList<>();
 	} 	}
