@@ -148,8 +148,7 @@ public class Agent extends chemotaxis.sim.Agent {
         }
         newState = (byte) (previousState - previousDirectionBits + newDirectionBits);
         if (previousState < 0)
-            newState = (byte) (newState | (128));
-//        newState = (byte) (newState | (-128));
+            newState = (byte) (newState | (-128));
         return newState;
     }
 
@@ -173,7 +172,7 @@ public class Agent extends chemotaxis.sim.Agent {
             newState = (byte) (previousState + 4 - (byte) (previousCounter * 4));
         }
         if (previousState < 0)
-            newState = (byte) (newState | (128));
+            newState = (byte) (newState | (-128));
         return newState;
     }
 
@@ -182,7 +181,7 @@ public class Agent extends chemotaxis.sim.Agent {
          * update the first bit stored in the state so that the agent knows whether he has started moving to the right
          * direction after leaving starting point
          */
-        byte newState = (byte) (previousState | 128);
+        byte newState = (byte) (previousState | -128);
         return newState;
     }
 
@@ -224,6 +223,32 @@ public class Agent extends chemotaxis.sim.Agent {
         }
         else {
             return oppositeDirection;
+        }
+    }
+
+    private DirectionType circumventBlocksForBlue(Byte previousState, ChemicalCell currentCell, Map<DirectionType, ChemicalCell> neighborMap) {
+        /**
+         * indicates which direction the agent should go in case he meets a block
+         */
+        DirectionType previousDirection = getPrevDirection(previousState);
+        ChemicalCell previousDirectionCell = neighborMap.get(previousDirection);
+        DirectionType rightDirection = getOtherDirectionList(previousDirection).get(0);
+        ChemicalCell rightCell = neighborMap.get(rightDirection);
+        DirectionType leftDirection = getOtherDirectionList(previousDirection).get(1);
+        ChemicalCell leftCell = neighborMap.get(leftDirection);
+        DirectionType oppositeDirection = getOtherDirectionList(previousDirection).get(2);
+        ChemicalCell oppositeCell = neighborMap.get(oppositeDirection);
+
+        if (!(rightCell.isBlocked())) {
+            return rightDirection;
+        }
+        else if (!(leftCell.isBlocked())) {
+            return leftDirection;
+        }
+        else if (!oppositeCell.isBlocked()){
+            return oppositeDirection;
+        } else {
+            return previousDirection;
         }
     }
 
@@ -276,10 +301,18 @@ public class Agent extends chemotaxis.sim.Agent {
                 sensedChemical = true;
             }
             if (sensedChemical == false) {
-                System.out.println("Agent is in the start cell --> random walk!!!");
-                move.directionType = randomStep(randomNum, previousState, currentCell, neighborMap);
-//                move.currentState = setRandomWalkBitInCurrentState(previousState);
-                move.currentState = setDirectionBitsInCurrentState(previousState, move.directionType);
+                // if in the start position, agent only has one way to go, set random bit to 1
+                List<DirectionType> possibleDirections = getPossibleDirections(neighborMap);
+                if (possibleDirections.size() == 1) {
+                    move.directionType = possibleDirections.get(0);
+                    move.currentState = setRandomWalkBitInCurrentState(previousState);
+                    move.currentState = setCounterInCurrentState(move.currentState, false);
+                    move.currentState = setDirectionBitsInCurrentState(move.currentState, move.directionType);
+                } else {
+                    System.out.println("Agent is in the start cell --> random walk!!!");
+                    move.directionType = randomStep(randomNum, previousState, currentCell, neighborMap);
+                    move.currentState = setDirectionBitsInCurrentState(previousState, move.directionType);
+                }
             }
         }
         else {
@@ -317,6 +350,7 @@ public class Agent extends chemotaxis.sim.Agent {
                 if (nextChemicalCell.isBlocked()) {
                     System.out.println("next cell is blocked");
                     newDirection = circumventBlocks(previousState, currentCell, neighborMap);
+                    System.out.println(previousState + "newDirection:" + newDirection.toString());
                 }
                 move.currentState = setCounterInCurrentState(previousState, false);
                 move.currentState = setDirectionBitsInCurrentState(move.currentState, newDirection);
@@ -348,6 +382,12 @@ public class Agent extends chemotaxis.sim.Agent {
                 System.out.println("previous Direction:" + previousDirection.toString());
                 DirectionType newDirection = getOtherDirectionList(previousDirection).get(2);
                 System.out.println("newDirection:" + newDirection.toString());
+                ChemicalCell nextChemicalCell = neighborMap.get(newDirection);
+                if (nextChemicalCell.isBlocked()) {
+                    System.out.println("next cell is blocked");
+                    newDirection = circumventBlocksForBlue(previousState, currentCell, neighborMap);
+                    System.out.println("newDirection:" + newDirection.toString());
+                }
                 move.currentState = setCounterInCurrentState(previousState, false);
                 move.currentState = setDirectionBitsInCurrentState(move.currentState, newDirection);
                 move.directionType = newDirection;
@@ -364,9 +404,16 @@ public class Agent extends chemotaxis.sim.Agent {
             if (sensedChemical == false) {
                 int rounds = getRoundsCounter(previousState);
                 if (rounds == 0) {
-                    System.out.println("random step");
-                    move.directionType = randomStep(randomNum, previousState, currentCell, neighborMap);
-                    move.currentState = setDirectionBitsInCurrentState(previousState, move.directionType);
+                    List<DirectionType> possibleDirections = getPossibleDirections(neighborMap);
+                    if (possibleDirections.size() == 1) {
+                        move.directionType = possibleDirections.get(0);
+                        move.currentState = setCounterInCurrentState(move.currentState, false);
+                        move.currentState = setDirectionBitsInCurrentState(move.currentState, move.directionType);
+                    } else {
+                        System.out.println("random step");
+                        move.directionType = randomStep(randomNum, previousState, currentCell, neighborMap);
+                        move.currentState = setDirectionBitsInCurrentState(previousState, move.directionType);
+                    }
                 } else if (rounds <= 31) {
                     ChemicalCell nextChemicalCell = neighborMap.get(previousDirection);
                     if (nextChemicalCell.isBlocked()) {
@@ -384,7 +431,7 @@ public class Agent extends chemotaxis.sim.Agent {
                             move.currentState = setCounterInCurrentState(move.currentState, true);
                         }
                     } else {
-                        System.out.println("continuee moving in the previous direction");
+                        System.out.println("continue moving in the previous direction:" + previousDirection);
                         move.directionType = previousDirection;
                         move.currentState = setCounterInCurrentState(previousState, true);
                         move.currentState = setDirectionBitsInCurrentState(move.currentState, move.directionType);
@@ -393,6 +440,9 @@ public class Agent extends chemotaxis.sim.Agent {
             } else {
                 move.currentState = setRandomWalkBitInCurrentState(move.currentState);
             }
+            System.out.println("sense chemical:" + sensedChemical);
+            System.out.println("blue" + blueConcentration + "green:" + greenConcentration + "red:" + redConcentration);
+            System.out.println("previous:" + previousDirection + "direction:"+ move.directionType);
         }
 
         return move;
