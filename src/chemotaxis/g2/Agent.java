@@ -68,7 +68,7 @@ public class Agent extends chemotaxis.sim.Agent {
 			if (Math.abs(neighborMap.get(directionType).getConcentration(chosenChemicalType) - 1.0) < minDetectableConcentration ) {
 				move.directionType = directionType;
 				turn = true;
-				previousState = (previousState & (Byte)248) | storeDir(directionType);;
+				previousState = (byte)((previousState & 248) | storeDir(directionType));
 				move.currentState = previousState;
 				break;
 
@@ -80,7 +80,7 @@ public class Agent extends chemotaxis.sim.Agent {
 
 			if(previousState == 0){
 				//first turn and no blue . So follow red-green strategy, start with red
-				previousState = (Byte)(128 | 64) ;
+				previousState = (byte)(128 | 64) ;
 			}
 			else if ((previousState & 128) == 0){
 				// no blue found, but strategy is follow the turns
@@ -119,10 +119,10 @@ public class Agent extends chemotaxis.sim.Agent {
 			if (dirChanged == false) {
 				if (chosenChemicalType == ChemicalType.RED) {
 					chosenChemicalType = ChemicalType.GREEN;
-					previousState = (previousState & (0b10011111)) | 0b00100000;
+					previousState = (byte)((previousState & (0b10011111)) | 0b00100000);
 				} else {
 					chosenChemicalType = ChemicalType.RED;
-					previousState = (previousState & (Byte) (0b10011111)) | (Byte) 0b01000000;
+					previousState = (byte)((previousState & (0b10011111)) | 0b01000000);
 				}
 
 				highestConcentration = currentCell.getConcentration(chosenChemicalType);
