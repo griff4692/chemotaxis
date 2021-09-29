@@ -29,7 +29,7 @@ public class AgentsNearTurnGenerator implements IDSCandidateGenerator {
      *                      a chemical must be placed at `placement` (2,1).
      * @param lookaheadTurns Number of turns to look ahead
      */
-    AgentsNearTurnGenerator(HashMap<Point, Point> turnJunctions, int lookaheadTurns) {
+    public AgentsNearTurnGenerator(HashMap<Point, Point> turnJunctions, int lookaheadTurns) {
         this.turnJunctions = turnJunctions;
         this.lookahead = lookaheadTurns;
     }
@@ -58,6 +58,7 @@ public class AgentsNearTurnGenerator implements IDSCandidateGenerator {
 
     private ArrayList<GameState> stepForward(int steps, final GameState gs) {
         ArrayList<GameState> states = new ArrayList<>();
+        states.add(gs);
         for (int i = 0; i < steps; ++i) {
             // Step forward without placing any chemicals
             states.add(gs.placeChemicalAndStep(new ChemicalPlacement()));
