@@ -17,7 +17,6 @@ public class Controller extends chemotaxis.sim.Controller {
     private int[][][] dist;
     Point modifiedStart = new Point();
     Point modifiedTarget = new Point();
-    private int currentTurn = 0;
     // Key is number of chemical (paid) turns
     // The largest key that exists in the map will be the shortest route
     // If there's a key n+1 in the Map, it's distance is less than the distance of key n
@@ -202,7 +201,7 @@ public class Controller extends chemotaxis.sim.Controller {
             }
 
             if (readyToGo) {
-                strongStrategy.put(time,1);
+                strongStrategy.put(time,0);
                 for (int i=0;i<turnAt_simpleForm.get(turnChoice).size();i++) {
                     strongStrategy.put(time+turnAt_simpleForm.get(turnChoice).get(i),turnAt_simpleForm.get(turnChoice).get(i));
                 }
@@ -353,9 +352,11 @@ public class Controller extends chemotaxis.sim.Controller {
     private ChemicalPlacement _applyChemicals(Integer currentTurn, Integer chemicalsRemaining, ArrayList<Point> locations, ChemicalCell[][] grid) {
         ChemicalPlacement chemicalPlacement = new ChemicalPlacement();
         if (strategy==StrategyChoice.strong) {
+            currentTurn-=1;
             if (strongStrategy.containsKey(currentTurn)) {
-                chemicalPlacement.location = routes.get(this.selectedRoute).get(strongStrategy.get(currentTurn));
-                if (strongStrategy.get(currentTurn)==1) {
+                chemicalPlacement.location = new Point(routes.get(this.selectedRoute).get(strongStrategy.get(currentTurn)+1).x+1,
+                    routes.get(this.selectedRoute).get(strongStrategy.get(currentTurn)+1).y+1);
+                if (strongStrategy.get(currentTurn)==0) {
                     chemicalPlacement.chemicals.add(ChemicalCell.ChemicalType.GREEN);
                     return chemicalPlacement;
                 }
@@ -364,6 +365,7 @@ public class Controller extends chemotaxis.sim.Controller {
                     return chemicalPlacement;
                 }
             }
+            return chemicalPlacement;
         }
         if (currentTurn == 1) {
             chemicalPlacement.location = start;
