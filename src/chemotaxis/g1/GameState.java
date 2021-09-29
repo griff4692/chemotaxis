@@ -3,32 +3,10 @@ package chemotaxis.g1;
 
 import chemotaxis.sim.*;
 import chemotaxis.sim.ChemicalCell.ChemicalType;
-import chemotaxis.g1.GameCell;
 
-import javax.xml.validation.Schema;
 import java.awt.*;
 import java.util.ArrayList;
 import java.util.HashMap;
-import java.util.Objects;
-
-class AgentLoc {
-    public Point loc;
-    public AgentState state;
-    // Turn on which this agent spawned
-    public int epoch;
-
-    AgentLoc(Point loc, AgentState state, int epoch) {
-        this.loc = new Point(loc);
-        this.state = new AgentState(state);
-        this.epoch = epoch;
-    }
-
-    AgentLoc(AgentLoc prior) {
-        this.loc = new Point(prior.loc);
-        this.state = new AgentState(prior.state);
-        this.epoch = prior.epoch;
-    }
-}
 
 public class GameState {
     private int currentTurn;
