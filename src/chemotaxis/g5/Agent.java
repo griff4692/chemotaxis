@@ -16,6 +16,7 @@ import java.util.Map;
 import java.util.Set;
 import java.util.stream.Collectors;
 
+
 public class Agent extends chemotaxis.sim.Agent {
     private static Map<Integer, DirectionType> intToDirection = 
                                     Map.of(4, DirectionType.CURRENT, 0, DirectionType.NORTH,
@@ -68,6 +69,9 @@ public class Agent extends chemotaxis.sim.Agent {
         // grab required number of bits for direction: https://stackoverflow.com/questions/15255692/grabbing-n-bits-from-a-byte
         // lower three bits represent current direction/gradient direction we're following
         int prevGradientDirection = previousState & 0x7;
+        if(prevGradientDirection > 4 || prevGradientDirection < 0){
+            prevGradientDirection = 0;
+        }
         int backwardsDirection = this.getBackwardsDirection(Agent.intToDirection.get(prevGradientDirection));
         int increasingGradDirectionType = this.getIncreasingGradient(chosenChemicalType, currentCell, neighborMap);
 
@@ -87,7 +91,7 @@ public class Agent extends chemotaxis.sim.Agent {
         }
 
         // can't find increasing direction => 1) keep going in previous direction 2) pick random (not previous) 3) pick backwards because stuck
-        Set<Integer> possibleMoveSet = this.getPossibleMoves(neighborMap);
+        Set<DirectionType> possibleMoveSet = this.getPossibleMoves(neighborMap);
         /*
         // check if previous direction is available (ie: continue forward)
         if (possibleMoveSet.contains(prevGradientDirection)) {
@@ -125,7 +129,7 @@ public class Agent extends chemotaxis.sim.Agent {
         return getNavigateMove(previousState, possibleMoveSet, backwardsDirection);
    }
 
-    private Move getNavigateMove(Byte previousState, Set<Integer> possibleMoveSet, int backwardsDirection){
+    private Move getNavigateMove(Byte previousState, Set<DirectionType> possibleMoveSet, int backwardsDirection){
         //Using second and third bit from the left as wallFollow bits
         //Using fourth and fifth bit from the left as the Pledge Direction bits
         int wallFollow = (previousState >> 5) & 3;
@@ -139,17 +143,17 @@ public class Agent extends chemotaxis.sim.Agent {
         if(wallFollow == 0){
             //If we cannot move in the pledge direction
             if(!possibleMoveSet.contains(pledgeDirection)){
-                //Now find what way we can move, then set wall following to 1 for right turns, 2 for left turns
+                //Now find what way we can move, then set wall following to 2 for left turns, 1 for right turns
                 if(possibleMoveSet.contains(relativePledge[1])){
-                    move.currentState = (byte) ((previousState | (1 << 5)) & ~(1 << 6));
+                    move.currentState = (byte) ((previousState | (1 << 6)) & ~(1 << 5));
                     move.directionType= relativePledge[1];
                 }
                 else if(possibleMoveSet.contains(relativePledge[0])){
-                    move.currentState = (byte) ((previousState | (1 << 6)) & ~(1 << 5));
+                    move.currentState = (byte) ((previousState | (1 << 5)) & ~(1 << 6));
                     move.directionType =  relativePledge[0];
                 }
                 else{
-                    move.currentState = (byte) ((previousState | (1 << 5)) & ~(1 << 6));
+                    move.currentState = (byte) ((previousState | (1 << 6)) & ~(1 << 5));
                     move.directionType = relativePledge[2];
                 }
             //We can move in the pledge direction, and do so, no wall following.
@@ -211,9 +215,9 @@ public class Agent extends chemotaxis.sim.Agent {
                     move.currentState = (byte) ((previousState & ~(1 << 5)) & ~(1 << 6));
                     move.directionType = pledgeDirection;
                 }
-            //
+            //Follow the wall
             } else {
-                move.currentState = (byte) ((previousState | (1 << 5)) & ~(1 << 6));
+                move.currentState = (byte) ((previousState | (1 << 6)) & ~(1 << 5));
                 if (possibleMoveSet.contains(relativeBack[1])) {
                     move.directionType = relativeBack[1];
                 } else if (possibleMoveSet.contains(relativeBack[2])) {
@@ -225,7 +229,7 @@ public class Agent extends chemotaxis.sim.Agent {
                 }
             }
         }
-        //Set previous move bits.
+        //Set gradient move bits to CURRENT.
         move.currentState = (byte)(move.currentState & ~(3));
         move.currentState = (byte)(move.currentState | directionToInt.get(move.directionType));
         return move;
@@ -253,26 +257,26 @@ public class Agent extends chemotaxis.sim.Agent {
     private int getBackwardsDirection(DirectionType directionType) {
         int retDir = 0;
         switch (directionType) {
-            case NORTH: retDir = 2; // SOUTH
+            case NORTH: retDir = 1; // SOUTH
                 break;
-            case SOUTH: retDir = 1;
+            case SOUTH: retDir = 0;
                 break;
-            case EAST: retDir = 4;
+            case EAST: retDir = 3;
                 break;
-            case WEST: retDir = 3;
+            case WEST: retDir = 2;
                 break;
-            default: retDir = 0;
+            default: retDir = 4;
                 break;
         }
         return retDir;
     }
 
-    private Set<Integer> getPossibleMoves(Map<DirectionType, ChemicalCell> neighborMap) {
-        Set<Integer> possibleMovesSet = new HashSet<>();
+    private Set<DirectionType> getPossibleMoves(Map<DirectionType, ChemicalCell> neighborMap) {
+        Set<DirectionType> possibleMovesSet = new HashSet<>();
         
         for (Map.Entry<DirectionType, ChemicalCell> entry : neighborMap.entrySet()) {
             if (entry.getValue().isOpen()) {
-                possibleMovesSet.add(Agent.directionToInt.get(entry.getKey()));
+                possibleMovesSet.add(entry.getKey());
             }
         }
 
@@ -281,7 +285,7 @@ public class Agent extends chemotaxis.sim.Agent {
 
     // get the greatest increasing direction from our neighbouring cells
     private int getIncreasingGradient(ChemicalType chosenChemicalType, ChemicalCell currentCell, Map<DirectionType, ChemicalCell> neighborMap) {
-        int increasingGradDirection = 0;
+        int increasingGradDirection = 4;
         double highestNetAttraction = 0.0;
 
         for (Map.Entry<DirectionType, ChemicalCell> entry : neighborMap.entrySet()) {
