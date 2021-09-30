@@ -72,7 +72,6 @@ public class Controller extends chemotaxis.sim.Controller {
         Point adjustedStart = new Point(start.x-1, start.y-1);
         Point adjustedTarget = new Point(target.x-1, target.y-1);
         this.gameState = new GameState(adjustedStart, adjustedTarget, agentGoal, spawnFreq, budget, grid);
-
         dist = new int[size][size][4];
         // Necessary since (0,0) on the game board is labeled (1,1)
         modifiedStart.x=start.x-1;
@@ -94,14 +93,14 @@ public class Controller extends chemotaxis.sim.Controller {
         // Run the shortest paths algorithm. Results are stored in `routes`
         // and keyed by the number of turns necessary for the path.
 
-        findshortestpath(grid,budget);
+        findshortestpath(grid,100);
 
         // Select the fastest route within our budget.
         // Routes with more turns are faster, otherwise `findshortestpath` will terminate
         // without adding a route for that number of turns. Therefore, if key `5` exists in
         // `routes`, it's route is strictly shorter than the route for key `4`.
 
-        for (int i=0;i<budget;i++) {
+        for (int i=0;i<100;i++) {
             if (!routes.containsKey(i)) {
                 break;
             }
@@ -112,16 +111,21 @@ public class Controller extends chemotaxis.sim.Controller {
         }
 
         this.selectedRoute = budget / agentGoal - 1;
-        while (!routes.containsKey(this.selectedRoute)) {
+        while (!routes.containsKey(this.selectedRoute) && this.selectedRoute>=0) {
             this.selectedRoute-=1;
         }
-        if (routes.get(this.selectedRoute).size()==0) {
-            strategy=StrategyChoice.weak;
-            planWeak(budget,agentGoal);
-            return;
+        if (routes.containsKey(this.selectedRoute) && routes.get(this.selectedRoute).size()!=0) {
+            scheduleAllAgents(this.selectedRoute,simTime,spawnFreq,agentGoal);
         }
 
-        scheduleAllAgents(this.selectedRoute,simTime,spawnFreq,agentGoal);
+        if (this.selectedRoute<0 || routes.get(this.selectedRoute).size()==0)  {
+            strategy=StrategyChoice.weak;
+        }
+        if (strategy==StrategyChoice.weak) {
+            planWeak(budget,agentGoal);
+        }
+
+
 
     }
 
@@ -168,8 +172,8 @@ public class Controller extends chemotaxis.sim.Controller {
     }
 */
     private void planWeak(int budget,int agentGol) {
-        int turnChoice=budget;
-        for (int i=budget;i>=0;i--) {
+        int turnChoice=100;
+        for (int i=100;i>=0;i--) {
             if (routes.containsKey(i)) {
                 turnChoice = i;
                 break;
@@ -177,25 +181,28 @@ public class Controller extends chemotaxis.sim.Controller {
         }
         this.selectedRoute = turnChoice;
         int length = routes.get(turnChoice).size()-1;
+        System.out.println(length);
+        Color currentColor = Color.blue;
         if (budget<length/5) {
-            Color currentColor = Color.blue;
             int rallyDist = 0;
-            for (int j=0;j<budget;j++) {
+            for (int j=0;j<budget-1;j++) {
                 weakPlan.put(rallyDist + length / budget,currentColor);
-                rallyDist += rallyDist + length / budget;
+                rallyDist += length / budget;
                 currentColor = currentColor.next();
             }
         }
         else {
-            Color currentColor = Color.blue;
-            int rallyDist = 0;
-            for (int j=0;j<length/5;j++) {
-                weakPlan.put(rallyDist + 5,currentColor);
-                rallyDist += rallyDist + 5;
+            int rallyDist = 5;
+            for (int j=0;j<length/5-1;j++) {
+                weakPlan.put(rallyDist,currentColor);
+                System.out.println(rallyDist);
+                System.out.println(currentColor);
+                rallyDist += 5;
                 currentColor = currentColor.next();
             }
         }
-        System.out.println(weakPlan);
+        weakPlan.put(length,currentColor);
+
     }
 
 
@@ -382,6 +389,9 @@ public class Controller extends chemotaxis.sim.Controller {
      * @return
      */
     private ChemicalPlacement _applyChemicals(Integer currentTurn, Integer chemicalsRemaining, ArrayList<Point> locations, ChemicalCell[][] grid) {
+        if (chemicalsRemaining<=0) {
+            return new ChemicalPlacement();
+        }
         ChemicalPlacement chemicalPlacement = new ChemicalPlacement();
         if (strategy==StrategyChoice.strong) {
             currentTurn-=1;
@@ -400,26 +410,27 @@ public class Controller extends chemotaxis.sim.Controller {
             return chemicalPlacement ;
         }
         else {
-            if (weakPlan.containsKey(currentRallyPoint)) {
-                chemicalPlacement.location = new Point(routes.get(this.selectedRoute).get(currentRallyPoint).x+1,
+            while (!weakPlan.containsKey(currentRallyPoint)) {
+                currentRallyPoint += 1;
+                if (currentRallyPoint>=routes.get(this.selectedRoute).size()) {
+                    currentRallyPoint=0;
+                }
+            }
+            chemicalPlacement.location = new Point(routes.get(this.selectedRoute).get(currentRallyPoint).x+1,
                     routes.get(this.selectedRoute).get(currentRallyPoint).y+1);
-                if (weakPlan.get(currentRallyPoint)==Color.blue) {
-                    chemicalPlacement.chemicals.add(ChemicalCell.ChemicalType.BLUE);
-                }
-                if (weakPlan.get(currentRallyPoint)==Color.red) {
-                    chemicalPlacement.chemicals.add(ChemicalCell.ChemicalType.RED);
-                }
-                if (weakPlan.get(currentRallyPoint)==Color.green) {
-                    chemicalPlacement.chemicals.add(ChemicalCell.ChemicalType.GREEN);
-                }
-                currentRallyPoint+=1;
-                return chemicalPlacement;
+            if (weakPlan.get(currentRallyPoint)==Color.blue) {
+                chemicalPlacement.chemicals.add(ChemicalCell.ChemicalType.BLUE);
             }
-            else {
-                currentRallyPoint+=1;
+            if (weakPlan.get(currentRallyPoint)==Color.red) {
+                chemicalPlacement.chemicals.add(ChemicalCell.ChemicalType.RED);
             }
+            if (weakPlan.get(currentRallyPoint)==Color.green) {
+                chemicalPlacement.chemicals.add(ChemicalCell.ChemicalType.GREEN);
+            }
+            currentRallyPoint+=1;
+            return chemicalPlacement;
         }
-        if (currentTurn == 1) {
+        /*if (currentTurn == 1) {
             chemicalPlacement.location = start;
             chemicalPlacement.chemicals.add(ChemicalCell.ChemicalType.GREEN);
             return chemicalPlacement;
@@ -461,7 +472,7 @@ public class Controller extends chemotaxis.sim.Controller {
             chemicalPlacement.location = new Point(loc.x + 1, loc.y + 1);
             chemicalPlacement.chemicals.add(ChemicalCell.ChemicalType.BLUE);
         }
-        return chemicalPlacement;
+        return chemicalPlacement;*/
     }
 
     /**

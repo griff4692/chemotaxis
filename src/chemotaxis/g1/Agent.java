@@ -254,7 +254,7 @@ public class Agent extends chemotaxis.sim.Agent {
             ChemicalType nextColor = nextColorWeak2(followColor);
             followDirection = towardsGradient(nextColor, neighborMap);
             if (followDirection != DirectionType.CURRENT) {
-                nextState.setFollowColor(nextColor);
+                nextState.changeFollowColor(followColor);
             }
         }
         nextMove.currentState = nextState.serialize();
@@ -284,6 +284,9 @@ public class Agent extends chemotaxis.sim.Agent {
      */
     private static DirectionType towardsGradient(ChemicalType followColor, Map<DirectionType, ChemicalCell> neighborMap) {
         // TODO: Does this conflict logic make sense?
+        System.out.println(followColor);
+
+
         boolean conflict = false;
         double maxConcentration = 0.0;
         DirectionType maxDirection = DirectionType.CURRENT;
@@ -291,6 +294,9 @@ public class Agent extends chemotaxis.sim.Agent {
         for (DirectionType d : neighborMap.keySet()) {
             ChemicalCell cell = neighborMap.get(d);
             double concentration = cell.getConcentration(followColor);
+            if( d == DirectionType.CURRENT) {
+                System.out.println(concentration);
+            }
             if (concentration == maxConcentration) {
                 conflict = true;
             } else if (concentration > maxConcentration) {
