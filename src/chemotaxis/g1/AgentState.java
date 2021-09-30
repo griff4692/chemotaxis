@@ -79,6 +79,7 @@ public class AgentState {
                 break;
             case GREEN:
                 this.state |= GREEN_BITS;
+                break;
             default:
                 throw new RuntimeException("Color state cannot be 11");
         }
