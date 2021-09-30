@@ -166,51 +166,51 @@ public class Agent extends chemotaxis.sim.Agent {
             // If hitting wall and neighbours are free, turn left, else turn where obstacles allow
             if(neighborMap.get(lastMove).isBlocked()){
                 if(lastMove == DirectionType.NORTH){
-                    if (neighborMap.get(DirectionType.WEST).isBlocked()){
-                        move.directionType = DirectionType.EAST;
+                    if (neighborMap.get(DirectionType.EAST).isBlocked()){
+                        move.directionType = DirectionType.WEST;
                     }
                     else if (neighborMap.get(DirectionType.EAST).isBlocked() &&
                             neighborMap.get(DirectionType.WEST).isBlocked()){
                         move.directionType = DirectionType.SOUTH;
                     }
                     else{
-                        move.directionType = DirectionType.WEST;
+                        move.directionType = DirectionType.EAST;
                     }
                 }
                 else if(lastMove == DirectionType.WEST){
-                    if (neighborMap.get(DirectionType.SOUTH).isBlocked()){
-                        move.directionType = DirectionType.NORTH;
+                    if (neighborMap.get(DirectionType.NORTH).isBlocked()){
+                        move.directionType = DirectionType.SOUTH;
                     }
                     else if (neighborMap.get(DirectionType.SOUTH).isBlocked() &&
                             neighborMap.get(DirectionType.NORTH).isBlocked()){
                         move.directionType = DirectionType.EAST;
                     }
                     else{
-                        move.directionType = DirectionType.SOUTH;
+                        move.directionType = DirectionType.NORTH;
                     }
                 }
                 else if(lastMove == DirectionType.SOUTH){
-                    if (neighborMap.get(DirectionType.EAST).isBlocked()){
-                        move.directionType = DirectionType.WEST;
+                    if (neighborMap.get(DirectionType.WEST).isBlocked()){
+                        move.directionType = DirectionType.EAST;
                     }
                     else if (neighborMap.get(DirectionType.EAST).isBlocked() &&
                             neighborMap.get(DirectionType.WEST).isBlocked()){
                         move.directionType = DirectionType.NORTH;
                     }
                     else{
-                        move.directionType = DirectionType.EAST;
+                        move.directionType = DirectionType.WEST;
                     }
                 }
                 else if(lastMove == DirectionType.EAST){
-                    if (neighborMap.get(DirectionType.NORTH).isBlocked()){
-                        move.directionType = DirectionType.SOUTH;
+                    if (neighborMap.get(DirectionType.SOUTH).isBlocked()){
+                        move.directionType = DirectionType.NORTH;
                     }
                     else if (neighborMap.get(DirectionType.NORTH).isBlocked() &&
                             neighborMap.get(DirectionType.SOUTH).isBlocked()){
                         move.directionType = DirectionType.WEST;
                     }
                     else{
-                        move.directionType = DirectionType.NORTH;
+                        move.directionType = DirectionType.SOUTH;
                     }
                 }
             }
