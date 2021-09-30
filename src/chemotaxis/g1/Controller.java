@@ -48,10 +48,12 @@ public class Controller extends chemotaxis.sim.Controller {
     private Map<Integer,Integer> strongStrategy = new HashMap<>();
     // a initial schedule if the strategy is weak
     // initialScheduleWeak[i]=color_a means put a color_a chemical at i+1 cell on the route
-    private Map<Integer, Color> initialScheduleWeak = new HashMap<>();
+    private Map<Integer, Color> weakPlan = new HashMap<>();
 
     // Game State for IDS lookahead
     private GameState gameState;
+
+    private int currentRallyPoint = 0;
 
     /**
      * Controller constructor
@@ -115,6 +117,7 @@ public class Controller extends chemotaxis.sim.Controller {
         }
         if (routes.get(this.selectedRoute).size()==0) {
             strategy=StrategyChoice.weak;
+            planWeak(budget,agentGoal);
             return;
         }
 
@@ -164,7 +167,36 @@ public class Controller extends chemotaxis.sim.Controller {
         }
     }
 */
-
+    private void planWeak(int budget,int agentGol) {
+        int turnChoice=budget;
+        for (int i=budget;i>=0;i--) {
+            if (routes.containsKey(i)) {
+                turnChoice = i;
+                break;
+            }
+        }
+        this.selectedRoute = turnChoice;
+        int length = routes.get(turnChoice).size()-1;
+        if (budget<length/5) {
+            Color currentColor = Color.blue;
+            int rallyDist = 0;
+            for (int j=0;j<budget;j++) {
+                weakPlan.put(rallyDist + length / budget,currentColor);
+                rallyDist += rallyDist + length / budget;
+                currentColor = currentColor.next();
+            }
+        }
+        else {
+            Color currentColor = Color.blue;
+            int rallyDist = 0;
+            for (int j=0;j<length/5;j++) {
+                weakPlan.put(rallyDist + 5,currentColor);
+                rallyDist += rallyDist + 5;
+                currentColor = currentColor.next();
+            }
+        }
+        System.out.println(weakPlan);
+    }
 
 
     private void scheduleAllAgents(int turnChoice, int simTime, int spawnFreq, int agentGoal) {
@@ -366,6 +398,26 @@ public class Controller extends chemotaxis.sim.Controller {
                 }
             }
             return chemicalPlacement ;
+        }
+        else {
+            if (weakPlan.containsKey(currentRallyPoint)) {
+                chemicalPlacement.location = new Point(routes.get(this.selectedRoute).get(currentRallyPoint).x+1,
+                    routes.get(this.selectedRoute).get(currentRallyPoint).y+1);
+                if (weakPlan.get(currentRallyPoint)==Color.blue) {
+                    chemicalPlacement.chemicals.add(ChemicalCell.ChemicalType.BLUE);
+                }
+                if (weakPlan.get(currentRallyPoint)==Color.red) {
+                    chemicalPlacement.chemicals.add(ChemicalCell.ChemicalType.RED);
+                }
+                if (weakPlan.get(currentRallyPoint)==Color.green) {
+                    chemicalPlacement.chemicals.add(ChemicalCell.ChemicalType.GREEN);
+                }
+                currentRallyPoint+=1;
+                return chemicalPlacement;
+            }
+            else {
+                currentRallyPoint+=1;
+            }
         }
         if (currentTurn == 1) {
             chemicalPlacement.location = start;
