@@ -71,14 +71,18 @@ public class Agent extends chemotaxis.sim.Agent {
         int backwardsDirection = this.getBackwardsDirection(Agent.intToDirection.get(prevGradientDirection));
         int increasingGradDirectionType = this.getIncreasingGradient(chosenChemicalType, currentCell, neighborMap);
 
-        if (increasingGradDirectionType != 0) {
+        if (increasingGradDirectionType != directionToInt.get(DirectionType.CURRENT) && increasingGradDirectionType != backwardsDirection) {
             move.directionType = Agent.intToDirection.get(increasingGradDirectionType);
             // unset then set the lowest three bits with the right direction
             // source: https://stackoverflow.com/questions/31007977/how-to-set-3-lower-bits-of-uint8-t-in-c
             // right now we're just using lowest three bits for anything
 
             //TODO set the pledge direction to the increasingGrad directionType and TEST
-            move.currentState = (byte) increasingGradDirectionType;
+            int currentState = previousState;
+            currentState = (byte)(currentState & ~(3));
+            currentState = (byte)(currentState | increasingGradDirectionType);
+            currentState = currentState | (increasingGradDirectionType << 3);
+            move.currentState = (byte) currentState;
             return move; //done
         }
 
@@ -221,6 +225,9 @@ public class Agent extends chemotaxis.sim.Agent {
                 }
             }
         }
+        //Set previous move bits.
+        move.currentState = (byte)(move.currentState & ~(3));
+        move.currentState = (byte)(move.currentState | directionToInt.get(move.directionType));
         return move;
     }
     //Helper function to get relative directions for a given direction
@@ -286,7 +293,6 @@ public class Agent extends chemotaxis.sim.Agent {
                 increasingGradDirection = Agent.directionToInt.get(entry.getKey());
             }
         }
-
         return increasingGradDirection;
     }
 
