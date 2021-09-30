@@ -53,6 +53,7 @@ public class Controller extends chemotaxis.sim.Controller {
 		if(path == null) {
 			simPrinter.println("creating path");
 			path = getPath(grid);
+			System.out.println("We got here!");
 		}
 
 		ArrayList<AnalysisData> data;
@@ -97,9 +98,13 @@ public class Controller extends chemotaxis.sim.Controller {
 			data = analyzer.analyzePath(path, arrayLength);
 		}
 
+		for(Point p: path){
+			System.out.println(p);
+		}
+
 		placementCells = new ArrayList<Point>();
 		// Analyze the selected path and get all turning points as initial placement cells
-		getIntervals(path, true);
+		getIntervals(path, true, grid);
 		// Make sure that the target is included
 		// If there is turnning point inside target cell's cover range, remove it.
 		int last = path.indexOf(placementCells.get(placementCells.size()-1));
@@ -306,7 +311,11 @@ public class Controller extends chemotaxis.sim.Controller {
 	}
 
 
-	Integer getIntervals(ArrayList<Point> current){
+
+
+
+	Integer getIntervals(ArrayList<Point> current, boolean setTurning, ChemicalCell[][] grid){
+		Integer length = grid.length;
 		ArrayList<Integer> values = new ArrayList<>();
 		for (int i=1;i<current.size();i=i+1) {
 			Point curr = current.get(i);
@@ -316,80 +325,88 @@ public class Controller extends chemotaxis.sim.Controller {
 			Integer prev_x = prev.x;
 			Integer prev_y = prev.y;
 
-			if (curr_x - prev_x < 0) {
+			if (curr_x - prev_x < 0) { //going left
 				values.add(1);
-			} else if (curr_x - prev_x > 0) {
+			} else if (curr_x - prev_x > 0) { //going right
 				values.add(2);
-			} else if (curr_y - prev_y < 0) {
+			} else if (curr_y - prev_y < 0) { //going up
 				values.add(3);
 			} else {
-				values.add(4);
+				values.add(4); //going down
 			}
 		}
 
 		Integer numIntervals = 0;
 
-		for (int i=1;i<values.size();i=i+1){
+		for (int i=0;i<values.size()-1;i=i+1){
+			Point currpoint = current.get(i+1);
+			Point wallpointcontinued;
+			Point wallpointleft;
 			Integer curr = values.get(i);
-			Integer prev = values.get(i-1);
-			if (curr == prev) {
-				continue;
+			Integer future = values.get(i+1);
+
+			if (curr==3 && future==2) {
+				wallpointcontinued = new Point(currpoint.x, currpoint.y-1);
+				wallpointleft = new Point(currpoint.x-1, currpoint.y);
+				if (pointInBounds(length,wallpointleft) && pointInBounds(length,wallpointcontinued)){
+					if (!grid[wallpointcontinued.x-1][wallpointcontinued.y-1].isOpen() && !grid[wallpointleft.x-1][wallpointleft.y-1].isOpen()){
+						numIntervals = numIntervals + 1;
+						if(setTurning){
+							placementCells.add(current.get(i+1));
+							System.out.println("Point after Turning " + path.get(i+1) + " ");
+						}
+					}}
 			}
-			else{
-				numIntervals = numIntervals + 1;
+			else if (curr==2 && future==4) {
+				wallpointcontinued = new Point(currpoint.x+1, currpoint.y);
+				wallpointleft = new Point(currpoint.x, currpoint.y-1);
+				if (pointInBounds(length,wallpointleft) && pointInBounds(length,wallpointcontinued)){
+				if (!grid[wallpointcontinued.x-1][wallpointcontinued.y-1].isOpen() && !grid[wallpointleft.x-1][wallpointleft.y-1].isOpen()){
+					numIntervals = numIntervals + 1;
+					if(setTurning){
+						placementCells.add(current.get(i+1));
+						System.out.println("Point after Turning " + path.get(i+1) + " ");
+					}
+				}}
 			}
-		}
-
-		return numIntervals;
-	}
-
-	Integer getIntervals(ArrayList<Point> current, boolean setTurning){
-		ArrayList<Integer> values = new ArrayList<>();
-		for (int i=1;i<current.size();i=i+1) {
-			Point curr = current.get(i);
-			Integer curr_x = curr.x;
-			Integer curr_y = curr.y;
-			Point prev = current.get(i - 1);
-			Integer prev_x = prev.x;
-			Integer prev_y = prev.y;
-
-			if (curr_x - prev_x < 0) {
-				values.add(1);
-			} else if (curr_x - prev_x > 0) {
-				values.add(2);
-			} else if (curr_y - prev_y < 0) {
-				values.add(3);
-			} else {
-				values.add(4);
+			else if (curr==4 && future==1) {
+				wallpointcontinued = new Point(currpoint.x, currpoint.y+1);
+				wallpointleft = new Point(currpoint.x+1,currpoint.y);
+				if (pointInBounds(length,wallpointleft) && pointInBounds(length,wallpointcontinued)){
+				if (!grid[wallpointcontinued.x-1][wallpointcontinued.y-1].isOpen() && !grid[wallpointleft.x-1][wallpointleft.y-1].isOpen()){
+					numIntervals = numIntervals + 1;
+					if(setTurning){
+						placementCells.add(current.get(i+1));
+						System.out.println("Point after Turning " + path.get(i+1) + " ");
+					}
+				}}
 			}
-		}
-
-		Integer numIntervals = 0;
-
-		for (int i=1;i<values.size();i=i+1){
-			Integer curr = values.get(i);
-			Integer prev = values.get(i-1);
-			if (curr == prev) {
-				continue;
-			}
-			else{
-				numIntervals = numIntervals + 1;
-				if(setTurning){
-					placementCells.add(current.get(i+1));
-					System.out.println("Point after Turning " + path.get(i+1) + " ");
+			else if(curr==1 && future==3) {
+				wallpointcontinued = new Point(currpoint.x - 1, currpoint.y);
+				wallpointleft = new Point(currpoint.x, currpoint.y + 1);
+				if (pointInBounds(length, wallpointleft) && pointInBounds(length, wallpointcontinued)) {
+					if (!grid[wallpointcontinued.x - 1][wallpointcontinued.y - 1].isOpen() && !grid[wallpointleft.x - 1][wallpointleft.y - 1].isOpen()) {
+						numIntervals = numIntervals + 1;
+						if (setTurning) {
+							placementCells.add(current.get(i + 1));
+							System.out.println("Point after Turning " + path.get(i + 1) + " ");
+						}
+					}
 				}
 			}
 		}
-
 		return numIntervals;
 	}
+
+
+
 
 	class CustomIntegerComparator implements Comparator<ArrayList<Point>> {
 
 		@Override
 		public int compare(ArrayList<Point> o1, ArrayList<Point> o2) {
-			Integer numIntervalso1 = getIntervals(o1);
-			Integer numIntervalso2 = getIntervals(o2);
+			Integer numIntervalso1 = getIntervals(o1, false, grid);
+			Integer numIntervalso2 = getIntervals(o2, false,grid);
 			Integer numNeighborso1 = countNeighborsInPath(o1);
 			Integer numNeighborso2 = countNeighborsInPath(o2);
 			if (numIntervalso1 - (int)0.5*numNeighborso1 + o1.size() < numIntervalso2 - (int)0.5*numNeighborso2 + o2.size()){
