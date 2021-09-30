@@ -67,6 +67,7 @@ public class Agent extends chemotaxis.sim.Agent {
 		boolean turn = false;
 		int colour;
 
+		System.out.println("checking for blue");
 		for (DirectionType directionType : neighborMap.keySet()) {
 			double a = neighborMap.get(directionType).getConcentration(chosenChemicalType);
 			System.out.println(a + " directionType: " + directionType);
@@ -80,18 +81,20 @@ public class Agent extends chemotaxis.sim.Agent {
 
 			}
 		}
-
+		System.out.println("Out of blue loop");
 		if(!turn){
 			// No blue found.
 
 			if(previousState == 0){
 				//first turn and no blue . So follow red-green strategy, start with red
+				System.out.println("No blue found and first turn");
 				previousState = (byte)(128 | 64) ;
 			}
 			else if ((previousState & 128) == 0){
 				// no blue found, but strategy is follow the turns
 				move.directionType = findPreviousState(previousState);
 				move.currentState = previousState;
+				System.out.println("No blue found but strategy is follow the turns");
 
 				return move;
 			}
@@ -115,6 +118,8 @@ public class Agent extends chemotaxis.sim.Agent {
 			highestConcentration = currentCell.getConcentration(chosenChemicalType);
 			double previousColourConcentration;
 
+			System.out.println("Strategy red-green : " + chosenChemicalType + " current conc : " + highestConcentration);
+
 			for (DirectionType directionType : neighborMap.keySet()) {
 				double b = neighborMap.get(directionType).getConcentration(chosenChemicalType);
 				System.out.println(1 + " " + b + "directionType: " + directionType);
@@ -127,8 +132,9 @@ public class Agent extends chemotaxis.sim.Agent {
 
 			}
 
-			if(allZero(neighborMap, chosenChemicalType, currentCell) == 1 && firstTurn == 1){
+			if(allZero(neighborMap, chosenChemicalType, currentCell) == 1 /*&& firstTurn == 1*/){
 				move.directionType = DirectionType.CURRENT;
+				move.currentState = previousState;
 				dirChanged = true;
 				return move;
 			}
@@ -145,13 +151,24 @@ public class Agent extends chemotaxis.sim.Agent {
 				}
 
 				highestConcentration = currentCell.getConcentration(chosenChemicalType);
+				System.out.println("Strategy red-green : " + chosenChemicalType + " current conc : " + highestConcentration);
 
 				for (DirectionType directionType : neighborMap.keySet()) {
-					if (highestConcentration <= neighborMap.get(directionType).getConcentration(chosenChemicalType)) {
+					double c = neighborMap.get(directionType).getConcentration(chosenChemicalType);
+					System.out.println(" In 2nd rg loop, concent:  " + highestConcentration + "direction type" + directionType + ", " + chosenChemicalType);
+					if (highestConcentration <= c) {
 						highestConcentration = neighborMap.get(directionType).getConcentration(chosenChemicalType);
 						move.directionType = directionType;
+						System.out.println("Strategy red-green : " +  " found higher conc : " + highestConcentration);
 						dirChanged = true;
 					}
+				}
+
+				if(allZero(neighborMap, chosenChemicalType, currentCell) == 1){
+					move.directionType = DirectionType.CURRENT;
+					move.currentState = previousState;
+					dirChanged = true;
+					return move;
 				}
 			}
 		}
