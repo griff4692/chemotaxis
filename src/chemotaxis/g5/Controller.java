@@ -12,8 +12,7 @@ import chemotaxis.sim.ChemicalCell.ChemicalType;
 public class Controller extends chemotaxis.sim.Controller {
     LinkedList<Point> path1 = new LinkedList<Point>();
     LinkedList<Point> path2 = new LinkedList<Point>();
-    LinkedList<Point> turn1 = new LinkedList<Point>();
-    LinkedList<Point> turn2 = new LinkedList<Point>();
+    LinkedList<Point> chemAtFork = new LinkedList<Point>();
     private int curPlacement = 1;
     private int optStepGap = 5;
     /**
@@ -35,15 +34,27 @@ public class Controller extends chemotaxis.sim.Controller {
 
         int[][] visited = new int[grid.length][grid[0].length];
         initializeVisited(visited,grid);
-        calculatePath(start, target, visited, grid, path1, turn1);
-
+        calculatePath(start, target, visited, grid, path1);
+        LinkedList<Point> turns1 = new LinkedList<Point> ();
+        if(path1.size()>0)
+            calculateTurn(path1,turns1,grid);
         initializeVisited(visited,grid);
 
         //blocking path1 and skipping target
         for (int i = 0; i < path1.size() - 1; i++)
             visited[path1.get(i).x - 1][path1.get(i).y - 1] = -1;
 
-        calculatePath(start, target, visited, grid, path2, turn2);
+        calculatePath(start, target, visited, grid, path2);
+        LinkedList<Point> turns2 = new LinkedList<Point> ();
+        if(path2.size()>0)
+            calculateTurn(path2,turns2,grid);
+
+        if(turns1.size()<=turns2.size())
+            chemAtFork = turns1;
+
+        else if(turns1.size()>turns2.size())
+            chemAtFork = turns2;
+
     }
 
     private void initializeVisited(int[][] visited, ChemicalCell[][] grid){
@@ -58,7 +69,7 @@ public class Controller extends chemotaxis.sim.Controller {
         }
     }
 
-    private void calculatePath(Point start, Point target, int[][] visited, ChemicalCell[][] grid, LinkedList<Point> path, LinkedList<Point> turn){
+    private void calculatePath(Point start, Point target, int[][] visited, ChemicalCell[][] grid, LinkedList<Point> path){
         int[][] parent = new int[grid.length][grid[0].length];
         // 0->start, -1->no parent, 1->top, 2-> right, 3->down, 4->left
 
@@ -144,50 +155,73 @@ public class Controller extends chemotaxis.sim.Controller {
                 System.out.print(path.get(i).y);
                 System.out.println("");
             }*/
-
-            //turns
-            if(path.size()>1)
-                calculateTurn(path, turn);
         }
     }
 
-    private void calculateTurn(LinkedList<Point> path, LinkedList<Point> turn)
+    private void calculateTurn(LinkedList<Point> path, LinkedList<Point> turn, ChemicalCell[][] grid)
     {
         int x = path.get(0).x;
         int y = path.get(0).y;
+        int forkx = 0;
+        int forky = 0;
         int vertical = 0;
+        if(path.size()>4)
+            turn.add(path.get(3));
         if(x==path.get(1).x)
             vertical = 1;
         for (int i = 1; i < path.size();i++) {
             if(x!=path.get(i).x && vertical==1)
             {
+                forkx = 0;
                 vertical = 0;
-                if(i==path.size()-2)
-                    turn.add(path.get(i+1));
-                else
-                    turn.add(path.get(i-1));
+                if(x-2>=0 && grid[x-2][y-1].isOpen())
+                    forkx+=1;
+                if(x<grid.length && grid[x][y-1].isOpen())
+                    forkx+=1;
+                if(y-2>=0 && grid[x-1][y-2].isOpen())
+                    forkx+=1;
+                if(y<grid[0].length && grid[x-1][y].isOpen())
+                    forkx+=1;
+
+                if(forkx>2)
+                    turn.add(path.get(i));
             }
-            else if(y!=path.get(i).y && vertical==0)
+            else if(y!=path.get(i).y && vertical==0 )
             {
+                forkx = 0;
                 vertical = 1;
-                if(i==path.size()-2)
-                    turn.add(path.get(i+1));
-                else
-                    turn.add(path.get(i-1));
+                if(x-2>=0 && grid[x-2][y-1].isOpen())
+                    forkx+=1;
+                if(x<grid.length && grid[x][y-1].isOpen())
+                    forkx+=1;
+                if(y-2>=0 && grid[x-1][y-2].isOpen())
+                    forkx+=1;
+                if(y<grid[0].length && grid[x-1][y].isOpen())
+                    forkx+=1;
+
+                if(forkx>2)
+                    turn.add(path.get(i));
             }
             x = path.get(i).x;
             y = path.get(i).y;
         }
         if(turn.get(turn.size()-1)!=path.get(path.size()-1))
             turn.add(path.get(path.size()-1));
-
-        /*System.out.println("Printing turns");
+        /*
+        System.out.println("Printing path");
+        for (int i = 0; i < path.size(); i++) {
+            System.out.print(path.get(i).x);
+            System.out.print(" ");
+            System.out.print(path.get(i).y);
+            System.out.println("");
+        }*/
+        System.out.println("Printing turns");
         for (int i = 0; i < turn.size(); i++) {
             System.out.print(turn.get(i).x);
             System.out.print(" ");
             System.out.print(turn.get(i).y);
             System.out.println("");
-        }*/
+        }
     }
     /**
      * Apply chemicals to the map
@@ -201,6 +235,36 @@ public class Controller extends chemotaxis.sim.Controller {
      */
     @Override
     public ChemicalPlacement applyChemicals(Integer currentTurn, Integer chemicalsRemaining, ArrayList<Point> locations, ChemicalCell[][] grid) {
+        Point tempPrev;
+        Point tempCurr;
+        ChemicalType chosenChemicalType = ChemicalType.GREEN;
+        ChemicalPlacement ret = new ChemicalPlacement();
+        int currPosition = agentOnTurn(locations,chemAtFork) + 1;
+        if(currPosition<chemAtFork.size())
+        {
+            //check concentration of color on next location in comparison to current
+            if(currPosition>0)
+            {
+                tempCurr = chemAtFork.get(currPosition);
+                tempPrev = chemAtFork.get(currPosition-1);
+                if(grid[tempCurr.x-1][tempCurr.y-1].getConcentration(chosenChemicalType)<=grid[tempPrev.x-1][tempPrev.y-1].getConcentration(chosenChemicalType))
+                    ret.location = tempCurr;
+            }
+            else
+            {
+                for(int i=0;i<chemAtFork.size();i++) {
+                    tempCurr = chemAtFork.get(i);
+                    if (grid[tempCurr.x - 1][tempCurr.y - 1].getConcentration(chosenChemicalType) < 0.001) {
+                        ret.location = tempCurr;
+                        break;
+                    }
+                }
+            }
+            ret.chemicals.add(chosenChemicalType);
+        }
+        return ret;
+
+
         // get the closest point which is the one we will make go to exit:
         
         // Point closestAgent = getClosestAgent(locations);
@@ -218,17 +282,7 @@ public class Controller extends chemotaxis.sim.Controller {
 
         System.out.println("Placing green at: " + locToPlace.toString());*/
 
-        Point locToPlace ;
-        ChemicalPlacement ret = new ChemicalPlacement();
-        int currPosition = agentOnTurn(locations,turn1) + 1;
-        if(currPosition!=0 || currentTurn % optStepGap == 0)
-        {
 
-            locToPlace = turn1.get(currPosition%turn1.size());
-            ret.location = locToPlace;
-            ret.chemicals.add(ChemicalType.GREEN);
-            //locToPlace = path1.get((currentTurn+optStepGap)%path1.size());
-        }
         /*
         else if(grid.length>=50 && (currentTurn-optStepGap/2) % optStepGap == 0)
         {
@@ -236,7 +290,7 @@ public class Controller extends chemotaxis.sim.Controller {
             ret.location = locToPlace;
             ret.chemicals.add(ChemicalType.BLUE);
         }*/
-        return ret;
+
     }
     private int agentOnTurn(ArrayList<Point> locations,LinkedList<Point> turn){
         int found = -1;
