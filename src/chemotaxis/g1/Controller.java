@@ -3,6 +3,7 @@ package chemotaxis.g1;
 import java.awt.Point;
 import java.util.*;
 
+import chemotaxis.g1.ids.*;
 import chemotaxis.sim.ChemicalPlacement;
 import chemotaxis.sim.ChemicalCell;
 import chemotaxis.sim.SimPrinter;
@@ -69,8 +70,8 @@ public class Controller extends chemotaxis.sim.Controller {
      */
     public Controller(Point start, Point target, Integer size, ChemicalCell[][] grid, Integer simTime, Integer budget, Integer seed, SimPrinter simPrinter, Integer agentGoal, Integer spawnFreq) {
         super(start, target, size, grid, simTime, budget, seed, simPrinter, agentGoal, spawnFreq);
-        Point adjustedStart = new Point(start.x-1, start.y-1);
-        Point adjustedTarget = new Point(target.x-1, target.y-1);
+        Point adjustedStart = GameCell.zeroPoint(start);
+        Point adjustedTarget = GameCell.zeroPoint(target);
         this.gameState = new GameState(adjustedStart, adjustedTarget, agentGoal, spawnFreq, budget, grid);
         dist = new int[size][size][4];
         // Necessary since (0,0) on the game board is labeled (1,1)
@@ -498,7 +499,13 @@ public class Controller extends chemotaxis.sim.Controller {
 
         ChemicalPlacement chemicalPlacement = this._applyChemicals(currentTurn, chemicalsRemaining, locations, grid);
 
-        this.gameState = this.gameState.placeChemicalAndStep(chemicalPlacement);
+
+        // Need to adjust from 1-based index to 0-based
+        ChemicalPlacement adjustedPlacement = new ChemicalPlacement();
+        adjustedPlacement.location = GameCell.zeroPoint(chemicalPlacement.location);
+        adjustedPlacement.chemicals = chemicalPlacement.chemicals;
+
+        this.gameState = this.gameState.placeChemicalAndStep(adjustedPlacement);
         return chemicalPlacement;
     }
 
@@ -690,5 +697,25 @@ public class Controller extends chemotaxis.sim.Controller {
             }
         }
     }
-}
 
+
+    private ChemicalPlacement getWeakPlacement(Integer currentTurn, Integer chemicalsRemaining,
+                                               ArrayList<Point> locations, ChemicalCell[][]grid) {
+        ArrayList<Point> route = this.routes.get(this.selectedRoute);
+        ArrayList<Integer> turnAt = this.turnAt_simpleForm.get(this.selectedRoute);
+        // TODO (etm): We could cache this hashmap to speed things up ever so slightly
+        HashMap<Point, Point> turnJunctions = new HashMap<>();
+        for (Integer i : turnAt) {
+            turnJunctions.put(route.get(i), route.get(i+1));
+        }
+
+        IDSCandidateGenerator generator = new AgentsNearTurnGenerator(turnJunctions, 3);
+        IDSHeuristic heuristic = new AgentsOnPathHeuristic(route);
+
+        ChemicalPlacement placement = IDSRunner.search(this.gameState, generator, heuristic);
+        if (placement.location != null) {
+            placement.location = new Point(placement.location.x + 1, placement.location.y + 1);
+        }
+        return placement;
+    }
+}

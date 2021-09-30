@@ -100,4 +100,21 @@ public class GameCell {
         }
         throw new RuntimeException("unexpected DirectionType enum");
     }
+
+    /**
+     * Returns a new point that is zero indexed
+     *
+     * @param oneBasedPoint
+     * @return
+     */
+    public static Point zeroPoint(final Point oneBasedPoint) {
+        if (oneBasedPoint == null) {
+            return null;
+        }
+        Point zeroBasedPoint = new Point(oneBasedPoint.x - 1, oneBasedPoint.y - 1);
+        if (zeroBasedPoint.x < 0 || zeroBasedPoint.y < 0) {
+            throw new RuntimeException("underflow converting one based point to zero based");
+        }
+        return zeroBasedPoint;
+    }
 }

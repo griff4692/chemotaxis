@@ -20,6 +20,10 @@ public class IDSCandidate implements Comparable<IDSCandidate> {
 
     public void setPlacement(ChemicalPlacement placement) {
         this.placement = placement;
+        if (placement.location == null) {
+            this.repr = "";
+            return;
+        }
         StringBuilder sb = new StringBuilder();
         sb.append(placement.location.x);
         sb.append(',');

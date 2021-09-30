@@ -90,7 +90,7 @@ public class AgentState {
             return ChemicalType.RED;
         }
         else if ((this.state & COLOR_MASK) == GREEN_BITS) {
-            return ChemicalType.RED;
+            return ChemicalType.GREEN;
         }
         return ChemicalType.BLUE;
     }
