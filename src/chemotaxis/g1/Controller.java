@@ -433,7 +433,6 @@ public class Controller extends chemotaxis.sim.Controller {
 
             route.add(new Point(current));
         }
-
         routes.put(turn, new ArrayList<>(route));
     }
 
