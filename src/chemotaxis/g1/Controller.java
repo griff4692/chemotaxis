@@ -126,7 +126,9 @@ public class Controller extends chemotaxis.sim.Controller {
         while (!routes.containsKey(selectedRoute)) {
             selectedRoute-=1;
         }
-        rallyPoints = RallypointLayout.calculateLayout(routes.get(selectedRoute), grid);
+        if (strategy==StrategyChoice.weak) {
+            rallyPoints = RallypointLayout.calculateLayout(routes.get(selectedRoute), grid);
+        }
     }
 
  /*   private void simWeak(Point start, Point target, int agentGoal, int spawnFreq,
@@ -408,7 +410,7 @@ public class Controller extends chemotaxis.sim.Controller {
             }
             return chemicalPlacement;
         } else {
-            int refreshingRate = (spawnFreq * agentGoal) / budget / rallyPoints.rallyPoints.size();
+            int refreshingRate = (spawnFreq * agentGoal) / budget;
             if ((currentTurn - 1) % refreshingRate == 0) {
                 chemicalPlacement.location = GameCell.oneBasedPoint(rallyPoints.rallyPoints.get(currentRallyPoint));
                 switch (currentRallyPoint % 3) {
@@ -422,6 +424,7 @@ public class Controller extends chemotaxis.sim.Controller {
                         chemicalPlacement.chemicals.add(ChemicalCell.ChemicalType.GREEN);
                         break;
                 }
+                currentRallyPoint+=1;
                 return chemicalPlacement;
             }
         }
