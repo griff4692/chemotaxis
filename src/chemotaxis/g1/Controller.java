@@ -185,7 +185,7 @@ public class Controller extends chemotaxis.sim.Controller {
         }
         this.selectedRoute = turnChoice;
         int length = routes.get(turnChoice).size()-1;
-        System.out.println(length);
+//        System.out.println(length);
         Color currentColor = Color.blue;
         if (budget<length/5) {
             int rallyDist = 0;
@@ -199,8 +199,8 @@ public class Controller extends chemotaxis.sim.Controller {
             int rallyDist = 5;
             for (int j=0;j<length/5-1;j++) {
                 weakPlan.put(rallyDist,currentColor);
-                System.out.println(rallyDist);
-                System.out.println(currentColor);
+//                System.out.println(rallyDist);
+//                System.out.println(currentColor);
                 rallyDist += 5;
                 currentColor = currentColor.next();
             }
@@ -414,7 +414,7 @@ public class Controller extends chemotaxis.sim.Controller {
         } else {
 //            int refreshingRate = (spawnFreq * agentGoal) / budget;
 //            int refreshingRate = (this.agentGoal * this.spawnFreq) / (this.startingChemicals / rallyPoints.rallyPoints.size()) * 3;
-            int refreshingRate = (this.agentGoal * this.spawnFreq) / this.startingChemicals;
+            int refreshingRate = ((this.agentGoal + 10)* this.spawnFreq) / this.startingChemicals;
             if ((currentTurn - 1) % refreshingRate == 0) {
                 chemicalPlacement.location = GameCell.oneBasedPoint(rallyPoints.rallyPoints.get(currentRallyPoint));
                 switch (currentRallyPoint % 3) {
@@ -496,11 +496,11 @@ public class Controller extends chemotaxis.sim.Controller {
     public ChemicalPlacement applyChemicals(Integer currentTurn, Integer chemicalsRemaining, ArrayList<Point> locations, ChemicalCell[][] grid) {
         // TODO (etm): Debug only, remove this validation.
         //   Throws an exception if the game state deviates from expected.
-        try {
-            this.gameState.validateEquivalence(currentTurn, chemicalsRemaining, locations, grid);
-        } catch (RuntimeException e) {
-            System.err.println("" + e);
-        }
+//        try {
+//            this.gameState.validateEquivalence(currentTurn, chemicalsRemaining, locations, grid);
+//        } catch (RuntimeException e) {
+//            System.err.println("" + e);
+//        }
 
         ChemicalPlacement chemicalPlacement = this._applyChemicals(currentTurn, chemicalsRemaining, locations, grid);
 
