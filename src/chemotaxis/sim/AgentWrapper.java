@@ -32,6 +32,7 @@ public class AgentWrapper {
             Log.writeToVerboseLogFile("Exception for team " + this.agentName + "'s agent: " + e);
         }
 
+        timer.terminate();
         return move;
     }
     
