@@ -425,6 +425,9 @@ public class Controller extends chemotaxis.sim.Controller {
                         break;
                 }
                 currentRallyPoint+=1;
+                if (currentRallyPoint==rallyPoints.rallyPoints.size()) {
+                    currentRallyPoint =0;
+                }
                 return chemicalPlacement;
             }
         }
