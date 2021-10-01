@@ -110,7 +110,9 @@ public class Agent extends chemotaxis.sim.Agent {
         for (DirectionType directionType : neighborMap.keySet()) {
             if (highestConcentration < neighborMap.get(directionType).getConcentration(chosenChemicalType)) {
                 highestConcentration = neighborMap.get(directionType).getConcentration(chosenChemicalType);
-                move.directionType = directionType;
+                if (highestConcentration > threshold) {
+                    move.directionType = directionType;
+                }
             }
         }
         System.out.println("first priority: " + move.directionType);
@@ -135,33 +137,47 @@ public class Agent extends chemotaxis.sim.Agent {
         }
 
         // Prevent backwards movement
-        if (((move.directionType == DirectionType.NORTH && lastMove == DirectionType.SOUTH) ||
-                (move.directionType == DirectionType.SOUTH && lastMove == DirectionType.NORTH) ||
-                (move.directionType == DirectionType.EAST && lastMove == DirectionType.WEST) ||
-                (move.directionType == DirectionType.WEST && lastMove == DirectionType.EAST)) && !state){
-            if(neighborMap.get(lastMove).isOpen()){
-                move.directionType = lastMove;
-            }
-            else {
-                for(int i=0; i<4; i++){
-                    DirectionType directionType;
-                    switch (i) {
-                        case 0: directionType = DirectionType.NORTH;
+        if (chemIdx != 0) {
+            if ((move.directionType == DirectionType.NORTH && lastMove == DirectionType.SOUTH) ||
+                    (move.directionType == DirectionType.SOUTH && lastMove == DirectionType.NORTH) ||
+                    (move.directionType == DirectionType.EAST && lastMove == DirectionType.WEST) ||
+                    (move.directionType == DirectionType.WEST && lastMove == DirectionType.EAST)) {
+                if (neighborMap.get(lastMove).isOpen()) {
+                    move.directionType = lastMove;
+                } else {
+                    for (int i = 0; i < 4; i++) {
+                        DirectionType directionType;
+                        switch (i) {
+                            case 0:
+                                directionType = DirectionType.NORTH;
+                                break;
+                            case 1:
+                                directionType = DirectionType.SOUTH;
+                                break;
+                            case 2:
+                                directionType = DirectionType.EAST;
+                                break;
+                            case 3:
+                                directionType = DirectionType.WEST;
+                                break;
+                            default:
+                                directionType = DirectionType.NORTH;
+                                break;
+                        }
+                        if (directionType != lastMove && neighborMap.get(directionType).isOpen()) {
+                            move.directionType = directionType;
                             break;
-                        case 1: directionType = DirectionType.SOUTH;
-                            break;
-                        case 2: directionType = DirectionType.EAST;
-                            break;
-                        case 3: directionType = DirectionType.WEST;
-                            break;
-                        default: directionType = DirectionType.NORTH;
-                            break;
-                    };
-                    if (directionType != lastMove && neighborMap.get(directionType).isOpen()) {
-                        move.directionType = directionType;
-                        break;
+                        }
                     }
                 }
+                switch (chosenChemicalType) {
+                    case RED: chosenChemicalType = ChemicalType.GREEN;
+                        break;
+                    case GREEN: chosenChemicalType = ChemicalType.BLUE;
+                        break;
+                    case BLUE: chosenChemicalType = ChemicalType.RED;
+                        break;
+                };
             }
             System.out.println("prevent backward: " + move.directionType);
         }
@@ -175,7 +191,7 @@ public class Agent extends chemotaxis.sim.Agent {
                     }
                     else if (neighborMap.get(DirectionType.EAST).isBlocked() &&
                             neighborMap.get(DirectionType.WEST).isBlocked()){
-                        move.directionType = DirectionType.SOUTH;
+                        move.directionType = DirectionType.CURRENT;
                     }
                     else{
                         move.directionType = DirectionType.WEST;
@@ -187,7 +203,7 @@ public class Agent extends chemotaxis.sim.Agent {
                     }
                     else if (neighborMap.get(DirectionType.SOUTH).isBlocked() &&
                             neighborMap.get(DirectionType.NORTH).isBlocked()){
-                        move.directionType = DirectionType.EAST;
+                        move.directionType = DirectionType.CURRENT;
                     }
                     else{
                         move.directionType = DirectionType.SOUTH;
@@ -199,7 +215,7 @@ public class Agent extends chemotaxis.sim.Agent {
                     }
                     else if (neighborMap.get(DirectionType.EAST).isBlocked() &&
                             neighborMap.get(DirectionType.WEST).isBlocked()){
-                        move.directionType = DirectionType.NORTH;
+                        move.directionType = DirectionType.CURRENT;
                     }
                     else{
                         move.directionType = DirectionType.EAST;
@@ -211,7 +227,7 @@ public class Agent extends chemotaxis.sim.Agent {
                     }
                     else if (neighborMap.get(DirectionType.NORTH).isBlocked() &&
                             neighborMap.get(DirectionType.SOUTH).isBlocked()){
-                        move.directionType = DirectionType.WEST;
+                        move.directionType = DirectionType.CURRENT;
                     }
                     else{
                         move.directionType = DirectionType.NORTH;
