@@ -7,6 +7,7 @@ import java.awt.*;
 import java.util.Objects;
 
 public class GameCell {
+    public static final double MIN_DETECTABLE_CONCENTRATION = 0.001;
     public boolean occupied;
     public ChemicalCell cell;
 
@@ -51,7 +52,6 @@ public class GameCell {
      * @return
      */
     public static ChemicalCell cloneAttenuatedChemicalCell(final ChemicalCell priorCell) {
-        double MIN_DETECTABLE_CONCENTRATION = 0.001;
         ChemicalCell newCell = new ChemicalCell(priorCell.isOpen());
         ChemicalCell.ChemicalType[] chems = {ChemicalCell.ChemicalType.BLUE, ChemicalCell.ChemicalType.RED, ChemicalCell.ChemicalType.GREEN};
         for (ChemicalCell.ChemicalType c : chems) {
