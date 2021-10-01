@@ -104,15 +104,20 @@ public class Controller extends chemotaxis.sim.Controller {
 		placementCells = new ArrayList<Point>();
 		// Analyze the selected path and get all turning points as initial placement cells
 		getIntervals(path, true, grid);
-		// Make sure that the target is included
-		// If there is turnning point inside target cell's cover range, remove it.
-		// int last = path.indexOf(placementCells.get(placementCells.size()-1));
-		// if(path.size()-1 != last){
-		// 	if(last >= path.size()-2){
-		// 		placementCells.remove(placementCells.size()-1);
-		// 	}
-		// 	placementCells.add(path.get(path.size()-1));
-		// }
+
+		Point first = path.get(1);
+		if(grid[start.x][start.y-1].isOpen() && (start.x+1!=first.x || start.y!=first.y)){
+			placementCells.add(0, path.get(1));
+		}
+		else if(grid[start.x-1][start.y].isOpen() && (start.x!=first.x || start.y+1!=first.y)){
+			placementCells.add(0, path.get(1));
+		}
+		else if(grid[start.x-2][start.y-1].isOpen() && (start.x-1!=first.x || start.y!=first.y)){
+			placementCells.add(0, path.get(1));
+		}
+		else if(grid[start.x-1][start.y-2].isOpen() && (start.x!=first.x || start.y-1!=first.y)){
+			placementCells.add(0, path.get(1));
+		}
 
 		placementPadding = new int[placementCells.size()];
 		System.out.println(placementCells.size());
@@ -122,7 +127,6 @@ public class Controller extends chemotaxis.sim.Controller {
 		// 	placementCells.add(0, path.get(first_interval));
 		// 	cur = first_interval;
 		// }
-		first_interval = 0;
 		int prev = 0;
 		System.out.println(prev);
 		// For each placement cells check the following two cells
@@ -155,7 +159,7 @@ public class Controller extends chemotaxis.sim.Controller {
 			int turningIdx = cur;
 			int bestPoint = cur;
 			int j=1;
-			while(j<=data.get(cur+j).maxDistance && (cur+j)<placementCells.size()-1){
+			while((cur+j)<placementCells.size() && j<=data.get(cur+j).maxDistance){
 				if(data.get(bestPoint).isMaxPercentage<=data.get(cur+j).isMaxPercentage && (next==cur || (next-cur)>(j+1))){
 					bestPoint = cur+j;
 				}
@@ -167,11 +171,11 @@ public class Controller extends chemotaxis.sim.Controller {
 
 			if(gap<data.get(cur).maxDistance){
 				System.out.print("i:" + i + " padding compute" + prev + " " + cur + " " + first_interval + "; ");
-				placementPadding[i] += 2 * prev - cur + first_interval;
+				placementPadding[i] += 2 * prev - cur;
 			}
 			else{
 				System.out.print("i:" + i + " padding compute" + turningIdx + " " + cur + " " + first_interval + "; ");
-				placementPadding[i] += 2 * turningIdx - cur + first_interval;
+				placementPadding[i] += 2 * turningIdx - cur;
 			}
 			
 			System.out.println("result " + i + " " + placementPadding[i]);
