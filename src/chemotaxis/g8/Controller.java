@@ -10,28 +10,10 @@ import java.util.*;
 
 public class Controller extends chemotaxis.sim.Controller {
 	static int[][] DIR = {{1, 0}, {0, 1}, {-1, 0}, {0, -1}}; // down right up left   +1: turn left; -1: turn right
-	int size, spawnFreq;
+	int size, spawnFreq, budget;
 	Map<Integer, Status> solution;
 	ChemicalCell[][] G;
-	int[][] sp;
-
-	private void shortestPath(Point target) {
-		for (int i = 1; i <= size; ++i) for (int j = 1; j <= size; ++j) sp[i][j] = -1;
-
-		sp[target.x][target.y] = 0;
-		Queue<Point> q = new LinkedList<>();
-		q.add(target);
-		while (!q.isEmpty()) {
-			Point u = q.poll();
-			for (int dt = 0; dt < 4; ++dt) {
-				Point nxt = moveByDT(u, dt);
-				if (isBlocked(nxt)) continue;
-				if (sp[nxt.x][nxt.y] != -1) continue;
-				sp[nxt.x][nxt.y] = sp[u.x][u.y] + 1;
-				q.add(nxt);
-			}
-		}
-	}
+	int alpha;
 
 	private boolean checkValid(Point p) {
 		return p.x >= 1 && p.y >= 1 && p.x <= size && p.y <= size;
@@ -76,7 +58,7 @@ public class Controller extends chemotaxis.sim.Controller {
 		} else {
 			while (true) {
 				if (vis[cur.x][cur.y][dt] > 0) return res;
-				for (int i = 0; i < 4; ++i) if (vis[cur.x][cur.y][i] != 0 && vis[cur.x][cur.y][i] <= turn - spawnFreq) return res;
+				for (int i = 0; i < 4; ++i) if (vis[cur.x][cur.y][i] != 0 && vis[cur.x][cur.y][i] <= turn - spawnFreq + 1) return res;
 				turn += 1;
 				vis[cur.x][cur.y][dt] = turn;
 				res.add(cur);
@@ -115,39 +97,37 @@ public class Controller extends chemotaxis.sim.Controller {
 			return "Status{" + "time=" + time + ", cost=" + cost + ", from=" + from + ", mode=" + mode + ", dt=" + dt + '}';
 		}
 
-		public int getV() {
-			return this.cost * 50 + this.time;
+		public int getV(int alpha) {
+			return this.cost * alpha + this.time;
 		}
 	}
 
 	private int modeCost(int x) { return (x & 1) + ((x >> 1) & 1) + ((x >> 2) & 1); }
 
-	private void precompute(Point start, Point target) {
+	private int precompute(Point start, Point target) {
 		Status[][] f = new Status[size + 1][size + 1];
 		f[start.x][start.y] = new Status(0, 0, null);
-		PriorityQueue<Status> pq = new PriorityQueue<>(Comparator.comparing(Status::getV));
+		PriorityQueue<Status> pq = new PriorityQueue<>(Comparator.comparing(s -> s.getV(alpha)));
 		pq.add(new Status(0, 0, start));
 
+		int res = -1;
 		while (!pq.isEmpty()) {
 			Status uu = pq.poll(), u = f[uu.from.x][uu.from.y];
-//			System.out.println(uu + "   " + u);
 			if (uu.cost != u.cost || uu.time != u.time) continue;
-			if (u.equals(target)) {
-				System.out.println("Cost: " + u.cost);
+			Point cur = uu.from;
+			if (target.equals(cur)) {
+				res = u.cost;
 				break;
 			}
-			Point cur = uu.from;
-//			System.out.println(cur);
 			for (int mode = 1; mode <= 6; ++mode) {
 				for (int dt = 0; dt < 4; ++dt) {
 					ArrayList<Point> path = generatePath(cur, mode, dt);
-//					System.out.println(mode + " " + dt + " " + path);
 					if (path == null) continue;
 					for (int i = 0; i < path.size(); ++i) {
 						Point nxt = path.get(i);
 						Status s = new Status(u.cost + modeCost(mode), u.time + i + 1, cur);
 						s.mode = mode; s.dt = dt;
-						if (f[nxt.x][nxt.y] == null || f[nxt.x][nxt.y].getV() > s.getV()) {
+						if (f[nxt.x][nxt.y] == null || f[nxt.x][nxt.y].getV(alpha) > s.getV(alpha)) {
 							f[nxt.x][nxt.y] = s;
 							Status ts = new Status(s); ts.from = nxt;
 							pq.add(ts);
@@ -160,34 +140,32 @@ public class Controller extends chemotaxis.sim.Controller {
 			Status s = f[target.x][target.y];
 			System.out.println("     " + s);
 //			Status ss = new Status(s); ss.from = target;
-			if (target.equals(start)) break;
+			if (target.equals(start)) return res;
 			solution.put(f[s.from.x][s.from.y].time, s);
 			target = s.from;
 		}
 	}
 
-	public Controller(Point start, Point target, Integer size, ChemicalCell[][] grid, Integer simTime, Integer budget, Integer seed, SimPrinter simPrinter, Integer agentGoal, Integer spawnFreq) {
-		super(start, target, size, grid, simTime, budget, seed, simPrinter, agentGoal, spawnFreq);
+	private Status solve(int alpha) {
+		this.alpha = alpha;
+		System.out.println("Precalculating...   alpha = " + alpha);
+		this.solution.clear();
 
-		this.size = size;
-		this.G = grid;
-		this.solution = new HashMap<>();
-		spawnFreq = Math.max(spawnFreq, 3);
-		this.spawnFreq = spawnFreq;
+		Status res = new Status(-1, -1, null);
 
-//		this.sp = new int[size + 1][size + 1];
-//		shortestPath(target);
-
-		System.out.println("Precalculating...");
-
-
-		precompute(start, target);
-		int delay = 1;
+		int costForOne = precompute(start, target);
+		int timeForOne = solution.keySet().stream().max(Integer::compare).get();
+		int delay = 0;
 		Map<Integer, Status> oSolution = new HashMap<>(solution);
-		for (int agentNumber = 1; agentNumber < agentGoal; ++agentNumber) {
+		for (int agentNumber = 1; agentNumber < Math.min(agentGoal, budget / costForOne); ++agentNumber) {
+			boolean timeLimitExceed = false;
 			while (true) {
-				int shift = spawnFreq * agentNumber + delay;
+				int shift = spawnFreq * agentNumber + delay + 1;
 				boolean flag = true;
+				if (shift + timeForOne > simTime) {
+					timeLimitExceed = true;
+					break;
+				}
 				for (int t: oSolution.keySet()) {
 					if (solution.containsKey(t + shift)) { flag = false; break; }
 				}
@@ -195,14 +173,55 @@ public class Controller extends chemotaxis.sim.Controller {
 					for (Map.Entry<Integer, Status> kv: oSolution.entrySet()) {
 						solution.put(kv.getKey() + shift, kv.getValue());
 					}
+					System.out.println(shift);
 					break;
 				}
 				delay += 1;
 			}
 			delay = (delay + spawnFreq - 1) / spawnFreq * spawnFreq;
+			if (timeLimitExceed) break;
+			res.mode = agentNumber;
 		}
+
+		res.time = solution.keySet().stream().max(Integer::compare).get();
+		res.cost = costForOne * agentGoal;
+		return res;
 	}
 
+
+	public Controller(Point start, Point target, Integer size, ChemicalCell[][] grid, Integer simTime, Integer budget, Integer seed, SimPrinter simPrinter, Integer agentGoal, Integer spawnFreq) {
+		super(start, target, size, grid, simTime, budget, seed, simPrinter, agentGoal, spawnFreq);
+
+		this.size = size;
+		this.G = grid;
+		this.solution = new HashMap<>();
+		this.budget = budget;
+		spawnFreq = Math.max(spawnFreq, 3);
+		this.spawnFreq = spawnFreq;
+
+		boolean solved = false;
+		Map<Integer, Status> best = null;
+		int reached = -1;
+
+		for (int a: new int[]{1000, 100, 50, 25, 20, 15, 12, 10, 7, 5, 2}) {
+			Status s = solve(a);
+			System.out.println(s);
+			if (s.time < simTime && s.cost <= budget && s.mode == agentGoal - 1) {
+				solved = true;
+				break;
+			}
+			if (s.mode > reached) {
+				reached = s.mode;
+				best = Map.copyOf(solution);
+			}
+		}
+
+		System.out.println("Solved: " + solved + " Reached: " + reached);
+
+		if (!solved) {
+			solution = best;
+		}
+	}
 
 	@Override
 	public ChemicalPlacement applyChemicals(Integer currentTurn, Integer chemicalsRemaining, ArrayList<Point> locations, ChemicalCell[][] grid) {
