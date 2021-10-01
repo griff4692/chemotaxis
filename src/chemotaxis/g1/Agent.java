@@ -248,26 +248,35 @@ public class Agent extends chemotaxis.sim.Agent {
         Move nextMove = new Move();
         AgentState nextState = new AgentState(prevState);
         ChemicalType followColor = prevState.getFollowColor();
-        DirectionType followDirection = towardsGradient(followColor, neighborMap);
-        if (followDirection == DirectionType.CURRENT) {
+        DirectionType followDirectionCurrent = towardsGradient(followColor, neighborMap);
+        ChemicalType nextColor = nextColorWeak2(followColor);
+        if (followDirectionCurrent == DirectionType.CURRENT) {
+            boolean changeColor = false;
             if (nextState.getConflict()) {
                 // If we've seen a conflict in the previous turn, change follow color
-                nextState.changeFollowColor(nextColorWeak2(followColor));
+                changeColor = true;
                 nextState.clearConflict();
             } else {
                 nextState.setConflict();
             }
             // Check to see if the next color is nearby
-            ChemicalType nextColor = nextColorWeak2(followColor);
-            followDirection = towardsGradient(nextColor, neighborMap);
-            if (followDirection != DirectionType.CURRENT) {
+            DirectionType followDirectionNext = towardsGradient(nextColor, neighborMap);
+            // Some ugly code right here
+            if (followDirectionNext != DirectionType.CURRENT || changeColor) {
                 nextState.changeFollowColor(followColor);
             }
         } else {
+            DirectionType  followDirectionNext = towardsGradient(nextColor, neighborMap);
+            if (!followDirectionNext.equals(DirectionType.CURRENT)) {
+                if (nextState.asCardinalDir(followDirectionCurrent).reverseOf().equals(nextState.asCardinalDir(followDirectionNext))) {
+                    nextState.changeFollowColor(followColor);
+                    followDirectionCurrent = followDirectionNext;
+                }
+            }
             nextState.clearConflict();
         }
         nextMove.currentState = nextState.serialize();
-        nextMove.directionType = followDirection;
+        nextMove.directionType = followDirectionCurrent;
         return nextMove;
     }
 
