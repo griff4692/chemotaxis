@@ -126,8 +126,8 @@ public class Controller extends chemotaxis.sim.Controller {
             planWeak(budget,agentGoal);
         }
 
-
-
+        RallypointLayout rpLayout = RallypointLayout.calculateLayout(routes.get(selectedRoute), grid);
+        System.out.println("mista dobalina");
     }
 
  /*   private void simWeak(Point start, Point target, int agentGoal, int spawnFreq,
