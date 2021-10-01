@@ -42,7 +42,7 @@ public class Agent extends chemotaxis.sim.Agent {
         // 7-8 bits: determine last move
         int chemIdx = (192 & previousState) >> 6;
         System.out.println("\n chemIdx" + chemIdx);
-        int thdLastMoveIdx = (48 & previousState) >> 4;
+        int firstRound = (48 & previousState) >> 4;
         int secLastMoveIdx = (12 & previousState) >> 2;
         int lastMoveIdx = 3 & previousState;
 
@@ -62,16 +62,17 @@ public class Agent extends chemotaxis.sim.Agent {
         System.out.println("chosenChemicalType " + chosenChemicalType);
 
         DirectionType thdLastMove;
-        switch (thdLastMoveIdx) {
-            case 0: thdLastMove = DirectionType.WEST;
+        boolean state;
+        switch (firstRound) {
+            case 0: state = true;
                 break;
-            case 1: thdLastMove = DirectionType.EAST;
-                break;
-            case 2: thdLastMove = DirectionType.NORTH;
-                break;
-            case 3: thdLastMove = DirectionType.SOUTH;
-                break;
-            default: thdLastMove = DirectionType.EAST;
+            // case 1: thdLastMove = DirectionType.EAST;
+            //     break;
+            // case 2: thdLastMove = DirectionType.NORTH;
+            //     break;
+            // case 3: thdLastMove = DirectionType.SOUTH;
+            //     break;
+            default: state = false;
                 break;
         };
 
@@ -112,6 +113,7 @@ public class Agent extends chemotaxis.sim.Agent {
                 move.directionType = directionType;
             }
         }
+        System.out.println("first priority: " + move.directionType);
         // If at maxima, switch chemical and look again
         if(highestConcentration == currentCell.getConcentration(chosenChemicalType) && highestConcentration != 0.0){
             switch (chosenChemicalType) {
@@ -129,13 +131,14 @@ public class Agent extends chemotaxis.sim.Agent {
                     move.directionType = directionType;
                 }
             }
+            System.out.println("at maxima: " + move.directionType);
         }
 
         // Prevent backwards movement
-        if ((move.directionType == DirectionType.NORTH && lastMove == DirectionType.SOUTH) ||
+        if (((move.directionType == DirectionType.NORTH && lastMove == DirectionType.SOUTH) ||
                 (move.directionType == DirectionType.SOUTH && lastMove == DirectionType.NORTH) ||
                 (move.directionType == DirectionType.EAST && lastMove == DirectionType.WEST) ||
-                (move.directionType == DirectionType.WEST && lastMove == DirectionType.EAST)){
+                (move.directionType == DirectionType.WEST && lastMove == DirectionType.EAST)) && !state){
             if(neighborMap.get(lastMove).isOpen()){
                 move.directionType = lastMove;
             }
@@ -160,6 +163,7 @@ public class Agent extends chemotaxis.sim.Agent {
                     }
                 }
             }
+            System.out.println("prevent backward: " + move.directionType);
         }
         // Second Priority: Follow Wall Following Behaviour
         if (move.directionType == DirectionType.CURRENT){
@@ -232,7 +236,7 @@ public class Agent extends chemotaxis.sim.Agent {
 
         int currState = 0;
         int currSecLastMove = lastMoveIdx;
-        int currThdLastMove = secLastMoveIdx;
+        int notFirstRound = 1;
         int currLastMove;
         switch (move.directionType) {
             case WEST: currLastMove = 0;
@@ -245,7 +249,7 @@ public class Agent extends chemotaxis.sim.Agent {
                 break;
             default: currLastMove = lastMoveIdx;
         };
-        currState = (currChem<<6) | (currThdLastMove<<4) | (currSecLastMove<<2) | (currLastMove);
+        currState = (currChem<<6) | (notFirstRound<<4) | (currSecLastMove<<2) | (currLastMove);
 
         move.currentState = (byte) currState;
 

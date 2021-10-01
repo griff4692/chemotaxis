@@ -106,15 +106,19 @@ public class Controller extends chemotaxis.sim.Controller {
 		getIntervals(path, true, grid);
 
 		Point first = path.get(1);
+		boolean addedFirst = false;
 		if(start.y-1!=first.y){
 			if(grid[start.x][start.y-1].isOpen() && (start.x+1!=first.x || start.y!=first.y)){
 				placementCells.add(0, path.get(1));
+				addedFirst = true;
 			}
 			else if(grid[start.x-1][start.y].isOpen() && (start.x!=first.x || start.y+1!=first.y)){
 				placementCells.add(0, path.get(1));
+				addedFirst = true;
 			}
 			else if(grid[start.x-2][start.y-1].isOpen() && (start.x-1!=first.x || start.y!=first.y)){
 				placementCells.add(0, path.get(1));
+				addedFirst = true;
 			}
 		}
 
@@ -122,10 +126,18 @@ public class Controller extends chemotaxis.sim.Controller {
 		// 	placementCells.add(0, path.get(1));
 		// }
 
-		placementPadding = new int[placementCells.size()];
+		if(addedFirst){
+			placementPadding = new int[placementCells.size()+1];
+			placementPadding[0] = -1;
+		}
+		else{
+			placementPadding = new int[placementCells.size()];
+			placementPadding[0] = 0;
+		}
+		
 		System.out.println(placementCells.size());
 		int cur = path.indexOf(placementCells.get(0));
-		placementPadding[0] = 0;
+		
 		// if(cur>roll_interval){
 		// 	placementCells.add(0, path.get(first_interval));
 		// 	cur = first_interval;
@@ -162,7 +174,7 @@ public class Controller extends chemotaxis.sim.Controller {
 			int turningIdx = cur;
 			int bestPoint = cur;
 			int j=1;
-			while((cur+j)<placementCells.size() && j<=data.get(cur+j).maxDistance){
+			while((cur+j)<placementCells.size() && j<=data.get(cur+j).maxDistance && !addedFirst){
 				if(data.get(bestPoint).isMaxPercentage<=data.get(cur+j).isMaxPercentage && (next==cur || (next-cur)>(j+1))){
 					bestPoint = cur+j;
 				}
