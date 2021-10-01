@@ -99,6 +99,7 @@ public class Controller extends chemotaxis.sim.Controller {
 	 */
 	public Controller(Point start, Point target, Integer size, ChemicalCell[][] grid, Integer simTime, Integer budget, Integer seed, SimPrinter simPrinter, Integer agentGoal, Integer spawnFreq) {
 		super(start, target, size, grid, simTime, budget, seed, simPrinter, agentGoal, spawnFreq);
+
 		// dijkestra: https://www.geeksforgeeks.org/dijkstras-shortest-path-algorithm-greedy-algo-7/
 		shortest_path = new ArrayList<Integer>();
 		node_to_point = new Hashtable<Integer, Point>();
@@ -205,7 +206,10 @@ public class Controller extends chemotaxis.sim.Controller {
         lower concentrations nearer to the spawn block)“
          */
 		ChemicalPlacement chemicalPlacement = new ChemicalPlacement();
+
 		System.out.println("period is " + this.period);
+		System.out.println("agent spawned is: " + locations.size());
+
 		if(currentTurn%this.period == 1){
 			List<ChemicalType> chemicals = new ArrayList<>();
 			chemicals.add(ChemicalType.RED);
@@ -225,7 +229,15 @@ public class Controller extends chemotaxis.sim.Controller {
 			chemicals.add(ChemicalType.BLUE);
 			chemicalPlacement.location = new Point(this.target.x, this.target.y);
 			chemicalPlacement.chemicals = chemicals;
-			//this.period = (spawnFreq * agentNottoGoal) / chemicalRemaining *3;
+
+			//
+
+			//dynamically calculate the period based on agent-not-reached-goal and chemicals remaining
+			this.period = (spawnFreq * (agentGoal-locations.size()) / chemicalsRemaining) *3;
+			if(this.period <3){
+				this.period = 3;
+			}
+			System.out.println("refreshed period is " + this.period);
 		}
 		return chemicalPlacement;
 	}
