@@ -16,18 +16,19 @@ import java.util.Map;
 import java.util.Set;
 import java.util.stream.Collectors;
 
+
 public class Agent extends chemotaxis.sim.Agent {
     private static Map<Integer, DirectionType> intToDirection = 
-                                    Map.of(0, DirectionType.CURRENT, 1, DirectionType.NORTH, 
-                                           2, DirectionType.SOUTH, 3, DirectionType.EAST,
-                                           4, DirectionType.WEST);
+                                    Map.of(4, DirectionType.CURRENT, 0, DirectionType.NORTH,
+                                           1, DirectionType.SOUTH, 2, DirectionType.EAST,
+                                           3, DirectionType.WEST);
 
     // followed https://stackoverflow.com/questions/20412354/reverse-hashmap-keys-and-values-in-java to reverse
     private static Map<DirectionType, Integer> directionToInt =
                                     intToDirection.entrySet()
                                     .stream()
                                     .collect(Collectors.toMap(Map.Entry::getValue, Map.Entry::getKey));
-    
+
     public Agent(SimPrinter var1) {
         super(var1);
         // for easier access to our memory mapping to direction. Baeldung referenced for Map of
@@ -49,15 +50,10 @@ public class Agent extends chemotaxis.sim.Agent {
 
         // set our default behaviours to look for
         // how do we change this depending on the path to go to? First chemical is used for priming?
-        // then have a swith depending on our selected chemical
+        // then have a switch depending on our selected chemical
 		ChemicalType chosenChemicalType = ChemicalType.GREEN;
 
-        /*
-        // get the first bit (from the left) and if it's set then follow blue rather than green
-        if (randomNum >> 7 & 1 == 1) {
-            chosenChemicalType = ChemicalType.BLUE;
-        }
-        */
+
         ChemicalType repulseChemicalType = ChemicalType.RED;
 
         /* 
@@ -67,21 +63,37 @@ public class Agent extends chemotaxis.sim.Agent {
         */ 
         // grab required number of bits for direction: https://stackoverflow.com/questions/15255692/grabbing-n-bits-from-a-byte
         // lower three bits represent current direction/gradient direction we're following
+        int freeze = previousState & (1 << 7);
+
         int prevGradientDirection = previousState & 0x7;
+        if(prevGradientDirection > 4 || prevGradientDirection < 0){
+            prevGradientDirection = 0;
+        }
         int backwardsDirection = this.getBackwardsDirection(Agent.intToDirection.get(prevGradientDirection));
         int increasingGradDirectionType = this.getIncreasingGradient(chosenChemicalType, currentCell, neighborMap);
-
-        if (increasingGradDirectionType != 0) {
+        if(freeze == 0){
+            backwardsDirection = 4;
+        }
+        if (increasingGradDirectionType != directionToInt.get(DirectionType.CURRENT) && increasingGradDirectionType != backwardsDirection) {
             move.directionType = Agent.intToDirection.get(increasingGradDirectionType);
             // unset then set the lowest three bits with the right direction
             // source: https://stackoverflow.com/questions/31007977/how-to-set-3-lower-bits-of-uint8-t-in-c
-            // right now we're just using lowest three bits for anything
-            move.currentState = (byte) increasingGradDirectionType;
+
+            int currentState = previousState;
+            currentState = (byte)(currentState & ~(7));
+            currentState = (byte)(currentState | increasingGradDirectionType);
+            currentState = (byte)(currentState & ~(3 << 4));
+            currentState = currentState | (increasingGradDirectionType << 4);
+            if(freeze == 0){
+                currentState = currentState | (1 << 7);
+            }
+            move.currentState = (byte) currentState;
             return move; //done
         }
-        // can't find increasing direction => 1) keep going in previous direction 2) pick random (not previous) 3) pick backwards because stuck
-        Set<Integer> possibleMoveSet = this.getPossibleMoves(neighborMap);
 
+        // can't find increasing direction => 1) keep going in previous direction 2) pick random (not previous) 3) pick backwards because stuck
+        Set<DirectionType> possibleMoveSet = this.getPossibleMoves(neighborMap);
+        /*
         // check if previous direction is available (ie: continue forward)
         if (possibleMoveSet.contains(prevGradientDirection)) {
             move.directionType = Agent.intToDirection.get(prevGradientDirection);
@@ -113,33 +125,163 @@ public class Agent extends chemotaxis.sim.Agent {
         System.err.println("Error in finding direction!");
         move.directionType = DirectionType.CURRENT;
         return move;
-
+        */
         // setting specific bits in a byte type: https://stackoverflow.com/questions/4674006/set-specific-bit-in-byte
+        return getNavigateMove(previousState, possibleMoveSet, backwardsDirection, freeze);
    }
+
+    private Move getNavigateMove(Byte previousState, Set<DirectionType> possibleMoveSet, int backwardsDirection, int freeze){
+        //Using second and third bit from the left as wallFollow bits
+        //Using fourth and fifth bit from the left as the Pledge Direction bits
+        int wallFollow = (previousState >> 5) & 3;
+        Move move = new Move();
+        DirectionType pledgeDirection = intToDirection.get((previousState >> 3) & 3);
+
+        DirectionType[] relativePledge = getRelativeDirections(pledgeDirection);
+        DirectionType[] relativeBack = getRelativeDirections(intToDirection.get(backwardsDirection));
+        if(freeze == 0){
+            move.directionType = DirectionType.CURRENT;
+            move.currentState = previousState;
+            return move;
+        }
+        //If we are not following a wall
+        if(wallFollow == 0){
+            //If we cannot move in the pledge direction
+            if(!possibleMoveSet.contains(pledgeDirection)){
+                //Now find what way we can move, then set wall following to 2 for left turns, 1 for right turns
+                if(possibleMoveSet.contains(relativePledge[1])){
+                    move.currentState = (byte) ((previousState | (1 << 6)) & ~(1 << 5));
+                    move.directionType= relativePledge[1];
+                }
+                else if(possibleMoveSet.contains(relativePledge[0])){
+                    move.currentState = (byte) ((previousState | (1 << 5)) & ~(1 << 6));
+                    move.directionType =  relativePledge[0];
+                }
+                else{
+                    move.currentState = (byte) ((previousState | (1 << 6)) & ~(1 << 5));
+                    move.directionType = relativePledge[2];
+                }
+            //We can move in the pledge direction, and do so, no wall following.
+            }else{
+                move.currentState = (byte) ((previousState & ~(1 << 5)) & ~(1 << 6));
+                move.directionType = pledgeDirection;
+            }
+        //We are using right turn wall following.
+        }else if(wallFollow == 1){
+            if(possibleMoveSet.contains(pledgeDirection)){
+                //if the Pledge direction is backwards, do not follow it, instead follow the wall.
+                if(backwardsDirection == directionToInt.get(pledgeDirection)) {
+                    move.currentState = (byte) ((previousState | (1 << 5)) & ~(1 << 6));
+                    if (possibleMoveSet.contains(relativeBack[0])) {
+                        move.directionType = relativeBack[0];
+                    } else if (possibleMoveSet.contains(relativeBack[2])) {
+                        move.directionType = relativeBack[2];
+                    } else if (possibleMoveSet.contains(relativeBack[1])) {
+                        move.directionType = relativeBack[1];
+                    //This case is a dead end
+                    }else{
+                        move.directionType = intToDirection.get(backwardsDirection);
+                    }
+                }
+                //Pledge direction is not backwards, and we have navigated the obstacle. break away from the wall.
+                else{
+                    move.currentState = (byte) ((previousState & ~(1 << 5)) & ~(1 << 6));
+                    move.directionType = pledgeDirection;
+                }
+            //No Pledge direction, so follow the wall.
+            }else{
+                move.currentState = (byte) ((previousState | (1 << 5)) & ~(1 << 6));
+                if (possibleMoveSet.contains(relativeBack[0])) {
+                    move.directionType = relativeBack[0];
+                } else if (possibleMoveSet.contains(relativeBack[2])) {
+                    move.directionType = relativeBack[2];
+                } else if (possibleMoveSet.contains(relativeBack[1])) {
+                    move.directionType = relativeBack[1];
+                }else{
+                    move.directionType = intToDirection.get(backwardsDirection);
+                }
+
+            }
+        //We are wall following left turns, same rules apply to right turn wall following.
+        }else {
+            if (possibleMoveSet.contains(pledgeDirection)) {
+                if (backwardsDirection == directionToInt.get(pledgeDirection)) {
+                    move.currentState = (byte) ((previousState | (1 << 6)) & ~(1 << 5));
+                    if (possibleMoveSet.contains(relativeBack[1])) {
+                        move.directionType = relativeBack[1];
+                    } else if (possibleMoveSet.contains(relativeBack[2])) {
+                        move.directionType = relativeBack[2];
+                    } else if (possibleMoveSet.contains(relativeBack[0])) {
+                        move.directionType = relativeBack[0];
+                    }else{
+                        move.directionType = intToDirection.get(backwardsDirection);
+                    }
+                } else {
+                    move.currentState = (byte) ((previousState & ~(1 << 5)) & ~(1 << 6));
+                    move.directionType = pledgeDirection;
+                }
+            //Follow the wall
+            } else {
+                move.currentState = (byte) ((previousState | (1 << 6)) & ~(1 << 5));
+                if (possibleMoveSet.contains(relativeBack[1])) {
+                    move.directionType = relativeBack[1];
+                } else if (possibleMoveSet.contains(relativeBack[2])) {
+                    move.directionType = relativeBack[2];
+                } else if (possibleMoveSet.contains(relativeBack[0])) {
+                    move.directionType = relativeBack[0];
+                }else{
+                    move.directionType = intToDirection.get(backwardsDirection);
+                }
+            }
+        }
+        //Set gradient move bits to CURRENT.
+        move.currentState = (byte)(move.currentState & ~(3));
+        move.currentState = (byte)(move.currentState | directionToInt.get(move.directionType));
+        return move;
+    }
+    //Helper function to get relative directions for a given direction
+    private DirectionType[] getRelativeDirections(DirectionType direction){
+        switch(direction){
+            //[LEFT, RIGHT, BACKWARDS]
+            //Current is set to south since Current should never occur.
+            case NORTH:
+                return new DirectionType[]{DirectionType.WEST, DirectionType.EAST, DirectionType.SOUTH};
+            case EAST:
+                return new DirectionType[]{DirectionType.NORTH, DirectionType.SOUTH, DirectionType.WEST};
+            case WEST:
+                return new DirectionType[]{DirectionType.SOUTH, DirectionType.NORTH, DirectionType.EAST};
+            case SOUTH:
+                return new DirectionType[]{DirectionType.EAST, DirectionType.WEST, DirectionType.NORTH};
+            case CURRENT:
+                return new DirectionType[]{DirectionType.EAST, DirectionType.WEST, DirectionType.NORTH};
+            default:
+                return new DirectionType[]{DirectionType.EAST, DirectionType.WEST, DirectionType.NORTH};
+        }
+    }
 
     private int getBackwardsDirection(DirectionType directionType) {
         int retDir = 0;
         switch (directionType) {
-            case NORTH: retDir = 2; // SOUTH
+            case NORTH: retDir = 1; // SOUTH
                 break;
-            case SOUTH: retDir = 1;
+            case SOUTH: retDir = 0;
                 break;
-            case EAST: retDir = 4;
+            case EAST: retDir = 3;
                 break;
-            case WEST: retDir = 3;
+            case WEST: retDir = 2;
                 break;
-            default: retDir = 0;
+            default: retDir = 4;
                 break;
         }
         return retDir;
     }
 
-    private Set<Integer> getPossibleMoves(Map<DirectionType, ChemicalCell> neighborMap) {
-        Set<Integer> possibleMovesSet = new HashSet<>();
+    private Set<DirectionType> getPossibleMoves(Map<DirectionType, ChemicalCell> neighborMap) {
+        Set<DirectionType> possibleMovesSet = new HashSet<>();
         
         for (Map.Entry<DirectionType, ChemicalCell> entry : neighborMap.entrySet()) {
             if (entry.getValue().isOpen()) {
-                possibleMovesSet.add(Agent.directionToInt.get(entry.getKey()));
+                possibleMovesSet.add(entry.getKey());
             }
         }
 
@@ -148,7 +290,7 @@ public class Agent extends chemotaxis.sim.Agent {
 
     // get the greatest increasing direction from our neighbouring cells
     private int getIncreasingGradient(ChemicalType chosenChemicalType, ChemicalCell currentCell, Map<DirectionType, ChemicalCell> neighborMap) {
-        int increasingGradDirection = 0;
+        int increasingGradDirection = 4;
         double highestNetAttraction = 0.0;
 
         for (Map.Entry<DirectionType, ChemicalCell> entry : neighborMap.entrySet()) {
@@ -160,7 +302,6 @@ public class Agent extends chemotaxis.sim.Agent {
                 increasingGradDirection = Agent.directionToInt.get(entry.getKey());
             }
         }
-
         return increasingGradDirection;
     }
 
