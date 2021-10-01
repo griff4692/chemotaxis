@@ -31,6 +31,20 @@ public class AgentState {
     private static final byte CONFLICT_MASK = 0x1 << 6;
     private static final byte CONFLICT_BIT = 0x1 << 6;
 
+    private static final byte CURRENT_BIT = (byte) (0x1 << 7);
+
+    public boolean getCurrent() {
+        return (this.state & CURRENT_BIT) == CURRENT_BIT;
+    }
+
+    public void setCurrent() {
+        this.state |= CURRENT_BIT;
+    }
+
+    public void clearCurrent() {
+        this.state &= ~CURRENT_BIT;
+    }
+
     public enum Strategy {
         STRONG, WEAK
     }
