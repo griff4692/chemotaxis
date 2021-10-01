@@ -37,10 +37,10 @@ public class Controller extends chemotaxis.sim.Controller {
 		super(start, target, size, grid, simTime, budget, seed, simPrinter, agentGoal, spawnFreq);
 		this.shortestPathList = shortestPath(grid);
 		this.incrementBy = decidePlacementStrategy(this.shortestPathList, idealChemicalIncrement, budget, spawnFreq);
-		this.placementPath = generatePlacementPath(this.shortestPathList, this.incrementBy);
+		this.placementPath = generatePlacementPath(this.shortestPathList, this.incrementBy, spawnFreq);
 	}
 	
-	public List<Point> generatePlacementPath(List<Point> shortestPath, int incrementBy) {
+	public List<Point> generatePlacementPath(List<Point> shortestPath, int incrementBy, int spawnFreq) {
 		List<Point> placementList = new ArrayList<Point>();
 		int i = 0;
 		while (true) {
@@ -66,8 +66,9 @@ public class Controller extends chemotaxis.sim.Controller {
 		// budget --; // take out for the beginning chemical
 		// budget --; // take out another for the ending chemical
 		int pathLength = shortestPathList.size();
-		int singlePathIncrement = (int) Math.ceil(pathLength / budget);
+		int singlePathIncrement = (int) Math.ceil((double) pathLength / (double) budget);
 		System.out.format("%d, %d, %d", pathLength, budget, singlePathIncrement);
+		
 		// ideal chemical increment will not make it the full path.
 		return (singlePathIncrement > idealChemicalIncrement) ? singlePathIncrement : idealChemicalIncrement;
 		// here, we need to choose some criteria to lower the idealChemicalIncrement based on the expected loops (single path or multiple) / saturation we want.
@@ -84,7 +85,7 @@ public class Controller extends chemotaxis.sim.Controller {
    */
  	@Override
 	public ChemicalPlacement applyChemicals(Integer currentTurn, Integer chemicalsRemaining, ArrayList<Point> locations, ChemicalCell[][] grid) {
- 		int waitAfter = 3;
+ 		int waitAfter = 2;
  		waitCounter += 1;
  		if (waitCounter % (waitAfter + 1) < waitAfter) {
 			return new ChemicalPlacement();

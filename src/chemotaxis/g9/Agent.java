@@ -37,6 +37,14 @@ public class Agent extends chemotaxis.sim.Agent {
             return 4;
         }
     }
+    
+    public int getNewState(int counterValue, int sequenceValue) {
+    	int state = 0;
+    	state = state | counterValue;
+    	state <<= 5;
+    	state = state | sequenceValue;
+    	return state;
+    }
 
     /**
      * Return agent's next byte corresponding to "last move" and "don't look"
@@ -48,7 +56,10 @@ public class Agent extends chemotaxis.sim.Agent {
      */
     public byte nextMove(DirectionType move, Byte previousState, boolean switchColor) {
         int x = previousState / 10;
-
+        int j =Byte.toUnsignedInt(previousState);
+        System.out.println(j);
+        int counterValue = j >> 5;
+        int otherValue = j & 31;
         if (switchColor) {
             x++;
             if (x == 3) {
@@ -179,6 +190,7 @@ public class Agent extends chemotaxis.sim.Agent {
         System.out.println(neighborMap);
 
         int prevStateMul = previousState / 10;
+
         if (prevStateMul == 0) { // red
             DirectionType highestRedDirection = findBestMove(ChemicalCell.ChemicalType.RED, currentCell, neighborMap, previousState);
 
