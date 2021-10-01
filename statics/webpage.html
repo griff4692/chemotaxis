@@ -159,7 +159,8 @@
         <br/>
         <div style="color:black;font-size:32px">Agent Goal: <input style="font-size:32px" type="text" id="agentGoal" size="20" value="3"></div>
         <br/>
-        <div style="color:black;font-size:32px">Map: <input style="font-size:32px" type="file" value="~/coms4444-chemotaxis/src/maps/dummy/10x10FarTarget.map" id="map"></div>
+        <div style="color:black;font-size:32px">Map: <input style="font-size:32px" type="file" value="dummy/10x10FarTarget.map" id="map"></div>
+        <div style="color:black;font-size:32px">Map Group: <input style="font-size:32px" type="text" id="mapGroup" size="20" value="dummy"></div>
       </div>
       <div>
       </div>
@@ -202,6 +203,7 @@
         var agentGoal = document.getElementById("agentGoal").value;
         pauseEveryN = document.getElementById("pauseEveryN").value;
         var map = document.getElementById("map").value.replace("C:\\fakepath\\", "");
+        map = document.getElementById("mapGroup").value + "/" + map;
 
         if(!Number.isInteger(parseInt(turns)) || turns != parseInt(turns)) {
           alert("The number of turns must be a valid integer!");
@@ -272,7 +274,7 @@
           var spawnFreq = document.getElementById("spawnFreq").value;
           var agentGoal = document.getElementById("agentGoal").value;
           var map = document.getElementById("map").value.replace("C:\\fakepath\\", "");
-
+          map = document.getElementById("mapGroup").value + "/" + map;
           if(!Number.isInteger(parseInt(turns)) || turns != parseInt(turns)) {
               alert("The number of turns must be a valid integer!");
               return;
