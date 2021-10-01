@@ -30,7 +30,7 @@ public class Controller extends chemotaxis.sim.Controller {
 	Integer chemical_color = 0;
 	Integer arrayLength = 20;
 	Integer pathComplete;
-	double threshold = 0.1;
+	double threshold = 0.05;
 	int vacantRound = 0;
 
 
@@ -53,13 +53,12 @@ public class Controller extends chemotaxis.sim.Controller {
 		if(path == null) {
 			simPrinter.println("creating path");
 			path = getPath(grid);
-			System.out.println("We got here!");
 		}
 
 		ArrayList<AnalysisData> data;
 		if(analyzer == null){
 			analyzer = new Analysis(grid);
-			analyzer.setThreshold(0.05); //default is 0.05
+			analyzer.setThreshold(threshold); //default is 0.05
 
 			data = analyzer.analyzePath(path, arrayLength);
 
@@ -107,22 +106,23 @@ public class Controller extends chemotaxis.sim.Controller {
 		getIntervals(path, true, grid);
 		// Make sure that the target is included
 		// If there is turnning point inside target cell's cover range, remove it.
-		int last = path.indexOf(placementCells.get(placementCells.size()-1));
-		if(path.size()-1 != last){
-			if(last >= path.size()-2){
-				placementCells.remove(placementCells.size()-1);
-			}
-			placementCells.add(path.get(path.size()-1));
-		}
+		// int last = path.indexOf(placementCells.get(placementCells.size()-1));
+		// if(path.size()-1 != last){
+		// 	if(last >= path.size()-2){
+		// 		placementCells.remove(placementCells.size()-1);
+		// 	}
+		// 	placementCells.add(path.get(path.size()-1));
+		// }
 
 		placementPadding = new int[placementCells.size()];
+		System.out.println(placementCells.size());
 		int cur = path.indexOf(placementCells.get(0));
 		placementPadding[0] = 0;
-		if(cur>roll_interval){
-			placementCells.add(0, path.get(first_interval));
-			cur = first_interval;
-		}
-		first_interval = cur;
+		// if(cur>roll_interval){
+		// 	placementCells.add(0, path.get(first_interval));
+		// 	cur = first_interval;
+		// }
+		first_interval = 0;
 		int prev = 0;
 		System.out.println(prev);
 		// For each placement cells check the following two cells
@@ -148,28 +148,33 @@ public class Controller extends chemotaxis.sim.Controller {
 			
 			// Say A --15 cells --> B; so the rolling mode is on
 			// Turn the rolling mode on
-			if(gap >= roll_interval){ 
-				placementPadding[i] += 2*(gap-1);
-			}
+			// if(gap >= roll_interval){ 
+			// 	placementPadding[i] += 2*(gap-1);
+			// }
 
+			int turningIdx = cur;
 			int bestPoint = cur;
-			if(i != placementCells.size()-1){
-				if(data.get(bestPoint).isMaxPercentage<=data.get(cur+1).isMaxPercentage && (next-cur)>2){
-					bestPoint = cur+1;
+			int j=1;
+			while(j<=data.get(cur+j).maxDistance && (cur+j)<placementCells.size()-1){
+				if(data.get(bestPoint).isMaxPercentage<=data.get(cur+j).isMaxPercentage && (next==cur || (next-cur)>(j+1))){
+					bestPoint = cur+j;
 				}
-				if(data.get(bestPoint).isMaxPercentage<=data.get(cur+2).isMaxPercentage && (next-cur)>3){
-					bestPoint = cur+2;
-				}
-				placementCells.set(i, path.get(bestPoint));
+				j++;
 			}
+			placementCells.set(i, path.get(bestPoint));
+			
 			System.out.print(" " + path.get(bestPoint) + " ");
 
-			if(i!=0){
+			if(gap<data.get(cur).maxDistance){
 				System.out.print("i:" + i + " padding compute" + prev + " " + cur + " " + first_interval + "; ");
 				placementPadding[i] += 2 * prev - cur + first_interval;
 			}
+			else{
+				System.out.print("i:" + i + " padding compute" + turningIdx + " " + cur + " " + first_interval + "; ");
+				placementPadding[i] += 2 * turningIdx - cur + first_interval;
+			}
 			
-			System.out.println("result " + placementPadding[i]);
+			System.out.println("result " + i + " " + placementPadding[i]);
 			prev = cur;
 		}
 		System.out.print("\n");
@@ -310,9 +315,12 @@ public class Controller extends chemotaxis.sim.Controller {
 		return total;
 	}
 
-
-
-
+	void addInterval(ArrayList<Point> current, boolean setTurning, int i){
+		if(setTurning){
+			placementCells.add(current.get(i+2));
+			System.out.println("Point after Turning " + path.get(i+2) + " ");
+		}
+	}
 
 	Integer getIntervals(ArrayList<Point> current, boolean setTurning, ChemicalCell[][] grid){
 		Integer length = grid.length;
@@ -325,14 +333,14 @@ public class Controller extends chemotaxis.sim.Controller {
 			Integer prev_x = prev.x;
 			Integer prev_y = prev.y;
 
-			if (curr_x - prev_x < 0) { //going left
-				values.add(1);
-			} else if (curr_x - prev_x > 0) { //going right
-				values.add(2);
-			} else if (curr_y - prev_y < 0) { //going up
+			if (curr_x - prev_x < 0) { //going up
 				values.add(3);
+			} else if (curr_x - prev_x > 0) { //going down
+				values.add(4);
+			} else if (curr_y - prev_y < 0) { //going left
+				values.add(1);
 			} else {
-				values.add(4); //going down
+				values.add(2); //going right
 			}
 		}
 
@@ -346,101 +354,134 @@ public class Controller extends chemotaxis.sim.Controller {
 			Integer future = values.get(i+1);
 
 			if (curr==3 && future==2) {
-				wallpointcontinued = new Point(currpoint.x, currpoint.y-1);
+				wallpointcontinued = new Point(currpoint.x-1, currpoint.y);
+				wallpointleft = new Point(currpoint.x, currpoint.y-1);
+				if (pointInBounds(length,wallpointleft) && pointInBounds(length,wallpointcontinued)){
+					if (grid[wallpointcontinued.x-1][wallpointcontinued.y-1].isOpen() || grid[wallpointleft.x-1][wallpointleft.y-1].isOpen()){
+						numIntervals = numIntervals + 1;
+						addInterval(current, setTurning, i);
+					}
+				}
+				else if (pointInBounds(length,wallpointleft)){
+					if (grid[wallpointleft.x-1][wallpointleft.y-1].isOpen()){
+						numIntervals = numIntervals + 1;
+						addInterval(current, setTurning, i);
+					}
+				}
+				else if (pointInBounds(length,wallpointcontinued)){
+					if (grid[wallpointcontinued.x-1][wallpointcontinued.y-1].isOpen()){
+						numIntervals = numIntervals + 1;
+						addInterval(current, setTurning, i);
+					}
+				}
+			}
+			else if (curr==2 && future==4) {
+				
+				wallpointcontinued = new Point(currpoint.x, currpoint.y+1);
 				wallpointleft = new Point(currpoint.x-1, currpoint.y);
 				if (pointInBounds(length,wallpointleft) && pointInBounds(length,wallpointcontinued)){
 					if (grid[wallpointcontinued.x-1][wallpointcontinued.y-1].isOpen() || grid[wallpointleft.x-1][wallpointleft.y-1].isOpen()){
 						numIntervals = numIntervals + 1;
-						if(setTurning){
-							placementCells.add(current.get(i+1));
-							System.out.println("Point after Turning " + path.get(i+1) + " ");
-						}
-					}}
-			}
-			else if (curr==2 && future==4) {
-				wallpointcontinued = new Point(currpoint.x+1, currpoint.y);
-				wallpointleft = new Point(currpoint.x, currpoint.y-1);
-				if (pointInBounds(length,wallpointleft) && pointInBounds(length,wallpointcontinued)){
-				if (!grid[wallpointcontinued.x-1][wallpointcontinued.y-1].isOpen() || grid[wallpointleft.x-1][wallpointleft.y-1].isOpen()){
-					numIntervals = numIntervals + 1;
-					if(setTurning){
-						placementCells.add(current.get(i+1));
-						System.out.println("Point after Turning " + path.get(i+1) + " ");
+						addInterval(current, setTurning, i);
 					}
-				}}
+				}
+				else if (pointInBounds(length,wallpointleft)){
+					if (grid[wallpointleft.x-1][wallpointleft.y-1].isOpen()){
+						numIntervals = numIntervals + 1;
+						if(setTurning){
+							addInterval(current, setTurning, i);
+						}
+					}
+				}
+				else if (pointInBounds(length,wallpointcontinued)){
+					if (grid[wallpointcontinued.x-1][wallpointcontinued.y-1].isOpen()){
+						numIntervals = numIntervals + 1;
+						addInterval(current, setTurning, i);
+					}
+				}
 			}
 			else if (curr==4 && future==1) {
-				wallpointcontinued = new Point(currpoint.x, currpoint.y+1);
-				wallpointleft = new Point(currpoint.x+1,currpoint.y);
+				wallpointcontinued = new Point(currpoint.x+1, currpoint.y);
+				wallpointleft = new Point(currpoint.x,currpoint.y+1);
 				if (pointInBounds(length,wallpointleft) && pointInBounds(length,wallpointcontinued)){
-				if (grid[wallpointcontinued.x-1][wallpointcontinued.y-1].isOpen() || grid[wallpointleft.x-1][wallpointleft.y-1].isOpen()){
-					numIntervals = numIntervals + 1;
-					if(setTurning){
-						placementCells.add(current.get(i+1));
-						System.out.println("Point after Turning " + path.get(i+1) + " ");
+					if (grid[wallpointcontinued.x-1][wallpointcontinued.y-1].isOpen() || grid[wallpointleft.x-1][wallpointleft.y-1].isOpen()){
+						numIntervals = numIntervals + 1;
+						addInterval(current, setTurning, i);
 					}
-				}}
+				}
+				else if (pointInBounds(length,wallpointleft)){
+					if (grid[wallpointleft.x-1][wallpointleft.y-1].isOpen()){
+						numIntervals = numIntervals + 1;
+						addInterval(current, setTurning, i);
+					}
+				}
+				else if (pointInBounds(length,wallpointcontinued)){
+					if (grid[wallpointcontinued.x-1][wallpointcontinued.y-1].isOpen()){
+						numIntervals = numIntervals + 1;
+						addInterval(current, setTurning, i);
+					}
+				}
 			}
 			else if(curr==1 && future==3) {
-				wallpointcontinued = new Point(currpoint.x - 1, currpoint.y);
-				wallpointleft = new Point(currpoint.x, currpoint.y + 1);
+				wallpointcontinued = new Point(currpoint.x, currpoint.y-1);
+				wallpointleft = new Point(currpoint.x+1, currpoint.y);
 				if (pointInBounds(length, wallpointleft) && pointInBounds(length, wallpointcontinued)) {
 					if (grid[wallpointcontinued.x - 1][wallpointcontinued.y - 1].isOpen() || grid[wallpointleft.x - 1][wallpointleft.y - 1].isOpen()) {
 						numIntervals = numIntervals + 1;
-						if (setTurning) {
-							placementCells.add(current.get(i + 1));
-							System.out.println("Point after Turning " + path.get(i + 1) + " ");
-						}
+						addInterval(current, setTurning, i);
+					}
+				}
+				else if (pointInBounds(length,wallpointleft)){
+					if (grid[wallpointleft.x-1][wallpointleft.y-1].isOpen()){
+						numIntervals = numIntervals + 1;
+						addInterval(current, setTurning, i);
+					}
+				}
+				else if (pointInBounds(length,wallpointcontinued)){
+					if (grid[wallpointcontinued.x-1][wallpointcontinued.y-1].isOpen()){
+						numIntervals = numIntervals + 1;
+						addInterval(current, setTurning, i);
 					}
 				}
 			}
 			else if(curr==3 && future==1) {
-				wallpointcontinued = new Point(currpoint.x, currpoint.y-1);
+				wallpointcontinued = new Point(currpoint.x-1, currpoint.y);
 				if (pointInBounds(length, wallpointcontinued)) {
 					if (grid[wallpointcontinued.x-1][wallpointcontinued.y-1].isOpen()){
 						numIntervals = numIntervals + 1;
-						if (setTurning) {
-							placementCells.add(current.get(i + 1));
-							System.out.println("Point after Turning " + path.get(i + 1) + " ");
-						}
+						addInterval(current, setTurning, i);
 					}
 				}
 			}
 			else if(curr==1 && future==4){
-				wallpointcontinued = new Point(currpoint.x - 1, currpoint.y);
+				wallpointcontinued = new Point(currpoint.x, currpoint.y-1);
 				if (pointInBounds(length, wallpointcontinued)) {
 					if (grid[wallpointcontinued.x-1][wallpointcontinued.y-1].isOpen()){
 						numIntervals = numIntervals + 1;
-						if (setTurning) {
-							placementCells.add(current.get(i + 1));
-							System.out.println("Point after Turning " + path.get(i + 1) + " ");
-						}
+						addInterval(current, setTurning, i);
 					}
 				}
 			}
 			else if(curr==4 && future==2){
-				wallpointcontinued = new Point(currpoint.x, currpoint.y+1);
-				if (pointInBounds(length, wallpointcontinued)) {
-					if (grid[wallpointcontinued.x-1][wallpointcontinued.y-1].isOpen()){
-						numIntervals = numIntervals + 1;
-						if (setTurning) {
-							placementCells.add(current.get(i + 1));
-							System.out.println("Point after Turning " + path.get(i + 1) + " ");
-						}
-					}
-				}
-			}
-			else if(curr==2 && future==3){
 				wallpointcontinued = new Point(currpoint.x+1, currpoint.y);
 				if (pointInBounds(length, wallpointcontinued)) {
 					if (grid[wallpointcontinued.x-1][wallpointcontinued.y-1].isOpen()){
 						numIntervals = numIntervals + 1;
-						if (setTurning) {
-							placementCells.add(current.get(i + 1));
-							System.out.println("Point after Turning " + path.get(i + 1) + " ");
-						}
+						addInterval(current, setTurning, i);
 					}
 				}
+
+			}
+			else if(curr==2 && future==3){
+				// System.out.println(currpoint + "go right and need to go up");
+				wallpointcontinued = new Point(currpoint.x, currpoint.y+1);
+				if (pointInBounds(length, wallpointcontinued)) {
+					if (grid[wallpointcontinued.x-1][wallpointcontinued.y-1].isOpen()){
+						numIntervals = numIntervals + 1;
+						addInterval(current, setTurning, i);
+					}
+				}
+
 			}
 		}
 		return numIntervals;
