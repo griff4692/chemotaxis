@@ -106,18 +106,21 @@ public class Controller extends chemotaxis.sim.Controller {
 		getIntervals(path, true, grid);
 
 		Point first = path.get(1);
-		if(grid[start.x][start.y-1].isOpen() && (start.x+1!=first.x || start.y!=first.y)){
-			placementCells.add(0, path.get(1));
+		if(start.y-1!=first.y){
+			if(grid[start.x][start.y-1].isOpen() && (start.x+1!=first.x || start.y!=first.y)){
+				placementCells.add(0, path.get(1));
+			}
+			else if(grid[start.x-1][start.y].isOpen() && (start.x!=first.x || start.y+1!=first.y)){
+				placementCells.add(0, path.get(1));
+			}
+			else if(grid[start.x-2][start.y-1].isOpen() && (start.x-1!=first.x || start.y!=first.y)){
+				placementCells.add(0, path.get(1));
+			}
 		}
-		else if(grid[start.x-1][start.y].isOpen() && (start.x!=first.x || start.y+1!=first.y)){
-			placementCells.add(0, path.get(1));
-		}
-		else if(grid[start.x-2][start.y-1].isOpen() && (start.x-1!=first.x || start.y!=first.y)){
-			placementCells.add(0, path.get(1));
-		}
-		else if(grid[start.x-1][start.y-2].isOpen() && (start.x!=first.x || start.y-1!=first.y)){
-			placementCells.add(0, path.get(1));
-		}
+
+		// else if(grid[start.x-1][start.y-2].isOpen() && (start.x!=first.x || start.y-1!=first.y)){
+		// 	placementCells.add(0, path.get(1));
+		// }
 
 		placementPadding = new int[placementCells.size()];
 		System.out.println(placementCells.size());
