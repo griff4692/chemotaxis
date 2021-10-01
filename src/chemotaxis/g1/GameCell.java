@@ -102,10 +102,10 @@ public class GameCell {
     }
 
     /**
-     * Returns a new point that is zero indexed
+     * Convert a one-indexed point to a zero-indexed point
      *
      * @param oneBasedPoint
-     * @return
+     * @return New point, now zero indexed
      */
     public static Point zeroPoint(final Point oneBasedPoint) {
         if (oneBasedPoint == null) {
@@ -116,5 +116,17 @@ public class GameCell {
             throw new RuntimeException("underflow converting one based point to zero based");
         }
         return zeroBasedPoint;
+    }
+
+    /**
+     * Convert a zero-indexed point to a one-indexed point
+     * @param zeroBasedPoint
+     * @return New point, now one indexed
+     */
+    public static Point oneBasedPoint(final Point zeroBasedPoint) {
+        if (zeroBasedPoint == null) {
+            return null;
+        }
+        return new Point(zeroBasedPoint.x + 1, zeroBasedPoint.y + 1);
     }
 }
