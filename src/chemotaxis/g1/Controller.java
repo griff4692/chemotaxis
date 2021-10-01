@@ -122,6 +122,10 @@ public class Controller extends chemotaxis.sim.Controller {
         if (this.selectedRoute<0 || routes.get(this.selectedRoute).size()==0)  {
             strategy=StrategyChoice.weak;
         }
+        selectedRoute = 100;
+        while (!routes.containsKey(selectedRoute)) {
+            selectedRoute-=1;
+        }
         rallyPoints = RallypointLayout.calculateLayout(routes.get(selectedRoute), grid);
     }
 
