@@ -109,9 +109,12 @@ public class Controller extends chemotaxis.sim.Controller {
             Collections.reverse(route);
             routes.put(i, route);
             setTurnAt(grid, i);
+
         }
 
         this.selectedRoute = budget / agentGoal;
+
+
         while (!routes.containsKey(this.selectedRoute) && this.selectedRoute>=0) {
             this.selectedRoute-=1;
         }
@@ -170,7 +173,6 @@ public class Controller extends chemotaxis.sim.Controller {
             }
 
             if (readyToGo) {
-                strongStrategy.put(time,0);
                 for (int i=0;i<turnAt_simpleForm.get(turnChoice).size();i++) {
                     strongStrategy.put(time+turnAt_simpleForm.get(turnChoice).get(i),turnAt_simpleForm.get(turnChoice).get(i));
                 }
@@ -183,22 +185,24 @@ public class Controller extends chemotaxis.sim.Controller {
 
 
 
-    private boolean agentAt(int x, int y) {
-        for (TriInteger agent : agents) {
-            if (agent.x==x && agent.y==y) {
-                return  true;
-            }
-        }
-        return false;
-    }
-
 
     private void setTurnAt(ChemicalCell[][] grid, final int turn) {
         final ArrayList<Point> route = routes.get(turn);
         // List of turns in the route
         ArrayList<Integer> turns = new ArrayList<>();
+        turns.add(1);
         int currentStep = 0;
         int d = 0;
+        if (route.size()>0) {
+            for (int j = 0; j < 4; j++) {
+                if ((route.get(1).x - route.get(0).x == movement(j).x) &&
+                    (route.get(1).y - route.get(0).y == movement(j).y)) {
+                    d = j;
+                    break;
+                }
+            }
+        }
+        currentStep=1;
         ArrayList<Integer> allDirections = new ArrayList<>(Arrays.asList(0,1,-1));
         while (currentStep<routes.get(turn).size()-1) {
             Point current = new Point(route.get(currentStep).x,route.get(currentStep).y);
@@ -398,7 +402,6 @@ public class Controller extends chemotaxis.sim.Controller {
         Point current = new Point(modifiedTarget.x,modifiedTarget.y);
         int step = 10001;
         int direction = 0;
-
         for (int i=0;i<4;i++) {
             if (dist[modifiedTarget.x][modifiedTarget.y][i]>0 && dist[modifiedTarget.x][modifiedTarget.y][i]<step){
                 step = dist[modifiedTarget.x][modifiedTarget.y][i];
@@ -406,6 +409,8 @@ public class Controller extends chemotaxis.sim.Controller {
         }
         int[][][] localdist = dist;
         int localturn = turn;
+        localdist = dist_record.get(localturn);
+
         if (step<10001) {
             while (!((modifiedStart.x==current.x)&&(modifiedStart.y==current.y))) {
 
@@ -416,6 +421,10 @@ public class Controller extends chemotaxis.sim.Controller {
                     for (int i = 0; i < 4; i++) {
                         int j = (i + direction + 4) % 4;
                         if (localdist[current.x][current.y][j] == step) {
+                            if (dist_record.get(localturn-1)[current.x][current.y][j] == step) {
+                                localturn -= 1;
+                                localdist = dist_record.get(localturn);
+                            }
                             direction = j;
                             step -= 1;
                             endwhile = true;
@@ -433,6 +442,8 @@ public class Controller extends chemotaxis.sim.Controller {
 
             route.add(new Point(current));
         }
+
+
         routes.put(turn, new ArrayList<>(route));
     }
 
@@ -447,6 +458,15 @@ public class Controller extends chemotaxis.sim.Controller {
         // other points if there is a wall that gives you a "free" turn in some direction.
         Queue<TriInteger> pointsSavedForNextTurn = new LinkedList<>();
         pointsSavedForNextTurn.add(new TriInteger(modifiedStart.x,modifiedStart.y,0));
+        int [][][] temp = new int[size][size][4];
+        for (int i=0;i<size;i++) {
+            for (int j = 0; j < size; j++) {
+                for (int k = 0; k < 4; k++) {
+                    temp[i][j][k] = dist[i][j][k];
+                }
+            }
+        }
+        dist_record.add(temp);
         for (int turn=1;turn<maxturn;turn++) {
             if (turn>1) {
                 while (!pointsSavedForNextTurn.isEmpty()) {
@@ -525,7 +545,7 @@ public class Controller extends chemotaxis.sim.Controller {
             if (pointsSavedForNextTurn.isEmpty()&&turn>0) {
                 return;
             }
-            int [][][] temp = new int[size][size][4];
+            temp = new int[size][size][4];
             for (int i=0;i<size;i++) {
                 for (int j = 0; j < size; j++) {
                     for (int k = 0; k < 4; k++) {
