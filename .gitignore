@@ -47,4 +47,4 @@ coms4444-chemotaxis.iml
 .vscode/
 .DS_Store
 .metadata/
-
+src/*.sh

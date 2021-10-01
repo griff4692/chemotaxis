@@ -42,4 +42,8 @@ public class AgentWrapper {
     public String getAgentName() {
         return agentName;
     }
+
+    public void terminateThread() {
+        this.timer.terminate();
+    }
 }
