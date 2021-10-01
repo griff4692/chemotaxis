@@ -105,11 +105,15 @@ public class Agent extends chemotaxis.sim.Agent {
         };
 
         // First Priority: Move in direction of highest concentration of sought chemical
+        double threshold = 0.1;
+
         double highestConcentration = currentCell.getConcentration(chosenChemicalType);
         for (DirectionType directionType : neighborMap.keySet()) {
             if (highestConcentration < neighborMap.get(directionType).getConcentration(chosenChemicalType)) {
                 highestConcentration = neighborMap.get(directionType).getConcentration(chosenChemicalType);
-                move.directionType = directionType;
+                if (highestConcentration > threshold) {
+                    move.directionType = directionType;
+                }
             }
         }
         // If at maxima, switch chemical and look again
@@ -178,7 +182,7 @@ public class Agent extends chemotaxis.sim.Agent {
                     }
                     else if (neighborMap.get(DirectionType.EAST).isBlocked() &&
                             neighborMap.get(DirectionType.WEST).isBlocked()){
-                        move.directionType = DirectionType.SOUTH;
+                        move.directionType = DirectionType.CURRENT;
                     }
                     else{
                         move.directionType = DirectionType.EAST;
@@ -190,7 +194,7 @@ public class Agent extends chemotaxis.sim.Agent {
                     }
                     else if (neighborMap.get(DirectionType.SOUTH).isBlocked() &&
                             neighborMap.get(DirectionType.NORTH).isBlocked()){
-                        move.directionType = DirectionType.EAST;
+                        move.directionType = DirectionType.CURRENT;
                     }
                     else{
                         move.directionType = DirectionType.NORTH;
@@ -202,7 +206,7 @@ public class Agent extends chemotaxis.sim.Agent {
                     }
                     else if (neighborMap.get(DirectionType.EAST).isBlocked() &&
                             neighborMap.get(DirectionType.WEST).isBlocked()){
-                        move.directionType = DirectionType.NORTH;
+                        move.directionType = DirectionType.CURRENT;
                     }
                     else{
                         move.directionType = DirectionType.WEST;
@@ -214,7 +218,7 @@ public class Agent extends chemotaxis.sim.Agent {
                     }
                     else if (neighborMap.get(DirectionType.NORTH).isBlocked() &&
                             neighborMap.get(DirectionType.SOUTH).isBlocked()){
-                        move.directionType = DirectionType.WEST;
+                        move.directionType = DirectionType.CURRENT;
                     }
                     else{
                         move.directionType = DirectionType.SOUTH;
