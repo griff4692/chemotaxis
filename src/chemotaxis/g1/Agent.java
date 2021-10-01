@@ -248,35 +248,17 @@ public class Agent extends chemotaxis.sim.Agent {
         Move nextMove = new Move();
         AgentState nextState = new AgentState(prevState);
         ChemicalType followColor = prevState.getFollowColor();
-        DirectionType followDirectionCurrent = towardsGradient(followColor, neighborMap);
-        ChemicalType nextColor = nextColorWeak2(followColor);
-        if (followDirectionCurrent == DirectionType.CURRENT) {
-            boolean changeColor = false;
-            if (nextState.getConflict()) {
-                // If we've seen a conflict in the previous turn, change follow color
-                changeColor = true;
-                nextState.clearConflict();
-            } else {
-                nextState.setConflict();
-            }
+        DirectionType followDirection = towardsGradient(followColor, neighborMap);
+        if (followDirection == DirectionType.CURRENT) {
             // Check to see if the next color is nearby
-            DirectionType followDirectionNext = towardsGradient(nextColor, neighborMap);
-            // Some ugly code right here
-            if (followDirectionNext != DirectionType.CURRENT || changeColor) {
+            ChemicalType nextColor = nextColorWeak2(followColor);
+            followDirection = towardsGradient(nextColor, neighborMap);
+            if (followDirection != DirectionType.CURRENT) {
                 nextState.changeFollowColor(followColor);
             }
-        } else {
-            DirectionType  followDirectionNext = towardsGradient(nextColor, neighborMap);
-            if (!followDirectionNext.equals(DirectionType.CURRENT)) {
-                if (nextState.asCardinalDir(followDirectionCurrent).reverseOf().equals(nextState.asCardinalDir(followDirectionNext))) {
-                    nextState.changeFollowColor(followColor);
-                    followDirectionCurrent = followDirectionNext;
-                }
-            }
-            nextState.clearConflict();
         }
         nextMove.currentState = nextState.serialize();
-        nextMove.directionType = followDirectionCurrent;
+        nextMove.directionType = followDirection;
         return nextMove;
     }
 
@@ -312,6 +294,9 @@ public class Agent extends chemotaxis.sim.Agent {
         for (DirectionType d : neighborMap.keySet()) {
             ChemicalCell cell = neighborMap.get(d);
             double concentration = cell.getConcentration(followColor);
+//            if( d == DirectionType.CURRENT) {
+//                System.out.println(concentration);
+//            }
             if (concentration == maxConcentration) {
                 conflict = true;
             } else if (concentration > maxConcentration) {
