@@ -53,7 +53,7 @@ public class Controller extends chemotaxis.sim.Controller {
 
     // Game State for IDS lookahead
     private GameState gameState;
-
+    private RallypointLayout rallyPoints;
     private int currentRallyPoint = 0;
 
     /**
@@ -122,12 +122,7 @@ public class Controller extends chemotaxis.sim.Controller {
         if (this.selectedRoute<0 || routes.get(this.selectedRoute).size()==0)  {
             strategy=StrategyChoice.weak;
         }
-        if (strategy==StrategyChoice.weak) {
-            planWeak(budget,agentGoal);
-        }
-
-        RallypointLayout rpLayout = RallypointLayout.calculateLayout(routes.get(selectedRoute), grid);
-        System.out.println("mista dobalina");
+        rallyPoints = RallypointLayout.calculateLayout(routes.get(selectedRoute), grid);
     }
 
  /*   private void simWeak(Point start, Point target, int agentGoal, int spawnFreq,
@@ -390,47 +385,44 @@ public class Controller extends chemotaxis.sim.Controller {
      * @return
      */
     private ChemicalPlacement _applyChemicals(Integer currentTurn, Integer chemicalsRemaining, ArrayList<Point> locations, ChemicalCell[][] grid) {
-        if (chemicalsRemaining<=0) {
+        if (chemicalsRemaining <= 0) {
             return new ChemicalPlacement();
         }
         ChemicalPlacement chemicalPlacement = new ChemicalPlacement();
-        if (strategy==StrategyChoice.strong) {
-            currentTurn-=1;
+        if (strategy == StrategyChoice.strong) {
+            currentTurn -= 1;
             if (strongStrategy.containsKey(currentTurn)) {
-                chemicalPlacement.location = new Point(routes.get(this.selectedRoute).get(strongStrategy.get(currentTurn)+1).x+1,
-                    routes.get(this.selectedRoute).get(strongStrategy.get(currentTurn)+1).y+1);
-                if (strongStrategy.get(currentTurn)==0) {
+                chemicalPlacement.location = new Point(routes.get(this.selectedRoute).get(strongStrategy.get(currentTurn) + 1).x + 1,
+                    routes.get(this.selectedRoute).get(strongStrategy.get(currentTurn) + 1).y + 1);
+                if (strongStrategy.get(currentTurn) == 0) {
                     chemicalPlacement.chemicals.add(ChemicalCell.ChemicalType.GREEN);
                     return chemicalPlacement;
-                }
-                else {
+                } else {
                     chemicalPlacement.chemicals.add(ChemicalCell.ChemicalType.BLUE);
                     return chemicalPlacement;
                 }
             }
-            return chemicalPlacement ;
-        }
-        else {
-            while (!weakPlan.containsKey(currentRallyPoint)) {
-                currentRallyPoint += 1;
-                if (currentRallyPoint>=routes.get(this.selectedRoute).size()) {
-                    currentRallyPoint=0;
-                }
-            }
-            chemicalPlacement.location = new Point(routes.get(this.selectedRoute).get(currentRallyPoint).x+1,
-                    routes.get(this.selectedRoute).get(currentRallyPoint).y+1);
-            if (weakPlan.get(currentRallyPoint)==Color.blue) {
-                chemicalPlacement.chemicals.add(ChemicalCell.ChemicalType.BLUE);
-            }
-            if (weakPlan.get(currentRallyPoint)==Color.red) {
-                chemicalPlacement.chemicals.add(ChemicalCell.ChemicalType.RED);
-            }
-            if (weakPlan.get(currentRallyPoint)==Color.green) {
-                chemicalPlacement.chemicals.add(ChemicalCell.ChemicalType.GREEN);
-            }
-            currentRallyPoint+=1;
             return chemicalPlacement;
+        } else {
+            int refreshingRate = (spawnFreq * agentGoal) / budget / rallyPoints.rallyPoints.size();
+            if ((currentTurn - 1) % refreshingRate == 0) {
+                chemicalPlacement.location = GameCell.oneBasedPoint(rallyPoints.rallyPoints.get(currentRallyPoint));
+                switch (currentRallyPoint % 3) {
+                    case 0:
+                        chemicalPlacement.chemicals.add(ChemicalCell.ChemicalType.BLUE);
+                        break;
+                    case 1:
+                        chemicalPlacement.chemicals.add(ChemicalCell.ChemicalType.RED);
+                        break;
+                    default:
+                        chemicalPlacement.chemicals.add(ChemicalCell.ChemicalType.GREEN);
+                        break;
+                }
+                return chemicalPlacement;
+            }
         }
+        return new ChemicalPlacement();
+    }
         /*if (currentTurn == 1) {
             chemicalPlacement.location = start;
             chemicalPlacement.chemicals.add(ChemicalCell.ChemicalType.GREEN);
@@ -474,7 +466,6 @@ public class Controller extends chemotaxis.sim.Controller {
             chemicalPlacement.chemicals.add(ChemicalCell.ChemicalType.BLUE);
         }
         return chemicalPlacement;*/
-    }
 
     /**
      * Apply chemicals to the map
