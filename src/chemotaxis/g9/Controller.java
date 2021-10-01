@@ -67,7 +67,6 @@ public class Controller extends chemotaxis.sim.Controller {
 		// budget --; // take out another for the ending chemical
 		int pathLength = shortestPathList.size();
 		int singlePathIncrement = (int) Math.ceil((double) pathLength / (double) budget);
-		System.out.format("%d, %d, %d", pathLength, budget, singlePathIncrement);
 		
 		// ideal chemical increment will not make it the full path.
 		return (singlePathIncrement > idealChemicalIncrement) ? singlePathIncrement : idealChemicalIncrement;
@@ -150,7 +149,6 @@ public class Controller extends chemotaxis.sim.Controller {
         	currentPathIndex += incrementBy;
         }*/
 		Point pointToPlace = this.placementPath.get(currentPathIndex);
-		System.out.println(currentPathIndex);
 		chemicalPlacement.location = new Point(pointToPlace.x + 1, pointToPlace.y + 1);
 		
 		// pick right chemical in sequence
