@@ -103,7 +103,9 @@ public class Controller extends chemotaxis.sim.Controller {
 
 		placementCells = new ArrayList<Point>();
 		// Analyze the selected path and get all turning points as initial placement cells
+		System.out.println("made it here");
 		getIntervals(path, true, grid);
+		System.out.println("made it here too");
 
 		Point first = path.get(1);
 		boolean addedFirst = false;
@@ -121,6 +123,7 @@ public class Controller extends chemotaxis.sim.Controller {
 				addedFirst = true;
 			}
 		}
+		System.out.println("and here1");
 
 		// else if(grid[start.x-1][start.y-2].isOpen() && (start.x!=first.x || start.y-1!=first.y)){
 		// 	placementCells.add(0, path.get(1));
@@ -144,6 +147,7 @@ public class Controller extends chemotaxis.sim.Controller {
 		// }
 		int prev = 0;
 		System.out.println(prev);
+		System.out.println("and here2");
 		// For each placement cells check the following two cells
 		// and find the one with largest percentage of remaining as local max.
 		for(int i=0; i<placementCells.size(); i++){
@@ -164,6 +168,7 @@ public class Controller extends chemotaxis.sim.Controller {
 					}
 				}
 			}
+			System.out.println("and here3");
 			
 			// Say A --15 cells --> B; so the rolling mode is on
 			// Turn the rolling mode on
@@ -365,8 +370,17 @@ public class Controller extends chemotaxis.sim.Controller {
 
 		Integer numIntervals = 0;
 
+		if(current.size() > 1){// test to see if first move is West (default movement) or some other move
+			if(values.get(0) != 1){// movement is not west
+				numIntervals = numIntervals + 1;
+				addInterval(current, setTurning, 0);
+			}
+		}
+
+
 		for (int i=0;i<values.size()-1;i=i+1){
 			Point currpoint = current.get(i+1);
+			if(currpoint.x == 11 && currpoint.y == 7) System.out.println("Expanding 11 7");
 			Point wallpointcontinued;
 			Point wallpointleft;
 			Integer curr = values.get(i);
@@ -400,6 +414,7 @@ public class Controller extends chemotaxis.sim.Controller {
 				wallpointleft = new Point(currpoint.x-1, currpoint.y);
 				if (pointInBounds(length,wallpointleft) && pointInBounds(length,wallpointcontinued)){
 					if (grid[wallpointcontinued.x-1][wallpointcontinued.y-1].isOpen() || grid[wallpointleft.x-1][wallpointleft.y-1].isOpen()){
+						if(currpoint.x == 11 && currpoint.y == 7) System.out.println("Should always be here");
 						numIntervals = numIntervals + 1;
 						addInterval(current, setTurning, i);
 					}
@@ -494,8 +509,10 @@ public class Controller extends chemotaxis.sim.Controller {
 			else if(curr==2 && future==3){
 				// System.out.println(currpoint + "go right and need to go up");
 				wallpointcontinued = new Point(currpoint.x, currpoint.y+1);
+				if(currpoint.x == 11 && currpoint.y == 7) System.out.println("Or should be here");
 				if (pointInBounds(length, wallpointcontinued)) {
 					if (grid[wallpointcontinued.x-1][wallpointcontinued.y-1].isOpen()){
+						if(currpoint.x == 11 && currpoint.y == 7) System.out.println("SHOULD NOT BE HERE!!!");
 						numIntervals = numIntervals + 1;
 						addInterval(current, setTurning, i);
 					}
@@ -517,7 +534,7 @@ public class Controller extends chemotaxis.sim.Controller {
 			Integer numIntervalso2 = getIntervals(o2, false,grid);
 			Integer numNeighborso1 = countNeighborsInPath(o1);
 			Integer numNeighborso2 = countNeighborsInPath(o2);
-			if (numIntervalso1 - (int)0.5*numNeighborso1 + o1.size() < numIntervalso2 - (int)0.5*numNeighborso2 + o2.size()){
+			if (numIntervalso1< numIntervalso2){
 				return -1;}
 			else{
 				return 1;
