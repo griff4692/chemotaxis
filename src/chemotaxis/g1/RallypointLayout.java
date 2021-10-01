@@ -65,9 +65,11 @@ public class RallypointLayout {
                     // the previous point.
                     rallypointRanges.remove(path.get(i - 1));
                     rallypointRanges.put(path.get(i), range);
-                    if (i == targetIx) {
+                    if (i+4 >= targetIx) {
                         // Can't look any further... target becomes rally point
                         rallypoints.add(path.get(targetIx));
+                        rallypointRanges.remove(path.get(i));
+                        rallypointRanges.put(path.get(targetIx), range);
                         // Break out of both loops
                         currentIx = targetIx;
                         break;
@@ -81,7 +83,13 @@ public class RallypointLayout {
                 }
             }
         }
-
+//        int len = rallypoints.size();
+//        if (len >= 2) {
+//            Point secondToLast = rallypoints.get(len-2);
+//            Point last = rallypoints.get(len-1);
+//            int manhattanDist =
+//
+//        }
         return new RallypointLayout(rallypoints, rallypointRanges);
     }
 
