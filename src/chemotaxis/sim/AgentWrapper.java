@@ -32,7 +32,6 @@ public class AgentWrapper {
             Log.writeToVerboseLogFile("Exception for team " + this.agentName + "'s agent: " + e);
         }
 
-        timer.terminate();
         return move;
     }
     
@@ -42,5 +41,9 @@ public class AgentWrapper {
 
     public String getAgentName() {
         return agentName;
+    }
+
+    public void terminateThread() {
+        this.timer.terminate();
     }
 }
