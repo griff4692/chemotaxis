@@ -374,8 +374,33 @@ public class Controller extends chemotaxis.sim.Controller {
 
 		if(current.size() > 1){// test to see if first move is West (default movement) or some other move
 			if(values.get(0) != 1){// movement is not west
-				numIntervals = numIntervals + 1;
-				addInterval(current, setTurning, 0);
+				Point start = current.get(0);
+				Point southStart = new Point(start.x + 1, start.y);
+				Point eastStart = new Point(start.x, start.y + 1);
+				Point westStart = new Point(start.x, start.y - 1);
+				boolean southOpen = (pointInBounds(grid.length, southStart) && grid[southStart.x - 1][southStart.y - 1].isOpen());
+				boolean eastOpen = (pointInBounds(grid.length, eastStart) && grid[eastStart.x - 1][eastStart.y - 1].isOpen());
+				boolean westOpen = (pointInBounds(grid.length, westStart) && grid[westStart.x - 1][westStart.y - 1].isOpen());
+
+
+				if(values.get(0) == 4){ //moving south
+					if(westOpen){
+						numIntervals = numIntervals + 1;
+						addInterval(current, setTurning, 0);
+					}
+				}
+				else if(values.get(0) == 2) {//moving east
+					if(westOpen || southOpen){
+						numIntervals = numIntervals + 1;
+						addInterval(current, setTurning, 0);
+					}
+				}
+				else if(values.get(0) == 3){
+					if(westOpen || southOpen || eastOpen){
+						numIntervals = numIntervals + 1;
+						addInterval(current, setTurning, 0);
+					}
+				}
 			}
 		}
 
@@ -537,7 +562,15 @@ public class Controller extends chemotaxis.sim.Controller {
 			Integer numNeighborso1 = countNeighborsInPath(o1);
 			Integer numNeighborso2 = countNeighborsInPath(o2);
 			if (numIntervalso1< numIntervalso2){
-				return -1;}
+				return -1;
+			}
+			else if(numIntervalso1 == numIntervalso2) {
+				if (o1.size() < o2.size()) {
+					return -1;
+				} else {
+					return 1;
+				}
+			}
 			else{
 				return 1;
 			}
