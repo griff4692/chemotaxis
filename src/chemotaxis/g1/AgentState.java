@@ -27,6 +27,10 @@ public class AgentState {
     private static final byte STRAT_MASK = 0x1 << 5;
     private static final byte WEAK_CHEM_BITS = 0x1 << 5;
 
+    // Seventh bit used to track previous direction "conflict for weak strategy
+    private static final byte CONFLICT_MASK = 0x1 << 6;
+    private static final byte CONFLICT_BIT = 0x1 << 6;
+
     public enum Strategy {
         STRONG, WEAK
     }
@@ -88,8 +92,7 @@ public class AgentState {
     public ChemicalType getFollowColor() {
         if ((this.state & COLOR_MASK) == RED_BITS) {
             return ChemicalType.RED;
-        }
-        else if ((this.state & COLOR_MASK) == GREEN_BITS) {
+        } else if ((this.state & COLOR_MASK) == GREEN_BITS) {
             return ChemicalType.GREEN;
         }
         return ChemicalType.BLUE;
@@ -190,5 +193,17 @@ public class AgentState {
         if (strat == Strategy.WEAK) {
             this.state |= WEAK_CHEM_BITS;
         }
+    }
+
+    public void setConflict() {
+        this.state &= CONFLICT_BIT;
+    }
+
+    public void clearConflict() {
+        this.state &= ~CONFLICT_MASK;
+    }
+
+    public boolean getConflict() {
+        return (this.state & CONFLICT_BIT) > 0;
     }
 }

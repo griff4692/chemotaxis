@@ -250,12 +250,21 @@ public class Agent extends chemotaxis.sim.Agent {
         ChemicalType followColor = prevState.getFollowColor();
         DirectionType followDirection = towardsGradient(followColor, neighborMap);
         if (followDirection == DirectionType.CURRENT) {
+            if (nextState.getConflict()) {
+                // If we've seen a conflict in the previous turn, change follow color
+                nextState.changeFollowColor(nextColorWeak2(followColor));
+                nextState.clearConflict();
+            } else {
+                nextState.setConflict();
+            }
             // Check to see if the next color is nearby
             ChemicalType nextColor = nextColorWeak2(followColor);
             followDirection = towardsGradient(nextColor, neighborMap);
             if (followDirection != DirectionType.CURRENT) {
                 nextState.changeFollowColor(followColor);
             }
+        } else {
+            nextState.clearConflict();
         }
         nextMove.currentState = nextState.serialize();
         nextMove.directionType = followDirection;
@@ -294,9 +303,6 @@ public class Agent extends chemotaxis.sim.Agent {
         for (DirectionType d : neighborMap.keySet()) {
             ChemicalCell cell = neighborMap.get(d);
             double concentration = cell.getConcentration(followColor);
-            if( d == DirectionType.CURRENT) {
-                System.out.println(concentration);
-            }
             if (concentration == maxConcentration) {
                 conflict = true;
             } else if (concentration > maxConcentration) {

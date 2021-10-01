@@ -9,7 +9,7 @@ import java.util.HashMap;
 import java.util.HashSet;
 
 public class RallypointLayout {
-    private static final int DIFFUSION_DEPTH = 25;
+    private static final int DIFFUSION_DEPTH = 25 * 2;
     private static final ChemicalCell.ChemicalType SIM_COLOR = ChemicalCell.ChemicalType.BLUE;
 
     ArrayList<Point> rallyPoints;
@@ -39,7 +39,7 @@ public class RallypointLayout {
         int currentIx = 0;
         while (currentIx != targetIx) {
             for (int i = currentIx + 1; i < path.size(); ++i) {
-                GameState gs = new GameState(path.get(0), path.get(targetIx), 0, Integer.MAX_VALUE, 1, grid);
+                GameState gs = new GameState(path.get(0), path.get(targetIx), 0, Integer.MAX_VALUE, Integer.MAX_VALUE, grid);
 
                 ChemicalPlacement cp = new ChemicalPlacement();
                 cp.location = path.get(i);
@@ -50,7 +50,11 @@ public class RallypointLayout {
 
                 for (int t = 0; t < DIFFUSION_DEPTH; ++t) {
                     // Do nothing placement, just step for diffusion
-                    gs = gs.placeChemicalAndStep(new ChemicalPlacement());
+                    if (currentIx != 0 && (t % (DIFFUSION_DEPTH / 5)) == 0) {
+                        gs = gs.placeChemicalAndStep(cp);
+                    } else {
+                        gs = gs.placeChemicalAndStep(new ChemicalPlacement());
+                    }
                 }
 
                 HashSet<Point> range = calculateRange(gs.getGrid());
@@ -59,7 +63,7 @@ public class RallypointLayout {
                     // Store the range here so that when we find the first point that
                     // cannot reach the current RP we have already cached the range for
                     // the previous point.
-                    rallypointRanges.remove(path.get(i-1));
+                    rallypointRanges.remove(path.get(i - 1));
                     rallypointRanges.put(path.get(i), range);
                     if (i == targetIx) {
                         // Can't look any further... target becomes rally point

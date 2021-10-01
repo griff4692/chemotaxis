@@ -43,6 +43,7 @@ public class Controller extends chemotaxis.sim.Controller {
         }
     }
     private StrategyChoice strategy;
+    private int startingChemicals;
     private int selectedRoute;
     // a final schedule if the strategy is strong
     // finalSchedule[i]=j means put a chemical at j+1 cell on the route on turn i
@@ -70,6 +71,7 @@ public class Controller extends chemotaxis.sim.Controller {
      */
     public Controller(Point start, Point target, Integer size, ChemicalCell[][] grid, Integer simTime, Integer budget, Integer seed, SimPrinter simPrinter, Integer agentGoal, Integer spawnFreq) {
         super(start, target, size, grid, simTime, budget, seed, simPrinter, agentGoal, spawnFreq);
+        this.startingChemicals = budget;
         Point adjustedStart = GameCell.zeroPoint(start);
         Point adjustedTarget = GameCell.zeroPoint(target);
         this.gameState = new GameState(adjustedStart, adjustedTarget, agentGoal, spawnFreq, budget, grid);
@@ -410,7 +412,9 @@ public class Controller extends chemotaxis.sim.Controller {
             }
             return chemicalPlacement;
         } else {
-            int refreshingRate = (spawnFreq * agentGoal) / budget;
+//            int refreshingRate = (spawnFreq * agentGoal) / budget;
+//            int refreshingRate = (this.agentGoal * this.spawnFreq) / (this.startingChemicals / rallyPoints.rallyPoints.size()) * 3;
+            int refreshingRate = (this.agentGoal * this.spawnFreq) / this.startingChemicals;
             if ((currentTurn - 1) % refreshingRate == 0) {
                 chemicalPlacement.location = GameCell.oneBasedPoint(rallyPoints.rallyPoints.get(currentRallyPoint));
                 switch (currentRallyPoint % 3) {
