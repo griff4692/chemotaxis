@@ -128,7 +128,10 @@ public class Agent extends chemotaxis.sim.Agent {
 				move.directionType = directionType;
 			}
 		}
-
+		if(randomNum%3 == 2)
+		{
+			move.currentState = (byte)(Math.abs(randomNum%4) + 1);
+		}
 		/* all surrounding cells have no chemical
 		Direction based on randNum%4
 			- 0: right
@@ -167,10 +170,6 @@ public class Agent extends chemotaxis.sim.Agent {
 				}
 				move.currentState = (byte)(Math.abs(randomNum%4) + 1);
 			}
-		}
-		if(randomNum%3 == 2)
-		{
-			move.currentState = (byte)(Math.abs(randomNum%4) + 1);
 		}
 		return move;
 	}

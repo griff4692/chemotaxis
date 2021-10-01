@@ -222,11 +222,13 @@ public class Controller extends chemotaxis.sim.Controller {
 			}
 		}
 
-		System.out.println("period is: " + period);
-		System.out.println("agent spawned is: " + locations.size());
-		System.out.println("agent reached: " + agentReached);
-
-		if(currentTurn%this.period == 1){
+		if(chemicalsRemaining == 1 || currentTurn%this.period ==3){
+			List<ChemicalType> chemicals = new ArrayList<>();
+			chemicals.add(ChemicalType.BLUE);
+			chemicalPlacement.location = new Point(this.target.x, this.target.y);
+			chemicalPlacement.chemicals = chemicals;
+		}
+		else if(currentTurn%this.period == 1){
 			List<ChemicalType> chemicals = new ArrayList<>();
 			chemicals.add(ChemicalType.RED);
 			chemicalPlacement.location = new Point(this.first_pt.x, this.first_pt.y);
@@ -236,12 +238,6 @@ public class Controller extends chemotaxis.sim.Controller {
 			List<ChemicalType> chemicals = new ArrayList<>();
 			chemicals.add(ChemicalType.GREEN);
 			chemicalPlacement.location = new Point(this.second_pt.x, this.second_pt.y);
-			chemicalPlacement.chemicals = chemicals;
-		}
-		else if(currentTurn%this.period == 3){
-			List<ChemicalType> chemicals = new ArrayList<>();
-			chemicals.add(ChemicalType.BLUE);
-			chemicalPlacement.location = new Point(this.target.x, this.target.y);
 			chemicalPlacement.chemicals = chemicals;
 		}
 		else if (currentTurn%this.period == 0) {
