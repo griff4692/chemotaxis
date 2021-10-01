@@ -52,9 +52,13 @@ public class Agent extends chemotaxis.sim.Agent {
 
         Move move = new Move();
 
-        Boolean hasSeenBlue= (previousState>4 || previousState<0);
-        if (hasSeenBlue) {
+        Boolean hasSeenBlue= (previousState >> 6 == 1);
+        Boolean firstMove = (previousState >> 7 == 0);
+        if (!firstMove) {
             previousState = (byte) (previousState - 128);
+        }
+        if (hasSeenBlue) {
+            previousState = (byte) (previousState - 64);
         }
         move.currentState = previousState;
         Integer previousDirection = previousState & 0b11;
@@ -77,7 +81,6 @@ public class Agent extends chemotaxis.sim.Agent {
             }
         }
 
-
         if (move.directionType == DirectionType.CURRENT && !hasSeenBlue) {
             ArrayList<DirectionType> possibledirections = new ArrayList<DirectionType>();
             for (DirectionType directionType : neighborMap.keySet()) {
@@ -85,24 +88,13 @@ public class Agent extends chemotaxis.sim.Agent {
                     possibledirections.add(directionType);
                 }
             }
-            if (possibledirections.size() > 1) {
-                if (previousState == 0 && possibledirections.contains(DirectionType.NORTH)) {
-                    possibledirections.remove(DirectionType.NORTH);
-                } else if (previousState == 1 && possibledirections.contains(DirectionType.WEST)) {
-                    possibledirections.remove(DirectionType.WEST);
-                } else if (previousState == 2 && possibledirections.contains(DirectionType.EAST)) {
-                    possibledirections.remove(DirectionType.EAST);
-                } else if (previousState == 3 && possibledirections.contains(DirectionType.SOUTH)) {
-                    possibledirections.remove(DirectionType.SOUTH);
-                }
-            }
-            if (previousState == 0 && possibledirections.contains(DirectionType.SOUTH)) {
+            if (previousState == 0 && possibledirections.contains(DirectionType.SOUTH) && !firstMove) {
                 possibledirections.add(DirectionType.SOUTH);
-            } else if (previousState == 1 && possibledirections.contains(DirectionType.EAST)) {
+            } else if (previousState == 1 && possibledirections.contains(DirectionType.EAST) && !firstMove) {
                 possibledirections.add(DirectionType.EAST);
-            } else if (previousState == 2 && possibledirections.contains(DirectionType.WEST)) {
+            } else if (previousState == 2 && possibledirections.contains(DirectionType.WEST) && !firstMove) {
                 possibledirections.add(DirectionType.WEST);
-            } else if (previousState == 3 && possibledirections.contains(DirectionType.NORTH)) {
+            } else if (previousState == 3 && possibledirections.contains(DirectionType.NORTH) && !firstMove) {
                 possibledirections.add(DirectionType.NORTH);
             }
 
@@ -122,9 +114,9 @@ public class Agent extends chemotaxis.sim.Agent {
         }
 
         if (hasSeenBlue) {
-            move.currentState = (byte) (move.currentState + 128) ;
+            move.currentState = (byte) (move.currentState + 64) ;
         }
-
+        move.currentState = (byte) (move.currentState + 128) ;
 
         return move;
     }
