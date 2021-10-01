@@ -39,8 +39,7 @@ public class RallypointLayout {
         int currentIx = 0;
         while (currentIx != targetIx) {
             for (int i = currentIx + 1; i < path.size(); ++i) {
-                // Only params that matter are start, target, and grid (and of course, chemicals >= 1)
-                GameState gs = new GameState(path.get(0), path.get(targetIx), 0, 0, 1, grid);
+                GameState gs = new GameState(path.get(0), path.get(targetIx), 0, Integer.MAX_VALUE, 1, grid);
 
                 ChemicalPlacement cp = new ChemicalPlacement();
                 cp.location = path.get(i);
@@ -60,10 +59,14 @@ public class RallypointLayout {
                     // Store the range here so that when we find the first point that
                     // cannot reach the current RP we have already cached the range for
                     // the previous point.
-                    rallypointRanges.put(path.get(currentIx), range);
-                    if (currentIx == targetIx) {
+                    rallypointRanges.remove(path.get(i-1));
+                    rallypointRanges.put(path.get(i), range);
+                    if (i == targetIx) {
                         // Can't look any further... target becomes rally point
-                        rallypoints.add(path.get(currentIx));
+                        rallypoints.add(path.get(targetIx));
+                        // Break out of both loops
+                        currentIx = targetIx;
+                        break;
                     }
                 } else {
                     // We cannot reach the current rallypoint from this new one
