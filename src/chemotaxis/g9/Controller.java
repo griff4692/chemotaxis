@@ -35,8 +35,7 @@ public class Controller extends chemotaxis.sim.Controller {
 	 */
 	public Controller(Point start, Point target, Integer size, ChemicalCell[][] grid, Integer simTime, Integer budget, Integer seed, SimPrinter simPrinter, Integer agentGoal, Integer spawnFreq) {
 		super(start, target, size, grid, simTime, budget, seed, simPrinter, agentGoal, spawnFreq);
-		System.out.println("hello");
-		this.shortestPathList = shortestPath(grid);	
+		this.shortestPathList = shortestPath(grid);
 		this.incrementBy = decidePlacementStrategy(this.shortestPathList, idealChemicalIncrement, budget, spawnFreq);
 		this.placementPath = generatePlacementPath(this.shortestPathList, this.incrementBy);
 	}
@@ -65,7 +64,7 @@ public class Controller extends chemotaxis.sim.Controller {
         	budget -= beginningChems;
 		}*/
 		// budget --; // take out for the beginning chemical
-		budget --; // take out another for the ending chemical
+		// budget --; // take out another for the ending chemical
 		int pathLength = shortestPathList.size();
 		int singlePathIncrement = (int) Math.ceil(pathLength / budget);
 		System.out.format("%d, %d, %d", pathLength, budget, singlePathIncrement);
@@ -95,20 +94,36 @@ public class Controller extends chemotaxis.sim.Controller {
 			if (currentPathIndex >= this.placementPath.size()) {
 				reverse = !reverse;
 				currentPathIndex = this.placementPath.size() - 2;
-				incrementColor(reverse);
-				incrementColor(reverse);
+				if (currentPathIndex < 0) {
+					currentPathIndex += this.placementPath.size();
+					incrementColor(reverse);
+				} else {
+					incrementColor(reverse);
+					incrementColor(reverse);
+				}
 			}
 		} else {
 			currentPathIndex -= 1;
 			if (currentPathIndex < 0) {
 				reverse = !reverse;
 				currentPathIndex = 1;
-				incrementColor(reverse);
-				incrementColor(reverse);
+				if (currentPathIndex >= this.placementPath.size()) {
+					currentPathIndex -= this.placementPath.size();
+					incrementColor(reverse);
+				} else {
+					incrementColor(reverse);
+					incrementColor(reverse);
+				}
 
 			}
 		}
- 		
+		/*
+		currentPathIndex += 1;
+		if (currentPathIndex >= this.placementPath.size()) {
+			currentPathIndex = 0;
+			colorCounter = 0;
+		}
+		 */
  		return placeChemical(reverse);
  		
  	}
@@ -132,8 +147,9 @@ public class Controller extends chemotaxis.sim.Controller {
             currentPathIndex += beginningChems;
         } else {
         	currentPathIndex += incrementBy;
-        }*/		
+        }*/
 		Point pointToPlace = this.placementPath.get(currentPathIndex);
+		System.out.println(currentPathIndex);
 		chemicalPlacement.location = new Point(pointToPlace.x + 1, pointToPlace.y + 1);
 		
 		// pick right chemical in sequence
