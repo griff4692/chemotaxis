@@ -53,12 +53,7 @@ public class Agent extends chemotaxis.sim.Agent {
         // then have a switch depending on our selected chemical
 		ChemicalType chosenChemicalType = ChemicalType.GREEN;
 
-        /*
-        // get the first bit (from the left) and if it's set then follow blue rather than green
-        if (randomNum >> 7 & 1 == 1) {
-            chosenChemicalType = ChemicalType.BLUE;
-        }
-        */
+
         ChemicalType repulseChemicalType = ChemicalType.RED;
 
         /* 
@@ -68,24 +63,30 @@ public class Agent extends chemotaxis.sim.Agent {
         */ 
         // grab required number of bits for direction: https://stackoverflow.com/questions/15255692/grabbing-n-bits-from-a-byte
         // lower three bits represent current direction/gradient direction we're following
+        int freeze = previousState & (1 << 7);
+
         int prevGradientDirection = previousState & 0x7;
         if(prevGradientDirection > 4 || prevGradientDirection < 0){
             prevGradientDirection = 0;
         }
         int backwardsDirection = this.getBackwardsDirection(Agent.intToDirection.get(prevGradientDirection));
         int increasingGradDirectionType = this.getIncreasingGradient(chosenChemicalType, currentCell, neighborMap);
-
+        if(freeze == 0){
+            backwardsDirection = 4;
+        }
         if (increasingGradDirectionType != directionToInt.get(DirectionType.CURRENT) && increasingGradDirectionType != backwardsDirection) {
             move.directionType = Agent.intToDirection.get(increasingGradDirectionType);
             // unset then set the lowest three bits with the right direction
             // source: https://stackoverflow.com/questions/31007977/how-to-set-3-lower-bits-of-uint8-t-in-c
-            // right now we're just using lowest three bits for anything
 
-            //TODO set the pledge direction to the increasingGrad directionType and TEST
             int currentState = previousState;
-            currentState = (byte)(currentState & ~(3));
+            currentState = (byte)(currentState & ~(7));
             currentState = (byte)(currentState | increasingGradDirectionType);
-            currentState = currentState | (increasingGradDirectionType << 3);
+            currentState = (byte)(currentState & ~(3 << 4));
+            currentState = currentState | (increasingGradDirectionType << 4);
+            if(freeze == 0){
+                currentState = currentState | (1 << 7);
+            }
             move.currentState = (byte) currentState;
             return move; //done
         }
@@ -126,10 +127,10 @@ public class Agent extends chemotaxis.sim.Agent {
         return move;
         */
         // setting specific bits in a byte type: https://stackoverflow.com/questions/4674006/set-specific-bit-in-byte
-        return getNavigateMove(previousState, possibleMoveSet, backwardsDirection);
+        return getNavigateMove(previousState, possibleMoveSet, backwardsDirection, freeze);
    }
 
-    private Move getNavigateMove(Byte previousState, Set<DirectionType> possibleMoveSet, int backwardsDirection){
+    private Move getNavigateMove(Byte previousState, Set<DirectionType> possibleMoveSet, int backwardsDirection, int freeze){
         //Using second and third bit from the left as wallFollow bits
         //Using fourth and fifth bit from the left as the Pledge Direction bits
         int wallFollow = (previousState >> 5) & 3;
@@ -138,7 +139,11 @@ public class Agent extends chemotaxis.sim.Agent {
 
         DirectionType[] relativePledge = getRelativeDirections(pledgeDirection);
         DirectionType[] relativeBack = getRelativeDirections(intToDirection.get(backwardsDirection));
-
+        if(freeze == 0){
+            move.directionType = DirectionType.CURRENT;
+            move.currentState = previousState;
+            return move;
+        }
         //If we are not following a wall
         if(wallFollow == 0){
             //If we cannot move in the pledge direction
