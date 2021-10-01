@@ -508,6 +508,7 @@ public class Simulator {
 						numReached ++;
 					}
 				}
+				agentWrapper.terminateThread();
 			
 			} catch (Exception e) {
 				Log.writeToLogFile("Unable to load or run agent: " + e.getMessage());
