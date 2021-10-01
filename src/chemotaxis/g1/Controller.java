@@ -414,7 +414,7 @@ public class Controller extends chemotaxis.sim.Controller {
         } else {
 //            int refreshingRate = (spawnFreq * agentGoal) / budget;
 //            int refreshingRate = (this.agentGoal * this.spawnFreq) / (this.startingChemicals / rallyPoints.rallyPoints.size()) * 3;
-            int refreshingRate = ((this.agentGoal + 10)* this.spawnFreq) / this.startingChemicals;
+            int refreshingRate = ((this.agentGoal * 15/10)* Integer.min(10, this.spawnFreq)) / this.startingChemicals;
             if ((currentTurn - 1) % refreshingRate == 0) {
                 chemicalPlacement.location = GameCell.oneBasedPoint(rallyPoints.rallyPoints.get(currentRallyPoint));
                 switch (currentRallyPoint % 3) {
