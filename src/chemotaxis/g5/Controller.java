@@ -9,13 +9,13 @@ import chemotaxis.sim.ChemicalCell;
 import chemotaxis.sim.SimPrinter;
 import chemotaxis.sim.ChemicalCell.ChemicalType;
 
+import static java.lang.Math.min;
+
 public class Controller extends chemotaxis.sim.Controller {
     LinkedList<Point> path1 = new LinkedList<Point>();
     LinkedList<Point> path2 = new LinkedList<Point>();
-    LinkedList<Point> turn1 = new LinkedList<Point>();
-    LinkedList<Point> turn2 = new LinkedList<Point>();
-    private int curPlacement = 1;
-    private int optStepGap = 5;
+    LinkedList<Point> chemAtFork = new LinkedList<Point>();
+    LinkedList<Point> finalPath = new LinkedList<Point>();
     /**
      * Controller constructor
      *
@@ -35,15 +35,39 @@ public class Controller extends chemotaxis.sim.Controller {
 
         int[][] visited = new int[grid.length][grid[0].length];
         initializeVisited(visited,grid);
-        calculatePath(start, target, visited, grid, path1, turn1);
-
+        calculatePath(start, target, visited, grid, path1);
+        LinkedList<Point> turns1 = new LinkedList<Point> ();
+        if(path1.size()>0)
+            calculateTurn(path1,turns1,grid);
         initializeVisited(visited,grid);
 
         //blocking path1 and skipping target
         for (int i = 0; i < path1.size() - 1; i++)
             visited[path1.get(i).x - 1][path1.get(i).y - 1] = -1;
 
-        calculatePath(start, target, visited, grid, path2, turn2);
+        calculatePath(start, target, visited, grid, path2);
+        LinkedList<Point> turns2 = new LinkedList<Point> ();
+        if(path2.size()>0)
+            calculateTurn(path2,turns2,grid);
+
+        if(path2.size()==0 || turns1.size()<=turns2.size()) {
+            chemAtFork = turns1;
+            finalPath = path1;
+        }
+
+        else if(turns1.size()>turns2.size()) {
+            chemAtFork = turns2;
+            finalPath = path2;
+
+        }
+        //printing path
+        for (int i = 0; i < finalPath.size(); i++) {
+            System.out.print(finalPath.get(i).x);
+            System.out.print(" ");
+            System.out.print(finalPath.get(i).y);
+            System.out.println("");
+        }
+
     }
 
     private void initializeVisited(int[][] visited, ChemicalCell[][] grid){
@@ -58,7 +82,7 @@ public class Controller extends chemotaxis.sim.Controller {
         }
     }
 
-    private void calculatePath(Point start, Point target, int[][] visited, ChemicalCell[][] grid, LinkedList<Point> path, LinkedList<Point> turn){
+    private void calculatePath(Point start, Point target, int[][] visited, ChemicalCell[][] grid, LinkedList<Point> path){
         int[][] parent = new int[grid.length][grid[0].length];
         // 0->start, -1->no parent, 1->top, 2-> right, 3->down, 4->left
 
@@ -144,50 +168,77 @@ public class Controller extends chemotaxis.sim.Controller {
                 System.out.print(path.get(i).y);
                 System.out.println("");
             }*/
-
-            //turns
-            if(path.size()>1)
-                calculateTurn(path, turn);
         }
     }
 
-    private void calculateTurn(LinkedList<Point> path, LinkedList<Point> turn)
+    private void calculateTurn(LinkedList<Point> path, LinkedList<Point> turn, ChemicalCell[][] grid)
     {
         int x = path.get(0).x;
         int y = path.get(0).y;
+        int forkx = 0;
+        int forky = 0;
         int vertical = 0;
+        if(path.size()>4)
+            turn.add(path.get(3));
         if(x==path.get(1).x)
             vertical = 1;
-        for (int i = 1; i < path.size();i++) {
+        for (int i = 1; i < path.size()-1;i++) {
             if(x!=path.get(i).x && vertical==1)
             {
+                forkx = 0;
                 vertical = 0;
-                if(i==path.size()-2)
-                    turn.add(path.get(i+1));
-                else
-                    turn.add(path.get(i-1));
+                if(x-2>=0 && grid[x-2][y-1].isOpen())
+                    forkx+=1;
+                if(x<grid.length && grid[x][y-1].isOpen())
+                    forkx+=1;
+                if(y-2>=0 && grid[x-1][y-2].isOpen())
+                    forkx+=1;
+                if(y<grid[0].length && grid[x-1][y].isOpen())
+                    forkx+=1;
+
+                if(forkx>2)
+                    turn.add(path.get(i));
             }
-            else if(y!=path.get(i).y && vertical==0)
+            else if(y!=path.get(i).y && vertical==0 )
             {
+                forkx = 0;
                 vertical = 1;
-                if(i==path.size()-2)
-                    turn.add(path.get(i+1));
-                else
-                    turn.add(path.get(i-1));
+                if(x-2>=0 && grid[x-2][y-1].isOpen())
+                    forkx+=1;
+                if(x<grid.length && grid[x][y-1].isOpen())
+                    forkx+=1;
+                if(y-2>=0 && grid[x-1][y-2].isOpen())
+                    forkx+=1;
+                if(y<grid[0].length && grid[x-1][y].isOpen())
+                    forkx+=1;
+
+                if(forkx>2)
+                    turn.add(path.get(i));
             }
             x = path.get(i).x;
             y = path.get(i).y;
         }
-        if(turn.get(turn.size()-1)!=path.get(path.size()-1))
-            turn.add(path.get(path.size()-1));
+        Point last = turn.get(turn.size()-1);
+        Point goal = path.get(path.size()-1);
+        if(Math.abs(last.x-goal.x+last.y-goal.x)<=2)
+            turn.removeLast();
+        turn.add(goal);
 
-        /*System.out.println("Printing turns");
+        /*
+        System.out.println("Printing path");
+        for (int i = 0; i < path.size(); i++) {
+            System.out.print(path.get(i).x);
+            System.out.print(" ");
+            System.out.print(path.get(i).y);
+            System.out.println("");
+        }*/
+        System.out.println("Printing turns");
         for (int i = 0; i < turn.size(); i++) {
             System.out.print(turn.get(i).x);
             System.out.print(" ");
             System.out.print(turn.get(i).y);
             System.out.println("");
-        }*/
+        }
     }
     /**
      * Apply chemicals to the map
@@ -201,122 +252,39 @@ public class Controller extends chemotaxis.sim.Controller {
      */
     @Override
     public ChemicalPlacement applyChemicals(Integer currentTurn, Integer chemicalsRemaining, ArrayList<Point> locations, ChemicalCell[][] grid) {
-        // get the closest point which is the one we will make go to exit:
-        
-        // Point closestAgent = getClosestAgent(locations);
-        // if(closestAgent != null) {
-        //     System.out.println("closest agent is at: " + closestAgent.toString());
-        // }
-
-        // Point locToPlace = getPosCloseToGoal(closestAgent, grid);
-        /*Point locToPlace = this.path1.get(curPlacement++);
-
-        // reset back to beginning
-        if (curPlacement == this.path1.size()) {
-            curPlacement = this.path1.size()-1;
-        }
-
-        System.out.println("Placing green at: " + locToPlace.toString());*/
-
-        Point locToPlace ;
+        ChemicalType chosenChemicalType = ChemicalType.GREEN;
         ChemicalPlacement ret = new ChemicalPlacement();
-        int currPosition = agentOnTurn(locations,turn1) + 1;
-        if(currPosition!=0 || currentTurn % optStepGap == 0)
+        if(currentTurn==1)
         {
-
-            locToPlace = turn1.get(currPosition%turn1.size());
-            ret.location = locToPlace;
-            ret.chemicals.add(ChemicalType.GREEN);
-            //locToPlace = path1.get((currentTurn+optStepGap)%path1.size());
+            ret.location = finalPath.get(1);
+            ret.chemicals.add(chosenChemicalType);
         }
-        /*
-        else if(grid.length>=50 && (currentTurn-optStepGap/2) % optStepGap == 0)
-        {
-            //locToPlace = path2.get((currentTurn+optStepGap)%path2.size());
-            ret.location = locToPlace;
-            ret.chemicals.add(ChemicalType.BLUE);
-        }*/
+        else{
+            int currPosition = agentOnTurn(locations,chemAtFork, chosenChemicalType, grid);
+            if(currPosition!=-1)
+            {
+                ret.location = chemAtFork.get(currPosition);
+                ret.chemicals.add(chosenChemicalType);
+                //System.out.println("Spraying at "+Integer.toString(ret.location.x)+" "+Integer.toString(ret.location.y)+" : ");
+            }
+        }
         return ret;
     }
-    private int agentOnTurn(ArrayList<Point> locations,LinkedList<Point> turn){
+    private int agentOnTurn(ArrayList<Point> locations,LinkedList<Point> turn, ChemicalType chosenChemicalType, ChemicalCell[][] grid){
         int found = -1;
+        int x,y, nextX = turn.get(turn.size()-1).x, nextY = turn.get(turn.size()-1).y;
         for(int i=turn.size()-2;i>=0;i--)
         {
+            x = turn.get(i).x;
+            y = turn.get(i).y;
             for(Point loc : locations)
-            {
-                if(loc.x==turn.get(i).x && loc.y==turn.get(i).y) {
-                    return i;
-                }
-            }
+                if(loc.x==x && loc.y==y && grid[nextX - 1][nextY - 1].getConcentration(chosenChemicalType) < 0.03)
+                    return i+1;
+            nextX = x;
+            nextY = y;
         }
+
         return found;
     }
-    /* Private helper methods to make the code concise
-     * Examples: caching the original path along with distance to goal for each one
-     */
-    private int getManhattanDistance(int targetX, int targetY, int sourceX, int sourceY) {
-        return Math.abs(targetX - sourceX) + Math.abs(targetY - sourceY);
-    }
 
-    private Point getClosestAgent(ArrayList<Point> locations) {
-        // return getClosestPointToTarget(target, locations);
-        Point closest = null;
-        int furthestDistance = -1;
-        for (Point loc : locations) {
-            for (int i = 0; i < this.path1.size(); i++) {
-                Point trial = this.path1.get(i);
-                if (loc == trial && i > furthestDistance) {
-                    closest = new Point(trial);
-                }
-            }
-        }
-        return closest;
-    }
-
-
-    private Point getPosCloseToGoal(Point agentLoc, ChemicalCell[][] grid) {
-        ArrayList<Point> availablePositions = new ArrayList<>();
-
-        // go through each of the lateral co-ordinates if possible and watch out for 1-indexing
-        int agentX = agentLoc.x;
-        int agentY = agentLoc.y;
-        int x = agentX - 1;
-        int y = agentY - 1;
-        if(x > 0 && grid[x - 1][y].isOpen()) {
-            availablePositions.add(new Point(agentX-1, agentY));
-        }
-        if(y > 0 && grid[x][y-1].isOpen()) {
-            availablePositions.add(new Point(agentX, agentY-1));
-        }
-        if(x+1 < grid.length && grid[x+1][y].isOpen()) {
-            availablePositions.add(new Point(agentX+1, agentY));
-        }
-        if(y+1 < grid[0].length && grid[x][y+1].isOpen()) {
-            availablePositions.add(new Point(agentX, agentY+1));
-        }
-        
-        return getClosestPointToTarget(target, availablePositions);
-    }
-
-    private Point getClosestPointToTarget(Point target, ArrayList<Point> possibleSources) {
-        Integer minDistance = null;
-        Point retLoc = null;
-        for (Point loc : possibleSources) {
-            /* int manhattanDistance = getManhattanDistance(target.x, target.y, loc.x, loc.y);
-            System.out.println(manhattanDistance);
-            if(minDistance == null || manhattanDistance < minDistance.intValue()) {
-                minDistance = manhattanDistance;
-                retLoc = loc;
-            }*/
-            int nextIdx = -1;
-            for (int i = 0; i < path1.size(); i++) {
-                Point trial = path1.get(i);
-                if (loc == trial && i > nextIdx) {
-                    nextIdx = i;
-                    retLoc = trial;
-                } 
-            }
-        }
-        return retLoc;
-    }
 }
