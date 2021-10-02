@@ -23,19 +23,6 @@ public class Agent extends chemotaxis.sim.Agent {
         super(simPrinter);
     }
 
-    /**
-     * Move agent
-     *
-     * @param randomNum        random number available for agents
-     * @param previousState    byte of previous state, bits 2-5 are a counter of the #rounds
-     *                         the agent hasn't seen a 1.0 chemical in his cell, last 2 bits store the previous
-     *                         direction (00: NORTH, 01: EAST, 10: SOUTH, 11: WEST), bit 7 will indicate whether the
-     *                         agent has started moving in the right direction or not
-     * @param currentCell      current cell
-     * @param neighborMap      map of cell's neighbors
-     * @return                 agent move
-     *
-     */
     private int getDirectionBits(Byte previousState) {
         int previousDirectionBits;
         if (previousState < 0) {
@@ -274,7 +261,19 @@ public class Agent extends chemotaxis.sim.Agent {
             return possibleDirections.get(randomIndex);
         }
     }
-
+    /**
+     * Move agent
+     *
+     * @param randomNum        random number available for agents
+     * @param previousState    byte of previous state, bits 2-5 are a counter of the #rounds
+     *                         the agent hasn't seen a 1.0 chemical in his cell, last 2 bits store the previous
+     *                         direction (00: NORTH, 01: EAST, 10: SOUTH, 11: WEST), bit 7 will indicate whether the
+     *                         agent has started moving in the right direction or not
+     * @param currentCell      current cell
+     * @param neighborMap      map of cell's neighbors
+     * @return                 agent move
+     *
+     */
     @Override
     public Move makeMove(Integer randomNum, Byte previousState, ChemicalCell currentCell, Map<DirectionType, ChemicalCell> neighborMap) {
 
@@ -293,7 +292,7 @@ public class Agent extends chemotaxis.sim.Agent {
                 }
             }
             if (maxConcentration > 0.001) {
-                System.out.println("Agent is in the start cell --> found blue!!!");
+//                System.out.println("Agent is in the start cell --> found blue!!!");
                 move.currentState = setRandomWalkBitInCurrentState(previousState);
                 move.currentState = setDirectionBitsInCurrentState(move.currentState, maxConcentrationDirection);
                 move.currentState = setCounterInCurrentState(move.currentState, false);
@@ -309,7 +308,7 @@ public class Agent extends chemotaxis.sim.Agent {
                     move.currentState = setCounterInCurrentState(move.currentState, false);
                     move.currentState = setDirectionBitsInCurrentState(move.currentState, move.directionType);
                 } else {
-                    System.out.println("Agent is in the start cell --> random walk!!!");
+//                    System.out.println("Agent is in the start cell --> random walk!!!");
                     move.directionType = randomStep(randomNum, previousState, currentCell, neighborMap);
                     move.currentState = setDirectionBitsInCurrentState(previousState, move.directionType);
                 }
@@ -339,34 +338,34 @@ public class Agent extends chemotaxis.sim.Agent {
             }
 
             if (redConcentration > greenConcentration && redConcentration > blueConcentration) {
-                System.out.println("red local maximum");
-                System.out.println(redConcentration);
-                System.out.println(greenConcentration);
-                System.out.println(blueConcentration);
-                System.out.println("previous Direction:" + previousDirection.toString());
+//                System.out.println("red local maximum");
+//                System.out.println(redConcentration);
+//                System.out.println(greenConcentration);
+//                System.out.println(blueConcentration);
+//                System.out.println("previous Direction:" + previousDirection.toString());
                 DirectionType newDirection = getOtherDirectionList(previousDirection).get(0);
-                System.out.println("newDirection:" + newDirection.toString());
+//                System.out.println("newDirection:" + newDirection.toString());
                 ChemicalCell nextChemicalCell = neighborMap.get(newDirection);
                 if (nextChemicalCell.isBlocked()) {
-                    System.out.println("next cell is blocked");
+//                    System.out.println("next cell is blocked");
                     newDirection = circumventBlocks(previousState, currentCell, neighborMap);
-                    System.out.println(previousState + "newDirection:" + newDirection.toString());
+//                    System.out.println(previousState + "newDirection:" + newDirection.toString());
                 }
                 move.currentState = setCounterInCurrentState(previousState, false);
                 move.currentState = setDirectionBitsInCurrentState(move.currentState, newDirection);
                 move.directionType = newDirection;
                 sensedChemical = true;
             } else if (greenConcentration > redConcentration && greenConcentration > blueConcentration) {
-                System.out.println("green local maximum");
-                System.out.println(redConcentration);
-                System.out.println(greenConcentration);
-                System.out.println(blueConcentration);
-                System.out.println("previous Direction:" + previousDirection.toString());
+//                System.out.println("green local maximum");
+//                System.out.println(redConcentration);
+//                System.out.println(greenConcentration);
+//                System.out.println(blueConcentration);
+//                System.out.println("previous Direction:" + previousDirection.toString());
                 DirectionType newDirection = getOtherDirectionList(previousDirection).get(1);
-                System.out.println("newDirection:" + newDirection.toString());
+//                System.out.println("newDirection:" + newDirection.toString());
                 ChemicalCell nextChemicalCell = neighborMap.get(newDirection);
                 if (nextChemicalCell.isBlocked()) {
-                    System.out.println("next cell is blocked");
+//                    System.out.println("next cell is blocked");
                     newDirection = circumventBlocks(previousState, currentCell, neighborMap);
                 }
                 move.currentState = setCounterInCurrentState(previousState, false);
@@ -375,18 +374,18 @@ public class Agent extends chemotaxis.sim.Agent {
                 sensedChemical = true;
             }
             else if (blueConcentration > redConcentration && blueConcentration > greenConcentration) {
-                System.out.println("blue local maximum");
-                System.out.println(redConcentration);
-                System.out.println(greenConcentration);
-                System.out.println(blueConcentration);
-                System.out.println("previous Direction:" + previousDirection.toString());
+//                System.out.println("blue local maximum");
+//                System.out.println(redConcentration);
+//                System.out.println(greenConcentration);
+//                System.out.println(blueConcentration);
+//                System.out.println("previous Direction:" + previousDirection.toString());
                 DirectionType newDirection = getOtherDirectionList(previousDirection).get(2);
-                System.out.println("newDirection:" + newDirection.toString());
+//                System.out.println("newDirection:" + newDirection.toString());
                 ChemicalCell nextChemicalCell = neighborMap.get(newDirection);
                 if (nextChemicalCell.isBlocked()) {
-                    System.out.println("next cell is blocked");
+//                    System.out.println("next cell is blocked");
                     newDirection = circumventBlocksForBlue(previousState, currentCell, neighborMap);
-                    System.out.println("newDirection:" + newDirection.toString());
+//                    System.out.println("newDirection:" + newDirection.toString());
                 }
                 move.currentState = setCounterInCurrentState(previousState, false);
                 move.currentState = setDirectionBitsInCurrentState(move.currentState, newDirection);
@@ -410,14 +409,14 @@ public class Agent extends chemotaxis.sim.Agent {
                         move.currentState = setCounterInCurrentState(move.currentState, false);
                         move.currentState = setDirectionBitsInCurrentState(move.currentState, move.directionType);
                     } else {
-                        System.out.println("random step");
+//                        System.out.println("random step");
                         move.directionType = randomStep(randomNum, previousState, currentCell, neighborMap);
                         move.currentState = setDirectionBitsInCurrentState(previousState, move.directionType);
                     }
                 } else if (rounds <= 31) {
                     ChemicalCell nextChemicalCell = neighborMap.get(previousDirection);
                     if (nextChemicalCell.isBlocked()) {
-                        System.out.println("next cell is blocked");
+//                        System.out.println("next cell is blocked");
                         move.directionType = circumventBlocks(previousState, currentCell, neighborMap);
                         move.currentState = setDirectionBitsInCurrentState(previousState, move.directionType);
                         boolean shouldIncreaseCounter = true;
@@ -431,7 +430,7 @@ public class Agent extends chemotaxis.sim.Agent {
                             move.currentState = setCounterInCurrentState(move.currentState, true);
                         }
                     } else {
-                        System.out.println("continue moving in the previous direction:" + previousDirection);
+//                        System.out.println("continue moving in the previous direction:" + previousDirection);
                         move.directionType = previousDirection;
                         move.currentState = setCounterInCurrentState(previousState, true);
                         move.currentState = setDirectionBitsInCurrentState(move.currentState, move.directionType);
@@ -440,9 +439,9 @@ public class Agent extends chemotaxis.sim.Agent {
             } else {
                 move.currentState = setRandomWalkBitInCurrentState(move.currentState);
             }
-            System.out.println("sense chemical:" + sensedChemical);
-            System.out.println("blue" + blueConcentration + "green:" + greenConcentration + "red:" + redConcentration);
-            System.out.println("previous:" + previousDirection + "direction:"+ move.directionType);
+//            System.out.println("sense chemical:" + sensedChemical);
+//            System.out.println("blue" + blueConcentration + "green:" + greenConcentration + "red:" + redConcentration);
+//            System.out.println("previous:" + previousDirection + "direction:"+ move.directionType);
         }
 
         return move;
