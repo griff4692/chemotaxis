@@ -646,7 +646,6 @@ public class Simulator {
         @SuppressWarnings("rawtypes")
         Class rawClass = loader.loadClass("chemotaxis." + teamName + ".Controller");
         Class[] classArgs = new Class[]{Point.class, Point.class, Integer.class, ChemicalCell[][].class, Integer.class, Integer.class, Integer.class, SimPrinter.class, Integer.class, Integer.class};
-
         return (Controller) rawClass.getDeclaredConstructor(classArgs).newInstance(start, target, mapSize, grid, turns, budget, seed, new SimPrinter(enableControllerPrints), agentGoal, spawnFreq);
     }
 
