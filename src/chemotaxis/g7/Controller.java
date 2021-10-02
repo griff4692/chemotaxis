@@ -101,7 +101,7 @@ public class Controller extends chemotaxis.sim.Controller {
                         beforeNode.setIndex(-1);
                     }
                 } else {
-                    System.out.println("agentpath: some errors here! need debug");
+//                    System.out.println("agentpath: some errors here! need debug");
                 }
             }
 
@@ -143,9 +143,9 @@ public class Controller extends chemotaxis.sim.Controller {
                 }
                 ArrayList<Point> path = node.getPath();
                 nextPosition = path.get(1);
-                System.out.println("agent" + String.valueOf(i) + "go unexpected way, now location:" + location.toString() + "before direction" + beforeDirection.toString());
-                System.out.println("now position index:" + String.valueOf(beforeIndex + 1) + ",expected:" + expectPath.toString());
-                System.out.println("new path:" + path.toString());
+//                System.out.println("agent" + String.valueOf(i) + "go unexpected way, now location:" + location.toString() + "before direction" + beforeDirection.toString());
+//                System.out.println("now position index:" + String.valueOf(beforeIndex + 1) + ",expected:" + expectPath.toString());
+//                System.out.println("new path:" + path.toString());
                 ArrayList<Point> newPath = new ArrayList<Point>(expectPath.subList(0, beforeIndex + 1));
                 newPath.addAll(path);
                 beforeNode.setPath(newPath);
@@ -170,8 +170,8 @@ public class Controller extends chemotaxis.sim.Controller {
                         }
                     } else {
                         // debug
-                        System.out.println("an agent next to a start agent doesn't in the agentTurnDirections");
-                        System.out.println(agentTurnDirections.toString());
+//                        System.out.println("an agent next to a start agent doesn't in the agentTurnDirections");
+//                        System.out.println(agentTurnDirections.toString());
                     }
                 }
             }
@@ -194,12 +194,12 @@ public class Controller extends chemotaxis.sim.Controller {
                 DirectionType beforebeforeDirection = this.getMoveDirections(beforebeforeLocation, location);
                 intendTurnDirection = this.getIntendTurnDirection(grid, location, beforebeforeDirection);
                 supposeTurnDirection = this.getChemicalType(beforebeforeDirection, nowDirection);
-                System.out.println("agent" + i + beforebeforeDirection + "stuck, intend to move" + intendTurnDirection + "suppose:" + supposeTurnDirection);
+//                System.out.println("agent" + i + beforebeforeDirection + "stuck, intend to move" + intendTurnDirection + "suppose:" + supposeTurnDirection);
             }
 
             if ((location.x != start.x -1 || location.y != start.y - 1) && beforeDirection == DirectionType.CURRENT) {
-                System.out.println(String.valueOf(i) + "stopped, now:" + nowDirection.toString());
-                System.out.println("intend:" + intendTurnDirection + "suppose:" + supposeTurnDirection);
+//                System.out.println(String.valueOf(i) + "stopped, now:" + nowDirection.toString());
+//                System.out.println("intend:" + intendTurnDirection + "suppose:" + supposeTurnDirection);
                 Point beforebeforeLocation = location;
                 int k;
                 for (k = beforeIndex; k >= 0; k --) {
@@ -227,8 +227,8 @@ public class Controller extends chemotaxis.sim.Controller {
             // actually we need to fix it afterwards, afraid of using a chemical can cause other agents go unexpectedly
             if (nowDirection == beforeDirection) {
                 if (intendTurnDirection != 0) {
-                    System.out.println("agent" + String.valueOf(i) + "should go" + String.valueOf(supposeTurnDirection));
-                    System.out.println("but it intend to go" + String.valueOf(intendTurnDirection));
+//                    System.out.println("agent" + String.valueOf(i) + "should go" + String.valueOf(supposeTurnDirection));
+//                    System.out.println("but it intend to go" + String.valueOf(intendTurnDirection));
                 }
             } else {
                 if (beforeDirection != DirectionType.CURRENT) {
@@ -305,7 +305,7 @@ public class Controller extends chemotaxis.sim.Controller {
         ChemicalPlacement chemicalPlacement = new ChemicalPlacement();
         // choose a point that needs to turn and apply the chemicals
         ArrayList<Integer> result = this.chooseOnePointNeedToTurn(locations, grid);
-        System.out.println("the result of applyChemicals is" + result.toString());
+//        System.out.println("the result of applyChemicals is" + result.toString());
         if (result.isEmpty()) {
             previousLocations = locations;
             return chemicalPlacement;
@@ -557,9 +557,9 @@ public class Controller extends chemotaxis.sim.Controller {
         }
         // debug
         if (previousLocation.x != currentLocation.x || previousLocation.y != currentLocation.y) {
-            System.out.println("getMoveDirections some errors here, need debug");
-            System.out.println(previousLocation);
-            System.out.println(currentLocation);
+//            System.out.println("getMoveDirections some errors here, need debug");
+//            System.out.println(previousLocation);
+//            System.out.println(currentLocation);
         }
         return DirectionType.CURRENT;
     }
