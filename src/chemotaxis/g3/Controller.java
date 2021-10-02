@@ -8,6 +8,8 @@ import chemotaxis.sim.ChemicalPlacement;
 import chemotaxis.sim.ChemicalCell;
 import chemotaxis.sim.ChemicalCell.ChemicalType;
 import chemotaxis.sim.SimPrinter;
+import java.lang.Math;
+
 public class Controller extends chemotaxis.sim.Controller {
 	static class Graph {
 		//fields
@@ -83,7 +85,7 @@ public class Controller extends chemotaxis.sim.Controller {
 	Point first_pt;
 	Point second_pt;
 	int period;
-	int agentReached;
+	int shortestPathLength;
 	/**
 	 * Controller constructor
 	 *
@@ -99,6 +101,7 @@ public class Controller extends chemotaxis.sim.Controller {
 	 */
 	public Controller(Point start, Point target, Integer size, ChemicalCell[][] grid, Integer simTime, Integer budget, Integer seed, SimPrinter simPrinter, Integer agentGoal, Integer spawnFreq) {
 		super(start, target, size, grid, simTime, budget, seed, simPrinter, agentGoal, spawnFreq);
+
 		// dijkestra: https://www.geeksforgeeks.org/dijkstras-shortest-path-algorithm-greedy-algo-7/
 		shortest_path = new ArrayList<Integer>();
 		node_to_point = new Hashtable<Integer, Point>();
@@ -154,25 +157,31 @@ public class Controller extends chemotaxis.sim.Controller {
 		int index_two = shortest_path.size() / 3;
 		int first_node = shortest_path.get(index_one);
 		int second_node = shortest_path.get(index_two);
+
+		this.shortestPathLength= shortest_path.size();
+
 		first_pt = node_to_point.get(first_node);
-		System.out.println(first_pt);
+
 		second_pt = node_to_point.get(second_node);
-		System.out.println(second_pt);
+
 		//agent goal 50
 		//spawnfreq 5
 		//at turn 250 last agent spawned
 		//budget 9
-		//this.period = 81
-		//run out of chemicals too fas, risk not holding up the gradient
+		//this.period = 84
+		//run out of chemicals too fast, risk not holding up the gradient
 		//if we delay the chemical placement, we are afraid that the chemicals won't reach the agent fast enough
-		this.period = ((spawnFreq * agentGoal) / this.budget) * 3;
-		if(this.period <3){
-			this.period = 3;
+
+		// adding ahortestPathLength to the calculation
+		//this.period = (((spawnFreq * agentGoal) + this.shortestPathLength) / this.budget) * 3;
+
+		double calc = (double)spawnFreq * agentGoal / this.budget;
+		this.period = (int)Math.ceil(calc * 3);
+		if(this.period <4){
+			this.period = 4;
 		}
-		System.out.println("spawnFreq is " + spawnFreq);
-		System.out.println("agentGoal is " + agentGoal);
-		System.out.println("budget is " + this.budget);
 	}
+
 	public int closestToTarget(ArrayList<Point> locations) {
 		int closestDistance = 9999999;
 		int closestIdx = 0;
@@ -205,27 +214,43 @@ public class Controller extends chemotaxis.sim.Controller {
         lower concentrations nearer to the spawn block)“
          */
 		ChemicalPlacement chemicalPlacement = new ChemicalPlacement();
-		System.out.println("period is " + this.period);
-		if(currentTurn%this.period == 1){
+
+		int agentReached = 0;
+		for(int i = 0; i < locations.size(); i++){
+			if (locations.get(i).equals(this.target)){
+				agentReached++;
+			}
+		}
+
+		if(chemicalsRemaining == 1 || currentTurn%this.period ==3){
+			List<ChemicalType> chemicals = new ArrayList<>();
+			chemicals.add(ChemicalType.BLUE);
+			chemicalPlacement.location = new Point(this.target.x, this.target.y);
+			chemicalPlacement.chemicals = chemicals;
+		}
+		else if(currentTurn%this.period == 1){
 			List<ChemicalType> chemicals = new ArrayList<>();
 			chemicals.add(ChemicalType.RED);
 			chemicalPlacement.location = new Point(this.first_pt.x, this.first_pt.y);
 			chemicalPlacement.chemicals = chemicals;
 		}
-		// 1 2 0
-		// 1 period/2 0
-		else if(currentTurn%this.period == (this.period/2)+1){
+		else if(currentTurn%this.period == 2){
 			List<ChemicalType> chemicals = new ArrayList<>();
 			chemicals.add(ChemicalType.GREEN);
 			chemicalPlacement.location = new Point(this.second_pt.x, this.second_pt.y);
 			chemicalPlacement.chemicals = chemicals;
 		}
 		else if (currentTurn%this.period == 0) {
-			List<ChemicalType> chemicals = new ArrayList<>();
-			chemicals.add(ChemicalType.BLUE);
-			chemicalPlacement.location = new Point(this.target.x, this.target.y);
-			chemicalPlacement.chemicals = chemicals;
-			//this.period = (spawnFreq * agentNottoGoal) / chemicalRemaining *3;
+			//calculate based on agents not spawned yet
+			//this.period = ((spawnFreq * (agentGoal-locations.size()) + this.shortestPathLength) / chemicalsRemaining) *3;
+
+			//calculate based on agents not reached yet, more conservative
+			//dynamically calculate the period based on agent-not-reached-goal and chemicals remaining
+			double calc = ((double)spawnFreq * (agentGoal-agentReached)) / chemicalsRemaining;
+			this.period = (int)Math.ceil(calc * 3);
+			if(this.period <4){
+				this.period = 4;
+			}
 		}
 		return chemicalPlacement;
 	}
