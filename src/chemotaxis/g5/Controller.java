@@ -60,13 +60,6 @@ public class Controller extends chemotaxis.sim.Controller {
             finalPath = path2;
 
         }
-        //printing path
-        for (int i = 0; i < finalPath.size(); i++) {
-            System.out.print(finalPath.get(i).x);
-            System.out.print(" ");
-            System.out.print(finalPath.get(i).y);
-            System.out.println("");
-        }
 
     }
 
@@ -140,9 +133,7 @@ public class Controller extends chemotaxis.sim.Controller {
         i = target_zero.x;
         j = target_zero.y;
 
-        if(parent[i][j]<1)
-            System.out.println("No path found");
-        else
+        if(parent[i][j]>=1)
         {
             int x = start.x - 1;
             int y = start.y - 1;
@@ -160,14 +151,6 @@ public class Controller extends chemotaxis.sim.Controller {
                     i=i+1;
             }
             path.addFirst(new Point(i+1,j+1));
-
-            /*printing path
-            for (i = 0; i < path.size(); i++) {
-                System.out.print(path.get(i).x);
-                System.out.print(" ");
-                System.out.print(path.get(i).y);
-                System.out.println("");
-            }*/
         }
     }
 
@@ -223,22 +206,6 @@ public class Controller extends chemotaxis.sim.Controller {
         if(Math.abs(last.x-goal.x+last.y-goal.x)<=2)
             turn.removeLast();
         turn.add(goal);
-
-        /*
-        System.out.println("Printing path");
-        for (int i = 0; i < path.size(); i++) {
-            System.out.print(path.get(i).x);
-            System.out.print(" ");
-            System.out.print(path.get(i).y);
-            System.out.println("");
-        }*/
-        System.out.println("Printing turns");
-        for (int i = 0; i < turn.size(); i++) {
-            System.out.print(turn.get(i).x);
-            System.out.print(" ");
-            System.out.print(turn.get(i).y);
-            System.out.println("");
-        }
     }
     /**
      * Apply chemicals to the map
@@ -265,7 +232,6 @@ public class Controller extends chemotaxis.sim.Controller {
             {
                 ret.location = chemAtFork.get(currPosition);
                 ret.chemicals.add(chosenChemicalType);
-                //System.out.println("Spraying at "+Integer.toString(ret.location.x)+" "+Integer.toString(ret.location.y)+" : ");
             }
         }
         return ret;
