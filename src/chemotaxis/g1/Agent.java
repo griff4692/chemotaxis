@@ -43,7 +43,7 @@ public class Agent extends chemotaxis.sim.Agent {
             if (prevState.getStrategy() == AgentState.Strategy.WEAK) {
                 // Random movement
                 if ((randomNum & 0xFFFF) % 20 == 0) {
-                    int moveNo = (randomNum & ~0xFFFF0000) % 4;
+                    int moveNo = (randomNum & 0xFFFF0000) % 4;
                     switch (moveNo) {
                         case 0:
                             move.directionType = DirectionType.NORTH;
