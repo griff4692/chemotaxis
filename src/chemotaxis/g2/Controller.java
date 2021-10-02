@@ -26,6 +26,7 @@ public class Controller extends chemotaxis.sim.Controller {
 	private boolean red;
 	private boolean blueStrategy;
 	private Set<Point> agentsStack;
+	private
 	//private ChemicalCell[][] grid1;
 	//private ChemicalCell[][] grid2;
 	//private ChemicalCell[][] grid3;
@@ -593,7 +594,7 @@ public class Controller extends chemotaxis.sim.Controller {
 		return (x > 0) && (x <= grid.length) && (y > 0) && (y <= grid[0].length) && grid[x][y].isOpen() ;
 	}
 
-	private DirectionType expectedMove (Point p, ChemicalCell[][] grid, boolean red) {
+	private DirectionType expectedMove (Point p, ChemicalCell[][] grid) {
 		List<Double> concentrations = new ArrayList<Double>();
 		ChemicalType color = ChemicalType.GREEN;
 		if (red) {
@@ -640,20 +641,23 @@ public class Controller extends chemotaxis.sim.Controller {
 				id = 4;
 			}
 		}
+		if (max.get(0) < 0.001) {
+			id = 4;
+		}
 		System.out.println(id);
 		switch(id) {
 			case 0:
-				System.out.println("GOING SOUTH");
-				return DirectionType.SOUTH;
-			case 1:
-				System.out.println("GOING NORTH");
-				return DirectionType.NORTH;
-			case 2:
-				System.out.println("GOING EAST");
-				return DirectionType.EAST;
-			case 3:
 				System.out.println("GOING WEST");
 				return DirectionType.WEST;
+			case 1:
+				System.out.println("GOING EAST");
+				return DirectionType.EAST;
+			case 2:
+				System.out.println("GOING NORTH");
+				return DirectionType.NORTH;
+			case 3:
+				System.out.println("GOING SOUTH");
+				return DirectionType.SOUTH;
 		}
 		System.out.println("STAYING PUT");
 		return DirectionType.CURRENT;
@@ -737,9 +741,9 @@ public class Controller extends chemotaxis.sim.Controller {
 			if (currentTurn % step == 1 && this.firstRound) {
 				int cellId;
 				if (currentTurn >= shortestPath.size()) {
-					cellId = Math.min((currentTurn / shortestPath.size()) + 3, shortestPath.size() - 1);
+					cellId = Math.min((currentTurn / shortestPath.size()) + (step-1), shortestPath.size() - 1);
 				} else {
-					cellId = Math.min(currentTurn + 3, shortestPath.size() - 1);
+					cellId = Math.min(currentTurn + (step-1), shortestPath.size() - 1);
 				}
 				newX = shortestPath.get(cellId).x;
 				newY = shortestPath.get(cellId).y;
@@ -761,13 +765,14 @@ public class Controller extends chemotaxis.sim.Controller {
 			} else {
 				// if all agents will follow the best policy, no need to add chemicals
 				for (int i = 0; i < locations.size(); i++) {
-					if (oppositeDirection(expectedMove(locations.get(i), grid, true), this.finalPolicy[locations.get(i).x][locations.get(i).y])) {
+					if (oppositeDirection(expectedMove(locations.get(i), grid), this.finalPolicy[locations.get(i).x][locations.get(i).y])) {
 						agentsStack.add(locations.get(i));
 					}
 				}
 			}
-
+			/*
 			if (agentsStack.size() != 0) {
+				System.out.println("\n\n\n ************************** \n PUTTING BLUE HERE\n ****************** \n\n\n");
 				Point agent = closestToTarget(agentsStack);
 				agentsStack.remove(closestToTarget(agentsStack));
 
@@ -782,6 +787,7 @@ public class Controller extends chemotaxis.sim.Controller {
 				return chemicalPlacement;
 
 			}
+			 */
 		}
 
 		return chemicalPlacement;
