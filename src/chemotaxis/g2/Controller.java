@@ -830,9 +830,9 @@ public class Controller extends chemotaxis.sim.Controller {
 					}
 				} else {
 					next = nextLocation(agent, this.finalPolicy[(agent.x-1)][(agent.y-1)]);
-					while (cellOccupied(next, locations) ||agent.equals(new Point(1,1))) {
-						next = nextLocation(next, this.finalPolicy[(next.x-1)][(next.y-1)]);
-					}
+					//while (cellOccupied(next, locations)) {
+					//	next = nextLocation(next, this.finalPolicy[(next.x-1)][(next.y-1)]);
+					//}
 				}
 				List<ChemicalType> chemicals = new ArrayList<>();
 				chemicals.add(ChemicalType.BLUE);
