@@ -120,7 +120,7 @@ public class Controller extends chemotaxis.sim.Controller {
                 visited[x][y] = true;
                 if (steps[x][y] <= chemicalsPerAgent) {
                     greenTarget = new Point(x + 1, y + 1);
-                    //System.out.println(greenTarget);
+                    System.out.println(greenTarget);
                     break;
                 }
             }
@@ -158,29 +158,13 @@ public class Controller extends chemotaxis.sim.Controller {
 
         HashMap<Point, DirectionType> newAgents = new HashMap<Point, DirectionType>();
 
-<<<<<<< Updated upstream
-        if (onConveyerAgents.containsKey(target)) {
-
-=======
         goalInAgents = 0;
         while (locations.contains(target)) {
->>>>>>> Stashed changes
             onConveyerAgents.remove(target);
+            locations.remove(target);
             goalInAgents++;
         }
 
-<<<<<<< Updated upstream
-        while (locations.contains(target)) {
-            locations.remove(target);
-        }
-
-        //if (locations.contains(target)) {
-
-            //onConveyerAgents.remove(target);
-            //locations.remove(target);
-            //goalInAgents++;
-        //}
-=======
         HashMap<Point, DirectionType> realConveyerAgents = new HashMap<Point, DirectionType>();
 
         for (Point p: onConveyerAgents.keySet()) {
@@ -190,7 +174,6 @@ public class Controller extends chemotaxis.sim.Controller {
         }
 
         onConveyerAgents = realConveyerAgents;
->>>>>>> Stashed changes
 
         boolean placeChemical = false;
 
@@ -198,7 +181,7 @@ public class Controller extends chemotaxis.sim.Controller {
         Point minP = null;
 
         for(Point p : locations) {
-            if(!onConveyerAgents.containsKey(p) && steps[p.x - 1][p.y - 1] <= chemicalsPerAgent && onConveyerAgents.size() <= (agentGoal/* + trackingErrorEpsilon - goalInAgents*/)) {
+            if(!onConveyerAgents.containsKey(p) && steps[p.x - 1][p.y - 1] <= chemicalsPerAgent && onConveyerAgents.size() <= (agentGoal + trackingErrorEpsilon - goalInAgents)) {
                 onConveyerAgents.put(p, DirectionType.CURRENT);
             }
             if (onConveyerAgents.containsKey(p)) {
@@ -213,13 +196,7 @@ public class Controller extends chemotaxis.sim.Controller {
 
                     }
                     chemicalPlacement.location = placement;
-<<<<<<< Updated upstream
-                    //onConveyerAgents.replace(p, directionMap[p.x - 1][p.y - 1]);
-                    onConveyerAgents.remove(p);
-                    onConveyerAgents.put(p, directionMap[p.x-1][p.y-1]);
-=======
                     // onConveyerAgents.replace(p, directionMap[p.x - 1][p.y - 1]);
->>>>>>> Stashed changes
                     placeChemical = true;
                     minConveyer = steps[p.x - 1][p.y - 1];
                     minP = p;
@@ -304,6 +281,7 @@ public class Controller extends chemotaxis.sim.Controller {
                 }
             }
         }
+
 
         chemicalPlacement.chemicals = chemicals;
         return chemicalPlacement;
