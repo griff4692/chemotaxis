@@ -151,7 +151,6 @@ public class Controller extends chemotaxis.sim.Controller {
                     i=i+1;
             }
             path.addFirst(new Point(i+1,j+1));
-
         }
     }
 

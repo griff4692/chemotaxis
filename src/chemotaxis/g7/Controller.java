@@ -56,7 +56,7 @@ public class Controller extends chemotaxis.sim.Controller {
 
     private void initialAgentPath() {
         Point startNode = new Point(start.x - 1, start.y - 1);
-        initialPath = this.getShortestPathLeastTurns(startNode, grid, DirectionType.CURRENT);
+        initialPath = this.getFourDirectionShortestPath(startNode, grid, DirectionType.CURRENT);
     }
 
     // weigh the points, not must be the closest point to the target
@@ -127,7 +127,20 @@ public class Controller extends chemotaxis.sim.Controller {
                 distanceToTarget = expectPath.size() - beforeIndex - 1;
             } else {
                 // the agent goes on the unexpected way, we need to compute the shortest path again and renew the agentsPath map
-                Node node = this.getShortestPathLeastTurns(location, grid, beforeDirection);
+                Node node;
+                if (beforeDirection == DirectionType.CURRENT) {
+                    Point beforebeforeLocation = location;
+                    for (int k = beforeIndex; k >= 0; k --) {
+                        beforebeforeLocation = expectPath.get(k);
+                        if (!beforebeforeLocation.equals(location)) {
+                            break;
+                        }
+                    }
+                    DirectionType beforebeforeDirection = this.getMoveDirections(beforebeforeLocation, location);
+                    node = this.getShortestPathLeastTurns(location, grid, beforebeforeDirection);
+                } else {
+                    node = this.getShortestPathLeastTurns(location, grid, beforeDirection);
+                }
                 ArrayList<Point> path = node.getPath();
                 nextPosition = path.get(1);
                 System.out.println("agent" + String.valueOf(i) + "go unexpected way, now location:" + location.toString() + "before direction" + beforeDirection.toString());
@@ -187,6 +200,17 @@ public class Controller extends chemotaxis.sim.Controller {
             if ((location.x != start.x -1 || location.y != start.y - 1) && beforeDirection == DirectionType.CURRENT) {
                 System.out.println(String.valueOf(i) + "stopped, now:" + nowDirection.toString());
                 System.out.println("intend:" + intendTurnDirection + "suppose:" + supposeTurnDirection);
+                Point beforebeforeLocation = location;
+                int k;
+                for (k = beforeIndex; k >= 0; k --) {
+                    beforebeforeLocation = expectPath.get(k);
+                    if (!beforebeforeLocation.equals(location)) {
+                        break;
+                    }
+                }
+                if (beforeIndex - k  >= 3 && supposeTurnDirection != 4) {
+                    supposeTurnDirection = 3;
+                }
             }
             // if the location isn't the start point, and we find that the agent goes blocked(beforeDirection = CURRENT),
             // we will know that there must be two agents want to the opposite way,
@@ -317,6 +341,27 @@ public class Controller extends chemotaxis.sim.Controller {
         chemicalPlacement.chemicals = chemicals;
         previousLocations = locations;
         return chemicalPlacement;
+    }
+
+    private Node getFourDirectionShortestPath(Point start, ChemicalCell[][] grid, DirectionType previousDirection) {
+        Node result = new Node(start, Integer.MAX_VALUE);
+        if (previousDirection == DirectionType.CURRENT) {
+            for (MoveDirection direction: directions) {
+                Node tempResult = this.getShortestPathLeastTurns(start, grid, direction.directionType);
+                if (result.getTurns() == Integer.MAX_VALUE || result.getPath().size() > tempResult.getPath().size()) {
+                    result.setTurns(tempResult.getTurns());
+                    result.setPath(tempResult.getPath());
+                } else if (result.getPath().size() == tempResult.getPath().size()) {
+                    if (result.getTurns() > tempResult.getTurns()) {
+                        result.setTurns(tempResult.getTurns());
+                        result.setPath(tempResult.getPath());
+                    }
+                }
+            }
+        } else {
+            result = this.getShortestPathLeastTurns(start, grid, previousDirection);
+        }
+        return result;
     }
 
     // use queue to do BFS to find the shortest path from current position to the target
