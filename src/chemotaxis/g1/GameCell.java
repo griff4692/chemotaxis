@@ -7,6 +7,7 @@ import java.awt.*;
 import java.util.Objects;
 
 public class GameCell {
+    public static final double MIN_DETECTABLE_CONCENTRATION = 0.001;
     public boolean occupied;
     public ChemicalCell cell;
 
@@ -51,7 +52,6 @@ public class GameCell {
      * @return
      */
     public static ChemicalCell cloneAttenuatedChemicalCell(final ChemicalCell priorCell) {
-        double MIN_DETECTABLE_CONCENTRATION = 0.001;
         ChemicalCell newCell = new ChemicalCell(priorCell.isOpen());
         ChemicalCell.ChemicalType[] chems = {ChemicalCell.ChemicalType.BLUE, ChemicalCell.ChemicalType.RED, ChemicalCell.ChemicalType.GREEN};
         for (ChemicalCell.ChemicalType c : chems) {
@@ -99,5 +99,34 @@ public class GameCell {
                 return new Point(current.x, current.y + 1);
         }
         throw new RuntimeException("unexpected DirectionType enum");
+    }
+
+    /**
+     * Convert a one-indexed point to a zero-indexed point
+     *
+     * @param oneBasedPoint
+     * @return New point, now zero indexed
+     */
+    public static Point zeroPoint(final Point oneBasedPoint) {
+        if (oneBasedPoint == null) {
+            return null;
+        }
+        Point zeroBasedPoint = new Point(oneBasedPoint.x - 1, oneBasedPoint.y - 1);
+        if (zeroBasedPoint.x < 0 || zeroBasedPoint.y < 0) {
+            throw new RuntimeException("underflow converting one based point to zero based");
+        }
+        return zeroBasedPoint;
+    }
+
+    /**
+     * Convert a zero-indexed point to a one-indexed point
+     * @param zeroBasedPoint
+     * @return New point, now one indexed
+     */
+    public static Point oneBasedPoint(final Point zeroBasedPoint) {
+        if (zeroBasedPoint == null) {
+            return null;
+        }
+        return new Point(zeroBasedPoint.x + 1, zeroBasedPoint.y + 1);
     }
 }
