@@ -77,10 +77,10 @@ public class Controller extends chemotaxis.sim.Controller {
 		this.finalPolicy = convertPolicy(policy);
 		this.red = true;
 		int errorMargin = size;
-		this.blueStrategy = (this.corners.size() * agentGoal + errorMargin < budget);
+		this.blueStrategy = (this.corners.size() * agentGoal + errorMargin < budget && this.spawnFreq > 2);
 		this.agentsStack = new HashSet<Point>();
-		this.step = 5;
-		this.POI = getPOI();
+		this.step = 7;
+		this.POI = getUpdatedPOI();
 		this.updateStack = new ArrayList<Point>();
 		this.turns = this.initializeTurns();
 	}
@@ -106,6 +106,25 @@ public class Controller extends chemotaxis.sim.Controller {
 			System.out.println("ADDED point : "+ this.shortestPath.get(this.shortestPath.size()-1));
 		}
 		return stack;
+	}
+
+	private HashMap<Point, ChemicalType> getUpdatedPOI (){
+		ChemicalType color =  ChemicalType.RED;
+		HashMap<Point, ChemicalType> poi = new HashMap<Point, ChemicalType>();
+		for (int i=1, j=1; i<this.shortestPath.size() && j<this.corners.size(); i++) {
+			if (this.red) {
+				color = ChemicalType.RED;
+			} else {
+				color = ChemicalType.GREEN;
+			}
+			if (this.shortestPath.get(i).equals(this.corners.get(j))) {
+				poi.put(this.shortestPath.get(i), color);
+				j++;
+			}
+			this.red = ! this.red;
+		}
+		poi.put(this.shortestPath.get(this.shortestPath.size()-1), color);
+		return poi;
 	}
 
 	private HashMap<Point, ChemicalType> getPOI (){
@@ -580,43 +599,37 @@ public class Controller extends chemotaxis.sim.Controller {
 	}
 
 	private boolean isMaximum (Point center, int r, ChemicalType color) {
-		HashMap<Point, Double> temp = new HashMap<Point, Double>();
 		int x = center.x;
 		int y = center.y;
 		double centerValue = this.grid[x-1][y-1].getConcentration(color);
-		System.out.println("color: "+ color);
-		System.out.println("Center: "+ center+ " Center value: "+ centerValue);
-		if (centerValue == 0.0) {
-			System.out.println("EMPTY CELL - NO MAX");
+		System.out.println("CENTER IS AT: x: "+ x+ " , y: "+y);
+		System.out.println("CENTER VALUE IS "+ centerValue);
+		if (centerValue == 0.0 ) {
 			return true;
 		}
-		int difference = 0;
-		for (int j = y-r; j < y+r; j++) {
-			difference = Math.abs(j-r);
-			for (int i = x, k = 0 ; k <= difference; k++) {
-				if (k == 0) {
-					if (validCell(i-1, j-1)) {
-						temp.put(new Point(i, j) ,this.grid[i-1][j-1].getConcentration(color));
-					}
-				} else {
-					if (validCell(i-k-2, j-2)) {
-						temp.put(new Point(i-k, j) ,this.grid[i - k-2][j-2].getConcentration(color));
-					}
-					if (validCell(i+k, j)) {
-						temp.put(new Point(i+k, j) ,this.grid[i + k][j].getConcentration(color));
-					}
-				}
-			}
-		}
+		Queue<Node> queue = new LinkedList<Node>();
+		boolean[][] visited = new boolean[this.m][this.n];
+		visited[x-1][y-1] = true;
+		Node start = new Node(x, y);
+		queue.add(start);
+		int cur_depth = 0;
+			while (cur_depth < r && !queue.isEmpty()) {
+				Node curNode = queue.poll();
 
-		for (Point p : temp.keySet()) {
-			System.out.println("Point: "+ p + " value: "+ temp.get(p));
-			if (temp.get(p) >= centerValue && !p.equals(center)) {
-				System.out.println("NOT MAX, center= "+ center +" , point found= "+ p);
-				return false;
+				for (Node nei: getNeighbors(curNode, this.grid, visited)){
+					int tempX = nei.getX();
+					int tempY = nei.getY();
+					System.out.println("checking neighbours: x = "+ tempX + " , y = "+ tempY + " , value = " + this.grid[tempX-1][tempY-1].getConcentration(color));
+					if (this.grid[tempX-1][tempY-1].getConcentration(color) > centerValue) {
+						System.out.println("FOUND ANOTHER MAX AT: x: "+ tempX+ " , y: "+tempY);
+						System.out.println("VALUE IS "+ this.grid[tempX-1][tempY-1].getConcentration(color));
+						return false;
+					}
+					visited[nei.getX() - 1][nei.getY() - 1] = true;
+					queue.add(nei);
+				}
+				cur_depth += 1;
 			}
-		}
-		System.out.println("IS MAX, center= "+ center);
 		return true;
 	}
 
@@ -784,6 +797,7 @@ public class Controller extends chemotaxis.sim.Controller {
 	@Override
 	public ChemicalPlacement applyChemicals(Integer currentTurn, Integer chemicalsRemaining, ArrayList<Point> locations, ChemicalCell[][] grid) {
 
+		System.out.println("\n\n\n\n\n\n\n****************** TURN "+ currentTurn+ " **************** \n\n\n\n\n\n");
 		this.grid = grid;
 		ChemicalPlacement chemicalPlacement = new ChemicalPlacement();
 		int newX;
@@ -838,7 +852,6 @@ public class Controller extends chemotaxis.sim.Controller {
 			}
 		}
 		else {
-			System.out.println("***************** \n\n\n\n\n\nNEW TURN  "+currentTurn+"\n\n\n\n\n\n *******************");
 			this.updateTurns(currentTurn);
 
 				ChemicalType color ;
@@ -911,6 +924,7 @@ public class Controller extends chemotaxis.sim.Controller {
 
 			}
 			 */
+		System.out.println("PLACEMENT HERE : "+ chemicalPlacement.chemicals);
 		return chemicalPlacement;
 	}
 }

@@ -61,8 +61,8 @@ public class Agent extends chemotaxis.sim.Agent {
 
 		chosenChemicalType = ChemicalType.BLUE;
 		double highestConcentration;
-		double minDetectableConcentration = 0.001;	/* Would have done a #define, but can't. CAUTION! Change if minimum detectable concentration
-		 changes. */
+		double minDetectableConcentration = 0.001; /* Would have done a #define, but can't. CAUTION! Change if minimum detectable concentration
+       changes. */
 
 		boolean turn = false;
 		int colour;
@@ -78,7 +78,6 @@ public class Agent extends chemotaxis.sim.Agent {
 				previousState = (byte)((previousState & 248) | storeDir(directionType));
 				move.currentState = previousState;
 				break;
-
 			}
 		}
 		//System.out.println("Out of blue loop");
@@ -127,6 +126,8 @@ public class Agent extends chemotaxis.sim.Agent {
 					highestConcentration = neighborMap.get(directionType).getConcentration(chosenChemicalType);
 					//System.out.println(2 + " found higher concentration " + highestConcentration + " direction is :" + directionType);
 					move.directionType = directionType;
+
+
 					dirChanged = true;
 				}
 
@@ -134,6 +135,9 @@ public class Agent extends chemotaxis.sim.Agent {
 
 			if(allZero(neighborMap, chosenChemicalType, currentCell) == 1 /*&& firstTurn == 1*/){
 				move.directionType = DirectionType.CURRENT;
+
+				previousState = (byte)((previousState & 248) | storeDir(move.directionType));
+
 				move.currentState = previousState;
 				dirChanged = true;
 				return move;
@@ -160,12 +164,14 @@ public class Agent extends chemotaxis.sim.Agent {
 						highestConcentration = neighborMap.get(directionType).getConcentration(chosenChemicalType);
 						move.directionType = directionType;
 						//System.out.println("Strategy red-green : " +  " found higher conc : " + highestConcentration);
+
 						dirChanged = true;
 					}
 				}
 
 				if(allZero(neighborMap, chosenChemicalType, currentCell) == 1){
 					move.directionType = DirectionType.CURRENT;
+					previousState = (byte)((previousState & 248) | storeDir(move.directionType));
 					move.currentState = previousState;
 					dirChanged = true;
 					return move;
@@ -173,7 +179,17 @@ public class Agent extends chemotaxis.sim.Agent {
 			}
 		}
 
-		move.currentState = previousState;
+		if (oppositeMovement(move.directionType, previousState) == 1){
+			move.directionType = DirectionType.CURRENT;
+
+			move.currentState = previousState;
+		}
+		else{
+			previousState = (byte)((previousState & 248) | storeDir(move.directionType));
+			move.currentState = previousState;
+		}
+
+
 		return move;
 	}
 
@@ -239,4 +255,21 @@ public class Agent extends chemotaxis.sim.Agent {
 			return 0;
 
 	}
+
+
+	public int oppositeMovement(DirectionType direction, Byte prev){
+		DirectionType prevDir = findPreviousState(prev);
+		if (prevDir == DirectionType.NORTH && direction == DirectionType.SOUTH)
+			return 1;
+		else if (prevDir == DirectionType.SOUTH && direction == DirectionType.NORTH)
+			return 1;
+		else if (prevDir == DirectionType.EAST && direction == DirectionType.WEST)
+			return 1;
+		else if (prevDir == DirectionType.WEST && direction == DirectionType.EAST)
+			return 1;
+		else
+			return 0;
+	}
+
+
 }
