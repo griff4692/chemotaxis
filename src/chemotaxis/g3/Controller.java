@@ -161,9 +161,9 @@ public class Controller extends chemotaxis.sim.Controller {
 		this.shortestPathLength= shortest_path.size();
 
 		first_pt = node_to_point.get(first_node);
-		System.out.println(first_pt);
+
 		second_pt = node_to_point.get(second_node);
-		System.out.println(second_pt);
+
 		//agent goal 50
 		//spawnfreq 5
 		//at turn 250 last agent spawned
@@ -251,7 +251,6 @@ public class Controller extends chemotaxis.sim.Controller {
 			if(this.period <4){
 				this.period = 4;
 			}
-			System.out.println("refreshed period is " + this.period);
 		}
 		return chemicalPlacement;
 	}
