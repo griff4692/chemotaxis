@@ -227,7 +227,7 @@ public class Controller extends chemotaxis.sim.Controller {
 	public ChemicalPlacement applyChemicals(Integer currentTurn, Integer chemicalsRemaining, ArrayList<Point> locations, ChemicalCell[][] grid) {
 		ChemicalPlacement res = new ChemicalPlacement();
 		currentTurn -= 1;
-		System.out.println(currentTurn + ": " + solution.getOrDefault(currentTurn, null));
+//		System.out.println(currentTurn + ": " + solution.getOrDefault(currentTurn, null));
 		if (!solution.containsKey(currentTurn)) return res;
 		Status s = solution.get(currentTurn);
 		res.location = moveByDT(s.from, s.dt);

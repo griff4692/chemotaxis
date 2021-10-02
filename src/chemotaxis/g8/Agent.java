@@ -47,7 +47,7 @@ public class Agent extends chemotaxis.sim.Agent {
 		int lastMode = decodeMode(previousState);
 		DirectionType lastDT = decodeDT(previousState);
 		boolean lastTurn = decodeTurn(previousState);
-		System.out.println("Agent: " + lastDT + "  " + lastMode);
+//		System.out.println("Agent: " + lastDT + "  " + lastMode);
 
 		for (DirectionType dt: neighborMap.keySet()) {
 			ChemicalCell cell = neighborMap.get(dt);
@@ -56,7 +56,7 @@ public class Agent extends chemotaxis.sim.Agent {
 			if (cell.getConcentration(ChemicalType.RED) > 0.99) mode += 2;
 			if (cell.getConcentration(ChemicalType.GREEN) > 0.99) mode += 4;
 			if (mode != 0) {
-				System.out.println("Agent Ins: " + dt + "  " + mode);
+//				System.out.println("Agent Ins: " + dt + "  " + mode);
 				move.directionType = dt;
 				move.currentState = encode(dt, mode, false);
 				return move;
@@ -71,7 +71,7 @@ public class Agent extends chemotaxis.sim.Agent {
 
 		if (3 <= lastMode && lastMode <= 6) {
 			if (neighborMap.get(lastDT).isBlocked()) {
-				System.out.println("Agent Hit Wall!");
+//				System.out.println("Agent Hit Wall!");
 				switch (lastMode) {
 					case 3: lastDT = turnLeft(lastDT); break;
 					case 4: lastDT = turnRight(lastDT); break;
