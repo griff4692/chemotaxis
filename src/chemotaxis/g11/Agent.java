@@ -52,14 +52,17 @@ public class Agent extends chemotaxis.sim.Agent {
 
         Move move = new Move();
 
-        Boolean hasSeenBlue= (previousState >> 6 == 1);
-        Boolean firstMove = (previousState >> 7 == 0);
-        if (!firstMove) {
-            previousState = (byte) (previousState - 128);
-        }
+        Boolean hasSeenBlue= (previousState >= 32 && !(previousState >= 64 && previousState < 68));
+        Boolean firstMove = (previousState < 64);
+
         if (hasSeenBlue) {
+            previousState = (byte) (previousState - 32);
+        }
+
+        if (!firstMove) {
             previousState = (byte) (previousState - 64);
         }
+
         move.currentState = previousState;
         Integer previousDirection = previousState & 0b11;
 
@@ -98,6 +101,8 @@ public class Agent extends chemotaxis.sim.Agent {
                 possibledirections.add(DirectionType.NORTH);
             }
 
+            System.out.println(possibledirections);
+
             int position = Math.abs(randomNum % possibledirections.size());
             move.directionType = possibledirections.get(position);
             move.currentState = (byte) (bitDirectionMap.get(move.directionType) | 0b00);
@@ -114,9 +119,10 @@ public class Agent extends chemotaxis.sim.Agent {
         }
 
         if (hasSeenBlue) {
-            move.currentState = (byte) (move.currentState + 64) ;
+            move.currentState = (byte) (move.currentState + 32) ;
         }
-        move.currentState = (byte) (move.currentState + 128) ;
+
+        move.currentState = (byte) (move.currentState + 64) ;
 
         return move;
     }
