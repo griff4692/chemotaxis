@@ -58,20 +58,20 @@ public class Controller extends chemotaxis.sim.Controller {
 			for (int j = 0; j < this.n; j ++){
 				if (shortestPathSet.contains(new Point(i + 1, j + 1))){
 					if (corners.contains(new Point(i + 1, j  + 1))){
-						System.out.print("C" + " ");
+						//System.out.print("C" + " ");
 					}else if(target.x == i + 1 && target.y == j + 1){
-						System.out.print("O" + " ");
+						//System.out.print("O" + " ");
 					}else {
-						System.out.print("S" + " ");
+						//System.out.print("S" + " ");
 					}
 				}
 				else if (blockedLocations.contains(new Point(i, j))){
-					System.out.print("*" + " ");
+					//System.out.print("*" + " ");
 				}else{
-					System.out.print("." + " ");
+					//System.out.print("." + " ");
 				}
 			}
-			System.out.println();
+			//System.out.println();
 		}
 		this.target = target;
 		this.findPolicy(0.8);
@@ -89,23 +89,23 @@ public class Controller extends chemotaxis.sim.Controller {
 
 	private HashMap<Integer, List<Point>> initializeTurns (){
 		HashMap<Integer, List<Point>> stack = new HashMap<Integer, List<Point>>();
-		System.out.println("SHORTEST PATH");
+		//System.out.println("SHORTEST PATH");
 		for (int k=0; k<this.shortestPath.size(); k++) {
-			System.out.println("ID: "+k+ " , value: "+ this.shortestPath.get(k));
+			//System.out.println("ID: "+k+ " , value: "+ this.shortestPath.get(k));
 		}
 		int i =step;
 		for (; i<this.shortestPath.size(); i = i+this.step) { //-1
 			List<Point> temp = new ArrayList<Point>();
 			temp.add(this.shortestPath.get(i));
 			stack.put(i-this.step+1, temp);
-			System.out.println("ADDED point : "+ this.shortestPath.get(i));
+			//System.out.println("ADDED point : "+ this.shortestPath.get(i));
 		}
 		if (this.shortestPath.size()-1 %this.step != 0) {
 			List<Point> temp = new ArrayList<Point>();
 			temp.add(this.shortestPath.get(this.shortestPath.size()-1));
 			int difference = this.step - (this.shortestPath.size() % this.step);
 			stack.put(i+difference, temp);
-			System.out.println("ADDED point : "+ this.shortestPath.get(this.shortestPath.size()-1));
+			//System.out.println("ADDED point : "+ this.shortestPath.get(this.shortestPath.size()-1));
 		}
 		return stack;
 	}
@@ -151,10 +151,10 @@ public class Controller extends chemotaxis.sim.Controller {
 			poi.put(this.shortestPath.get(this.shortestPath.size()-1), color);
 		}
 		for (Point p : poi.keySet()){
-			System.out.println("POI LIST: point: "+ p +" color: "+ poi.get(p));
+			//System.out.println("POI LIST: point: "+ p +" color: "+ poi.get(p));
 		}
 		for (Point p : poi.keySet()){
-			System.out.println("Point "+ p+ " , color: "+ poi.get(p));
+			//System.out.println("Point "+ p+ " , color: "+ poi.get(p));
 		}
 		return poi;
 	}
@@ -188,21 +188,21 @@ public class Controller extends chemotaxis.sim.Controller {
 
 	private void findPolicy(double gamma){
 		String[][] init = this.extractPolicy(new double[this.m][this.n], gamma);
-		System.out.println("Init");
+		//System.out.println("Init");
 		for (int i = 0; i < this.m; i ++){
 			for (int j = 0; j < this.n; j ++){
-				System.out.print(init[i][j] + " ");
+				//System.out.print(init[i][j] + " ");
 			}
-			System.out.println();
+			//System.out.println();
 		}
-		System.out.println("New Policy");
+		//System.out.println("New Policy");
 
 		this.policy = policyIteration(init, new double[this.m][this.n], gamma);
 		for (int i = 0; i < this.m; i ++){
 			for (int j = 0; j < this.n; j ++){
-				System.out.print(policy[i][j] + " ");
+				//System.out.print(policy[i][j] + " ");
 			}
-			System.out.println();
+			//System.out.println();
 		}
 	}
 
@@ -357,8 +357,8 @@ public class Controller extends chemotaxis.sim.Controller {
 			a = b;
 			b = c;
 		}
-		System.out.println(corners);
-		System.out.println(corners.size());
+		//System.out.println(corners);
+		//System.out.println(corners.size());
 		return corners;
 	}
 
@@ -608,8 +608,8 @@ public class Controller extends chemotaxis.sim.Controller {
 		int x = center.x;
 		int y = center.y;
 		double centerValue = this.grid[x-1][y-1].getConcentration(color);
-		System.out.println("CENTER IS AT: x: "+ x+ " , y: "+y);
-		System.out.println("CENTER VALUE IS "+ centerValue);
+		//System.out.println("CENTER IS AT: x: "+ x+ " , y: "+y);
+		//System.out.println("CENTER VALUE IS "+ centerValue);
 		if (centerValue == 0.0 ) {
 			return true;
 		}
@@ -625,11 +625,11 @@ public class Controller extends chemotaxis.sim.Controller {
 				for (Node nei: getNeighbors(curNode, this.grid, visited)){
 					int tempX = nei.getX();
 					int tempY = nei.getY();
-					System.out.println("checking neighbours: x = "+ tempX + " , y = "+ tempY + " , value = " + this.grid[tempX-1][tempY-1].getConcentration(color));
+					//System.out.println("checking neighbours: x = "+ tempX + " , y = "+ tempY + " , value = " + this.grid[tempX-1][tempY-1].getConcentration(color));
 					if (this.grid[tempX-1][tempY-1].getConcentration(color) > centerValue) {
 						if (this.grid[tempX-1][tempY-1].getConcentration(color) - centerValue > 0.001){
-							System.out.println("FOUND ANOTHER MAX AT: x: "+ tempX+ " , y: "+tempY);
-							System.out.println("VALUE IS "+ this.grid[tempX-1][tempY-1].getConcentration(color));
+							//System.out.println("FOUND ANOTHER MAX AT: x: "+ tempX+ " , y: "+tempY);
+							//System.out.println("VALUE IS "+ this.grid[tempX-1][tempY-1].getConcentration(color));
 							return false;
 						}
 					}
@@ -643,7 +643,7 @@ public class Controller extends chemotaxis.sim.Controller {
 
 	private void updateTurns (int currentTurn) {
 		for (Point p : this.POI.keySet()) {
-			System.out.println("In uodateTurns, point: "+p);
+			//System.out.println("In uodateTurns, point: "+p);
 			if (!isMaximum(p, this.step, this.POI.get(p))) {
 				if (turns.containsKey(currentTurn)) {
 					List<Point> t = this.turns.get(currentTurn);
@@ -663,25 +663,25 @@ public class Controller extends chemotaxis.sim.Controller {
 		switch (currentCell) {
 			case EAST:
 				if (nextCell == DirectionType.WEST) {
-					System.out.println("agent is going EAST but policy says to go WEST");
+					//System.out.println("agent is going EAST but policy says to go WEST");
 					return true;
 				}
 				break;
 			case WEST:
 				if (nextCell == DirectionType.EAST) {
-					System.out.println("agent is going WEST but policy says to go EAST");
+					//System.out.println("agent is going WEST but policy says to go EAST");
 					return true;
 				}
 				break;
 			case NORTH:
 				if (nextCell == DirectionType.SOUTH) {
-					System.out.println("agent is going NORTH but policy says to go SOUTH");
+					//System.out.println("agent is going NORTH but policy says to go SOUTH");
 					return true;
 				}
 				break;
 			case SOUTH:
 				if (nextCell == DirectionType.NORTH) {
-					System.out.println("agent is going NORTH but policy says to go SOUTH");
+					//System.out.println("agent is going NORTH but policy says to go SOUTH");
 					return true;
 				}
 				break;
@@ -752,7 +752,7 @@ public class Controller extends chemotaxis.sim.Controller {
 			concentrations.add(0.0);
 		}
 		for (int k=0; k < 4; k++){
-			System.out.println(concentrations.get(k));
+			//System.out.println(concentrations.get(k));
 		}
 		List<Double> max = new ArrayList<>();
 		max.add(0.0);
@@ -772,22 +772,22 @@ public class Controller extends chemotaxis.sim.Controller {
 		if (max.get(0) < 0.001) {
 			id = 4;
 		}
-		System.out.println(id);
+		//System.out.println(id);
 		switch(id) {
 			case 0:
-				System.out.println("GOING WEST");
+				//System.out.println("GOING WEST");
 				return DirectionType.WEST;
 			case 1:
-				System.out.println("GOING EAST");
+				//System.out.println("GOING EAST");
 				return DirectionType.EAST;
 			case 2:
-				System.out.println("GOING NORTH");
+				//System.out.println("GOING NORTH");
 				return DirectionType.NORTH;
 			case 3:
-				System.out.println("GOING SOUTH");
+				//System.out.println("GOING SOUTH");
 				return DirectionType.SOUTH;
 		}
-		System.out.println("STAYING PUT");
+		//System.out.println("STAYING PUT");
 		return DirectionType.CURRENT;
 	}
 

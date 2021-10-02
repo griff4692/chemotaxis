@@ -10,6 +10,12 @@ public class Timer extends Thread {
 	private Exception error = null;
 	private Object result = null;
 	private long startTime, endTime;
+	private boolean running;
+
+	public Timer() {
+		super();
+		this.running = true;
+	}
 
 	public <T> void callStart(Callable <T> task) {
 		if(!isAlive())
@@ -17,7 +23,7 @@ public class Timer extends Thread {
 		if(task == null)
 			throw new IllegalArgumentException();
 		this.task = task;
-		
+
 		synchronized(this) {
 			started = true;
 			this.startTime = System.currentTimeMillis();
@@ -28,7 +34,6 @@ public class Timer extends Thread {
 	public <T> T callWait(long timeout) throws Exception {
 		if(timeout < 0)
 			throw new IllegalArgumentException();
-		
 		synchronized(this) {
 			if(completed == false)
 				try {
@@ -52,6 +57,9 @@ public class Timer extends Thread {
 	public void run() {
 		while(true) {
 			synchronized(this) {
+				if (!this.running) {
+					return;
+				}
 				if(started == false)
 					try {
 						wait();
@@ -72,6 +80,12 @@ public class Timer extends Thread {
 				completed = true;
 				notify();
 			}
+		}
+	}
+
+	public void terminate() {
+		synchronized (this) {
+			this.running = false;
 		}
 	}
 	

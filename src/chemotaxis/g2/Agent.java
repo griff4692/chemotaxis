@@ -113,11 +113,11 @@ public class Agent extends chemotaxis.sim.Agent {
 
 			colour = findRedOrGreen(previousState);
 			if (colour == 1) {
-				chosenChemicalType = ChemicalType.RED;
-				System.out.println("FOLLOWING RED"); }
+				chosenChemicalType = ChemicalType.RED;}
+				//System.out.println("FOLLOWING RED"); }
 			else {
-				chosenChemicalType = ChemicalType.GREEN;
-				System.out.println("FOLLOWING GREEN"); }
+				chosenChemicalType = ChemicalType.GREEN;}
+				//System.out.println("FOLLOWING GREEN"); }
 
 			highestConcentration = currentCell.getConcentration(chosenChemicalType);
 			double previousColourConcentration;
@@ -202,7 +202,7 @@ public class Agent extends chemotaxis.sim.Agent {
 			move.currentState = previousState;
 		}
 
-		System.out.println("Final Move: "+ move.directionType);
+		//System.out.println("Final Move: "+ move.directionType);
 		return move;
 	}
 
