@@ -36,7 +36,7 @@ public class Controller extends chemotaxis.sim.Controller {
       super(start, target, size, grid, simTime, budget, seed, simPrinter, agentGoal, spawnFreq);
 
       this.turnGrid = computeTurnGrid(grid, start);
-      printTurnGrid();
+//      printTurnGrid();
       findDesiredPath(grid, start, target);
       agentsLastLocation = new ArrayList<>();
       agentsLastDir = new ArrayList<>();

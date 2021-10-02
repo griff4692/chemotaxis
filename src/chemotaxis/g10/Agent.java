@@ -296,7 +296,7 @@ public class Agent extends chemotaxis.sim.Agent {
          }
       }
 
-      System.out.println("Part 1");
+//      System.out.println("Part 1");
 
 //
 //      for (DirectionType orthogonalDirection: orthogonalDirections) {
