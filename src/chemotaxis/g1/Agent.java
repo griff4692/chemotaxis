@@ -38,9 +38,28 @@ public class Agent extends chemotaxis.sim.Agent {
             prevState = new AgentState(previousState);
         }
 
-        Move move;
+        Move move = new Move();
         if (prevState.isInitialized()) {
             if (prevState.getStrategy() == AgentState.Strategy.WEAK) {
+                // Random movement
+                if ((randomNum & 0xFFFF) % 20 == 0) {
+                    int moveNo = (randomNum & 0xFFFF0000) % 4;
+                    switch (moveNo) {
+                        case 0:
+                            move.directionType = DirectionType.NORTH;
+                            break;
+                        case 1:
+                            move.directionType = DirectionType.WEST;
+                            break;
+                        case 2:
+                            move.directionType = DirectionType.EAST;
+                            break;
+                        case 3:
+                            move.directionType = DirectionType.SOUTH;
+                    }
+                    move.currentState = previousState;
+                    return move;
+                }
                 // Old weak strategy
 //                move = weakFollowStrategy(prevState, neighborMap);
                 neighborMap.put(DirectionType.CURRENT, currentCell);
@@ -284,7 +303,7 @@ public class Agent extends chemotaxis.sim.Agent {
      */
     private static DirectionType towardsGradient(ChemicalType followColor, Map<DirectionType, ChemicalCell> neighborMap) {
         // TODO: Does this conflict logic make sense?
-        System.out.println(followColor);
+//        System.out.println(followColor);
 
 
         boolean conflict = false;
@@ -294,9 +313,9 @@ public class Agent extends chemotaxis.sim.Agent {
         for (DirectionType d : neighborMap.keySet()) {
             ChemicalCell cell = neighborMap.get(d);
             double concentration = cell.getConcentration(followColor);
-            if( d == DirectionType.CURRENT) {
-                System.out.println(concentration);
-            }
+//            if( d == DirectionType.CURRENT) {
+//                System.out.println(concentration);
+//            }
             if (concentration == maxConcentration) {
                 conflict = true;
             } else if (concentration > maxConcentration) {
