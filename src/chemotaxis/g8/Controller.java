@@ -148,7 +148,7 @@ public class Controller extends chemotaxis.sim.Controller {
 
 	private Status solve(int alpha) {
 		this.alpha = alpha;
-		System.out.println("Precalculating...   alpha = " + alpha);
+//		System.out.println("Precalculating...   alpha = " + alpha);
 		this.solution.clear();
 
 		Status res = new Status(-1, -1, null);
@@ -173,7 +173,7 @@ public class Controller extends chemotaxis.sim.Controller {
 					for (Map.Entry<Integer, Status> kv: oSolution.entrySet()) {
 						solution.put(kv.getKey() + shift, kv.getValue());
 					}
-					System.out.println(shift);
+//					System.out.println(shift);
 					break;
 				}
 				delay += 1;
@@ -205,7 +205,7 @@ public class Controller extends chemotaxis.sim.Controller {
 
 		for (int a: new int[]{1000, 100, 50, 25, 20, 15, 12, 10, 7, 5, 2}) {
 			Status s = solve(a);
-			System.out.println(s);
+//			System.out.println(s);
 			if (s.time < simTime && s.cost <= budget && s.mode == agentGoal - 1) {
 				solved = true;
 				break;
@@ -216,7 +216,7 @@ public class Controller extends chemotaxis.sim.Controller {
 			}
 		}
 
-		System.out.println("Solved: " + solved + " Reached: " + reached);
+//		System.out.println("Solved: " + solved + " Reached: " + reached);
 
 		if (!solved) {
 			solution = best;
