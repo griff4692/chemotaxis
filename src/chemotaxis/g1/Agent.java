@@ -38,10 +38,35 @@ public class Agent extends chemotaxis.sim.Agent {
             prevState = new AgentState(previousState);
         }
 
-        Move move;
+        Move move = new Move();
         if (prevState.isInitialized()) {
-            if (prevState.getStrategy() == AgentState.Strategy.WEAK)
-                move = weakFollowStrategy(prevState, neighborMap);
+            if (prevState.getStrategy() == AgentState.Strategy.WEAK) {
+                // Random movement
+                if ((randomNum & 0xFFFF) % 10 == 0) {
+                    int moveNo = (randomNum & 0xFFFF0000) % 4;
+                    switch (moveNo) {
+                        case 0:
+                            move.directionType = DirectionType.NORTH;
+                            break;
+                        case 1:
+                            move.directionType = DirectionType.WEST;
+                            break;
+                        case 2:
+                            move.directionType = DirectionType.EAST;
+                            break;
+                        case 3:
+                            move.directionType = DirectionType.SOUTH;
+                    }
+                    move.currentState = previousState;
+                    return move;
+                }
+                // Old weak strategy
+//                move = weakFollowStrategy(prevState, neighborMap);
+                neighborMap.put(DirectionType.CURRENT, currentCell);
+                // Need to return here weak2 does not modify prevState directly
+                // the move it returns is complete and ready to return to the sim.
+                return weak2(prevState, neighborMap);
+            }
             else
                 move = strongFollowStrategy(prevState, neighborMap);
         }
@@ -126,12 +151,16 @@ public class Agent extends chemotaxis.sim.Agent {
         }
 
         if (prevState.getStrategy() == AgentState.Strategy.WEAK){
-            DirectionType nextDirection = getHighestConcentrationDirectionWeak(ChemicalType.BLUE, neighborMap);
-            if (nextDirection != null) {
-                move.directionType = nextDirection;
-                prevState.changeFollowColor(ChemicalType.BLUE);
-            }
-            move.directionType = handleWall(move, neighborMap, prevState);
+            // new weak strategy
+            neighborMap.put(DirectionType.CURRENT, currentCell);
+            return weak2(prevState, neighborMap);
+            // Old weak strategy
+//            DirectionType nextDirection = getHighestConcentrationDirectionWeak(ChemicalType.BLUE, neighborMap);
+//            if (nextDirection != null) {
+//                move.directionType = nextDirection;
+//                prevState.changeFollowColor(ChemicalType.BLUE);
+//            }
+//            move.directionType = handleWall(move, neighborMap, prevState);
         }
 
         return move;
@@ -228,4 +257,76 @@ public class Agent extends chemotaxis.sim.Agent {
         return move;
     }
 
+    /**
+     * Generates the movement choice for the new weak *2* strategy.
+     * @param prevState
+     * @param neighborMap
+     * @return
+     */
+    public Move weak2(AgentState prevState, Map<DirectionType, ChemicalCell> neighborMap) {
+        Move nextMove = new Move();
+        AgentState nextState = new AgentState(prevState);
+        ChemicalType followColor = prevState.getFollowColor();
+        DirectionType followDirection = towardsGradient(followColor, neighborMap);
+        if (followDirection == DirectionType.CURRENT) {
+            // Check to see if the next color is nearby
+            ChemicalType nextColor = nextColorWeak2(followColor);
+            followDirection = towardsGradient(nextColor, neighborMap);
+            if (followDirection != DirectionType.CURRENT) {
+                nextState.changeFollowColor(followColor);
+            }
+        }
+        nextMove.currentState = nextState.serialize();
+        nextMove.directionType = followDirection;
+        return nextMove;
+    }
+
+    private static ChemicalType nextColorWeak2(ChemicalType color) {
+        switch(color) {
+            case BLUE:
+                return ChemicalType.RED;
+            case RED:
+                return ChemicalType.GREEN;
+            case GREEN:
+                return ChemicalType.BLUE;
+        }
+        throw new RuntimeException("invalid color");
+    }
+
+    /**
+     * Returns the direction towards the highest concentration of the `followColor` chemical.
+     * If the maximum visible concentration is located in multiple cells, or in the agent's current
+     * cell, the return value is `CURRENT` (no move).
+     * @param followColor
+     * @param neighborMap
+     * @return
+     */
+    private static DirectionType towardsGradient(ChemicalType followColor, Map<DirectionType, ChemicalCell> neighborMap) {
+        // TODO: Does this conflict logic make sense?
+//        System.out.println(followColor);
+
+
+        boolean conflict = false;
+        double maxConcentration = 0.0;
+        DirectionType maxDirection = DirectionType.CURRENT;
+
+        for (DirectionType d : neighborMap.keySet()) {
+            ChemicalCell cell = neighborMap.get(d);
+            double concentration = cell.getConcentration(followColor);
+//            if( d == DirectionType.CURRENT) {
+//                System.out.println(concentration);
+//            }
+            if (concentration == maxConcentration) {
+                conflict = true;
+            } else if (concentration > maxConcentration) {
+                conflict = false;
+                maxConcentration = concentration;
+                maxDirection = d;
+            }
+        }
+        if (conflict) {
+            maxDirection = DirectionType.CURRENT;
+        }
+        return maxDirection;
+    }
 }
