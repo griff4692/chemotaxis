@@ -94,7 +94,7 @@ public class Controller extends chemotaxis.sim.Controller {
                 beforeNode = agentsPath.get(i);
             } else {
                 // if agentsPath not contains i, then this agent must be a new agent
-                if (location.x == start.x - 1 || location.y == start.y - 1) {
+                if (location.x == start.x - 1 && location.y == start.y - 1) {
                     agentsPath.put(i, new Node(initialPath));
                     beforeNode = agentsPath.get(i);
                     if (beforeNode.getIndex() != -1) {
