@@ -29,6 +29,7 @@ public class Controller extends chemotaxis.sim.Controller {
 	private HashMap<Point, ChemicalType> POI;
 	private int step;
 	private List<Point> updateStack;
+	private Set<Point> agents;
 
 	/**
 	 * Controller constructor
@@ -79,10 +80,11 @@ public class Controller extends chemotaxis.sim.Controller {
 		int errorMargin = size;
 		this.blueStrategy = (this.corners.size() * agentGoal + errorMargin < budget && this.spawnFreq > 2);
 		this.agentsStack = new HashSet<Point>();
-		this.step = 7;
-		this.POI = getUpdatedPOI();
+		this.step = 6;
+		this.POI = getPOI();
 		this.updateStack = new ArrayList<Point>();
 		this.turns = this.initializeTurns();
+		this.agents = new HashSet<>();
 	}
 
 	private HashMap<Integer, List<Point>> initializeTurns (){
@@ -111,6 +113,7 @@ public class Controller extends chemotaxis.sim.Controller {
 	private HashMap<Point, ChemicalType> getUpdatedPOI (){
 		ChemicalType color =  ChemicalType.RED;
 		HashMap<Point, ChemicalType> poi = new HashMap<Point, ChemicalType>();
+
 		for (int i=1, j=1; i<this.shortestPath.size() && j<this.corners.size(); i++) {
 			if (this.red) {
 				color = ChemicalType.RED;
@@ -139,7 +142,7 @@ public class Controller extends chemotaxis.sim.Controller {
 			poi.put(this.shortestPath.get(i), color);
 			this.red = ! this.red;
 		}
-		if (this.shortestPath.size()-1 %this.step != 0) {
+		if ((this.shortestPath.size()-1) %this.step != 0) {
 			if (this.red) {
 				color = ChemicalType.RED;
 			} else {
@@ -149,6 +152,9 @@ public class Controller extends chemotaxis.sim.Controller {
 		}
 		for (Point p : poi.keySet()){
 			System.out.println("POI LIST: point: "+ p +" color: "+ poi.get(p));
+		}
+		for (Point p : poi.keySet()){
+			System.out.println("Point "+ p+ " , color: "+ poi.get(p));
 		}
 		return poi;
 	}
@@ -613,7 +619,7 @@ public class Controller extends chemotaxis.sim.Controller {
 		Node start = new Node(x, y);
 		queue.add(start);
 		int cur_depth = 0;
-			while (cur_depth < r && !queue.isEmpty()) {
+			while (cur_depth < r+1 && !queue.isEmpty()) {
 				Node curNode = queue.poll();
 
 				for (Node nei: getNeighbors(curNode, this.grid, visited)){
@@ -621,9 +627,11 @@ public class Controller extends chemotaxis.sim.Controller {
 					int tempY = nei.getY();
 					System.out.println("checking neighbours: x = "+ tempX + " , y = "+ tempY + " , value = " + this.grid[tempX-1][tempY-1].getConcentration(color));
 					if (this.grid[tempX-1][tempY-1].getConcentration(color) > centerValue) {
-						System.out.println("FOUND ANOTHER MAX AT: x: "+ tempX+ " , y: "+tempY);
-						System.out.println("VALUE IS "+ this.grid[tempX-1][tempY-1].getConcentration(color));
-						return false;
+						if (this.grid[tempX-1][tempY-1].getConcentration(color) - centerValue > 0.001){
+							System.out.println("FOUND ANOTHER MAX AT: x: "+ tempX+ " , y: "+tempY);
+							System.out.println("VALUE IS "+ this.grid[tempX-1][tempY-1].getConcentration(color));
+							return false;
+						}
 					}
 					visited[nei.getX() - 1][nei.getY() - 1] = true;
 					queue.add(nei);
@@ -686,20 +694,20 @@ public class Controller extends chemotaxis.sim.Controller {
 		int newY;
 		switch (direction) {
 			case EAST:
-				newX = location.x + 1;
-				newY = location.y;
+				newX = location.x;
+				newY = location.y+1;
 				break;
 			case WEST:
-				newX = location.x - 1;
-				newY = location.y;
+				newX = location.x;
+				newY = location.y-1;
 				break;
 			case NORTH:
-				newX = location.x;
-				newY = location.y - 1;
+				newX = location.x-1;
+				newY = location.y;
 				break;
 			case SOUTH:
-				newX = location.x;
-				newY = location.y + 1;
+				newX = location.x+1;
+				newY = location.y;
 				break;
 			default:
 				newX = location.x;
@@ -784,6 +792,8 @@ public class Controller extends chemotaxis.sim.Controller {
 	}
 
 
+
+
 	/**
 	 * Apply chemicals to the map
 	 *
@@ -797,7 +807,6 @@ public class Controller extends chemotaxis.sim.Controller {
 	@Override
 	public ChemicalPlacement applyChemicals(Integer currentTurn, Integer chemicalsRemaining, ArrayList<Point> locations, ChemicalCell[][] grid) {
 
-		System.out.println("\n\n\n\n\n\n\n****************** TURN "+ currentTurn+ " **************** \n\n\n\n\n\n");
 		this.grid = grid;
 		ChemicalPlacement chemicalPlacement = new ChemicalPlacement();
 		int newX;
@@ -874,17 +883,23 @@ public class Controller extends chemotaxis.sim.Controller {
 						chemicals.add(color);
 						chemicalPlacement.location = next;
 						chemicalPlacement.chemicals = chemicals;
-					}
-					/*
-					else {
-						// if all agents will follow the best policy, no need to add chemicals
-						for (int i = 0; i < locations.size(); i++) {
-							if (oppositeDirection(expectedMove(locations.get(i), grid), this.finalPolicy[locations.get(i).x][locations.get(i).y])) {
-								agentsStack.add(locations.get(i));
+					} else {
+						if (this.spawnFreq > 2) {
+							for (int i=0; i<locations.size(); i++) {
+								if (this.agents.contains(locations.get(i))) {
+									Point next = nextLocation(locations.get(i), this.finalPolicy[locations.get(i).x-1][locations.get(i).y-1]);
+									if (cellOccupied(next, locations) || locations.get(i).equals(new Point(1,1))) {
+										continue;
+									}
+									List<ChemicalType> chemicals = new ArrayList<>();
+									chemicals.add(ChemicalType.BLUE);
+
+									chemicalPlacement.location = next;
+									chemicalPlacement.chemicals = chemicals;
+								}
 							}
 						}
 					}
-					 */
 				}
 				else if (list.size() > 1) {
 					Point next = this.turns.get(currentTurn).get(0);
@@ -906,25 +921,11 @@ public class Controller extends chemotaxis.sim.Controller {
 					chemicalPlacement.chemicals = chemicals;
 				}
 			}
-			/*
-			if (agentsStack.size() != 0) {
-				System.out.println("\n\n\n ************************** \n PUTTING BLUE HERE\n ****************** \n\n\n");
-				Point agent = closestToTarget(agentsStack);
-				agentsStack.remove(closestToTarget(agentsStack));
 
-				DirectionType move = this.finalPolicy[agent.x][agent.y];
-
-				List<ChemicalType> chemicals = new ArrayList<>();
-				chemicals.add(ChemicalType.BLUE);
-
-				chemicalPlacement.location = nextLocation(agent, move);
-				chemicalPlacement.chemicals = chemicals;
-
-				return chemicalPlacement;
-
-			}
-			 */
-		System.out.println("PLACEMENT HERE : "+ chemicalPlacement.chemicals);
+		this.agents = new HashSet<Point>();
+		for (int i=0; i<locations.size(); i++) {
+			this.agents.add(locations.get(i));
+		}
 		return chemicalPlacement;
 	}
 }

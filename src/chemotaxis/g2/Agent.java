@@ -1,7 +1,10 @@
 package chemotaxis.g2;
 
+import java.util.ArrayList;
 import java.util.Map;
 import java.lang.Math;
+import java.util.Random;
+import java.util.List;
 
 import chemotaxis.sim.DirectionType;
 import chemotaxis.sim.ChemicalCell;
@@ -109,10 +112,12 @@ public class Agent extends chemotaxis.sim.Agent {
 			//red-green is on, follow the gradient
 
 			colour = findRedOrGreen(previousState);
-			if (colour == 1)
+			if (colour == 1) {
 				chosenChemicalType = ChemicalType.RED;
-			else
+				System.out.println("FOLLOWING RED"); }
+			else {
 				chosenChemicalType = ChemicalType.GREEN;
+				System.out.println("FOLLOWING GREEN"); }
 
 			highestConcentration = currentCell.getConcentration(chosenChemicalType);
 			double previousColourConcentration;
@@ -176,23 +181,68 @@ public class Agent extends chemotaxis.sim.Agent {
 					dirChanged = true;
 					return move;
 				}
+
 			}
 		}
 
 		if (oppositeMovement(move.directionType, previousState) == 1){
-			move.directionType = DirectionType.CURRENT;
+			if (neighborMap.get(findPreviousState(previousState)).isOpen()) {
+				move.directionType = findPreviousState(previousState);
+				move.currentState = previousState;
+			}
+			else {
+				move.directionType = randomMove(move.directionType, neighborMap);
+				previousState = (byte)((previousState & 248) | storeDir(move.directionType));
+				move.currentState = previousState;
+			}
 
-			move.currentState = previousState;
 		}
 		else{
 			previousState = (byte)((previousState & 248) | storeDir(move.directionType));
 			move.currentState = previousState;
 		}
 
-
+		System.out.println("Final Move: "+ move.directionType);
 		return move;
 	}
 
+	public DirectionType randomMove(DirectionType oppisiteDir, Map<DirectionType, ChemicalCell> map){
+		List<DirectionType> moves =  new ArrayList<DirectionType>();
+		for (DirectionType dir: DirectionType.values()){
+			if (!dir.equals(oppisiteDir)){
+				moves.add(dir);
+			}
+		}
+		Random random = new Random();
+		while (true) {
+			DirectionType chosenDir = moves.get(random.nextInt(moves.size()));
+			if (map.get(chosenDir).isOpen()) {
+				return chosenDir;
+			}
+		}
+	}
+/*
+	private DirectionType randomMove (DirectionType dir, DirectionType opp, Map<DirectionType, ChemicalCell> map) {
+		Random rd = new Random();
+		boolean flag = rd.nextBoolean();
+		for (DirectionType tempDir : map.keySet()) {
+			if ((! tempDir.equals(dir)) && (! tempDir.equals(opp))) {
+				if (flag) {
+					return tempDir;
+				}
+				else {
+					flag = true;
+				}
+			}
+		}
+		for (DirectionType tempDir : map.keySet()) {
+			if ((! tempDir.equals(dir)) && (! tempDir.equals(opp))) {
+				return tempDir;
+			}
+		}
+		return DirectionType.CURRENT;
+	}
+*/
 
 	public Byte storeDir(DirectionType directionType){
 		if(directionType == DirectionType.EAST){
