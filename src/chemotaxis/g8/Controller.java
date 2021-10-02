@@ -139,7 +139,7 @@ public class Controller extends chemotaxis.sim.Controller {
 		while (true) {
 			Status s = f[target.x][target.y];
 //			System.out.println("     " + s);
-			Status ss = new Status(s); ss.from = target;
+//			Status ss = new Status(s); ss.from = target;
 			if (target.equals(start)) return res;
 			solution.put(f[s.from.x][s.from.y].time, s);
 			target = s.from;
