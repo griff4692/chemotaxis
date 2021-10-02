@@ -816,7 +816,7 @@ public class Controller extends chemotaxis.sim.Controller {
 			//this.agentsStack.addAll(agentsAtCorner(locations));
 			this.agentsStack = agentsAtCorner(locations);
 			if (agentsStack.size() == 0) {
-				return chemicalPlacement;
+				return null;
 			} else {
 				Point agent = closestToTarget(agentsStack);
 				agentsStack.remove(closestToTarget(agentsStack));
@@ -906,6 +906,9 @@ public class Controller extends chemotaxis.sim.Controller {
 		this.agents = new HashSet<Point>();
 		for (int i=0; i<locations.size(); i++) {
 			this.agents.add(locations.get(i));
+		}
+		if (chemicalPlacement.location.x < 1 || chemicalPlacement.location.x > this.size|| chemicalPlacement.location.y > this.size || chemicalPlacement.location.y < 1){
+			return null;
 		}
 		return chemicalPlacement;
 	}
