@@ -825,34 +825,15 @@ public class Controller extends chemotaxis.sim.Controller {
 				Point next;
 				if (inPath(agent)) {
 					next = nextCell(agent);
-					if (cellOccupied(next, locations)) {
+					while (cellOccupied(next, locations)) {
 						next = nextCell(next);
 					}
 				} else {
-					int closestPathPointId = closestPathPoint(agent);
-					next = this.shortestPath.get(closestPathPointId);
-					int xDelta = next.x - agent.x;
-					int yDelta = next.y - agent.y;
-					if (xDelta < 0) {
-						xDelta = -1;
-					} else if (xDelta > 0) {
-						xDelta = 1;
+					next = nextLocation(agent, this.finalPolicy[(agent.x-1)][(agent.y-1)]);
+					while (cellOccupied(next, locations) ||agent.equals(new Point(1,1))) {
+						next = nextLocation(next, this.finalPolicy[(next.x-1)][(next.y-1)]);
 					}
-					if (yDelta < 0) {
-						yDelta = -1;
-					} else if (yDelta > 0) {
-						yDelta = 1;
-					}
-					newX = agent.x + xDelta;
-					newY = agent.y + yDelta;
-					while (cellOccupied(new Point(newX, newY), locations)) {
-						newX = agent.x + xDelta;
-						newY = agent.y + yDelta;
-					}
-					next = new Point(newX, newY);
-
 				}
-
 				List<ChemicalType> chemicals = new ArrayList<>();
 				chemicals.add(ChemicalType.BLUE);
 
