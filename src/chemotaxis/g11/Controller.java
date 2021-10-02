@@ -45,6 +45,7 @@ public class Controller extends chemotaxis.sim.Controller {
         onConveyerAgents = new HashMap<>();
         this.start = start;
         this.target = target;
+        this.size = size;
         int endX = target.x - 1;
         int endY = target.y - 1;
         boolean[][] visited = new boolean[size][size];
@@ -95,10 +96,10 @@ public class Controller extends chemotaxis.sim.Controller {
         */
         trackingErrorEpsilon = 2;
         goalInAgents = 0;
-        refreshRate = simTime / agentGoal;
+        refreshRate = simTime / (agentGoal * 2);
         greenChemicalBudget = agentGoal;
         greenChemicalsPut = 0;
-        chemicalsPerAgent = (budget - greenChemicalBudget) / agentGoal;
+        chemicalsPerAgent = (budget - greenChemicalBudget) / (agentGoal + trackingErrorEpsilon);
         for (int r = 0; r < size; r++) {
             for (int c = 0; c < size; c++) {
                 visited[r][c] = false;
@@ -157,12 +158,18 @@ public class Controller extends chemotaxis.sim.Controller {
 
         HashMap<Point, DirectionType> newAgents = new HashMap<Point, DirectionType>();
 
+<<<<<<< Updated upstream
         if (onConveyerAgents.containsKey(target)) {
 
+=======
+        goalInAgents = 0;
+        while (locations.contains(target)) {
+>>>>>>> Stashed changes
             onConveyerAgents.remove(target);
             goalInAgents++;
         }
 
+<<<<<<< Updated upstream
         while (locations.contains(target)) {
             locations.remove(target);
         }
@@ -173,10 +180,22 @@ public class Controller extends chemotaxis.sim.Controller {
             //locations.remove(target);
             //goalInAgents++;
         //}
+=======
+        HashMap<Point, DirectionType> realConveyerAgents = new HashMap<Point, DirectionType>();
+
+        for (Point p: onConveyerAgents.keySet()) {
+            if (locations.contains(p)) {
+                realConveyerAgents.put(p, onConveyerAgents.get(p));
+            }
+        }
+
+        onConveyerAgents = realConveyerAgents;
+>>>>>>> Stashed changes
 
         boolean placeChemical = false;
 
         int minConveyer = Integer.MAX_VALUE;
+        Point minP = null;
 
         for(Point p : locations) {
             if(!onConveyerAgents.containsKey(p) && steps[p.x - 1][p.y - 1] <= chemicalsPerAgent && onConveyerAgents.size() <= (agentGoal/* + trackingErrorEpsilon - goalInAgents*/)) {
@@ -185,36 +204,87 @@ public class Controller extends chemotaxis.sim.Controller {
             if (onConveyerAgents.containsKey(p)) {
                 if (onConveyerAgents.get(p) != directionMap[p.x - 1][p.y - 1] && steps[p.x - 1][p.y - 1] <= minConveyer) {
                     Point placement = getChemicalPlacement(p.x - 1, p.y - 1, p);
-                    if (checkIfAgentExists(placement, p, locations)) {
-                        continue;
+                    try {
+                        if (checkIfAgentExists(placement, p, locations)) {
+                            continue;
+                        }
+                    }
+                    catch(Exception e) {
+
                     }
                     chemicalPlacement.location = placement;
+<<<<<<< Updated upstream
                     //onConveyerAgents.replace(p, directionMap[p.x - 1][p.y - 1]);
                     onConveyerAgents.remove(p);
                     onConveyerAgents.put(p, directionMap[p.x-1][p.y-1]);
+=======
+                    // onConveyerAgents.replace(p, directionMap[p.x - 1][p.y - 1]);
+>>>>>>> Stashed changes
                     placeChemical = true;
                     minConveyer = steps[p.x - 1][p.y - 1];
+                    minP = p;
                     //break;
                 }
             }
         }
 
+        if (minP != null) {
+            onConveyerAgents.replace(minP, directionMap[minP.x - 1][minP.y - 1]);
+        }
+
         for (Point p: onConveyerAgents.keySet()) {
             DirectionType currentDirection = onConveyerAgents.get(p);
-            if (currentDirection == DirectionType.NORTH) {
-                newAgents.put(new Point(p.x - 1, p.y), DirectionType.NORTH);
+            if (currentDirection == DirectionType.NORTH && locations.contains(p)) {
+                try {
+                    ChemicalCell toGo = grid[p.x - 2][p.y - 1];
+                    if (toGo.isBlocked()) {
+                        newAgents.put(new Point(p.x, p.y), DirectionType.NORTH);
+                    } else {
+                        newAgents.put(new Point(p.x - 1, p.y), DirectionType.NORTH);
+                    }
+                }
+                catch (Exception e) {
+                    newAgents.put(new Point(p.x, p.y), DirectionType.NORTH);
+                }
             }
-            else if (currentDirection == DirectionType.SOUTH) {
-                newAgents.put(new Point(p.x + 1, p.y), DirectionType.SOUTH);
+            else if (currentDirection == DirectionType.SOUTH && locations.contains(p)) {
+                try {
+                    ChemicalCell toGo = grid[p.x][p.y - 1];
+                    if (toGo.isBlocked()) {
+                        newAgents.put(new Point(p.x, p.y), DirectionType.SOUTH);
+                    } else {
+                        newAgents.put(new Point(p.x + 1, p.y), DirectionType.SOUTH);
+                    }
+                }
+                catch (Exception e) {
+                    newAgents.put(new Point(p.x, p.y), DirectionType.SOUTH);
+                }
             }
-            else if (currentDirection == DirectionType.WEST) {
-                newAgents.put(new Point(p.x, p.y - 1), DirectionType.WEST);
+            else if (currentDirection == DirectionType.WEST && locations.contains(p)) {
+                try {
+                    ChemicalCell toGo = grid[p.x - 1][p.y - 2];
+                    if (toGo.isBlocked()) {
+                        newAgents.put(new Point(p.x, p.y), DirectionType.WEST);
+                    } else {
+                        newAgents.put(new Point(p.x, p.y - 1), DirectionType.WEST);
+                    }
+                }
+                catch (Exception e) {
+                    newAgents.put(new Point(p.x, p.y), DirectionType.WEST);
+                }
             }
-            else if (currentDirection == DirectionType.EAST) {
-                newAgents.put(new Point(p.x, p.y + 1), DirectionType.EAST);
-            }
-            else {
-                newAgents.put(new Point(p.x, p.y), DirectionType.CURRENT);
+            else if (currentDirection == DirectionType.EAST && locations.contains(p)) {
+                try {
+                    ChemicalCell toGo = grid[p.x - 1][p.y];
+                    if (toGo.isBlocked()) {
+                        newAgents.put(new Point(p.x, p.y), DirectionType.EAST);
+                    } else {
+                        newAgents.put(new Point(p.x, p.y + 1), DirectionType.EAST);
+                    }
+                }
+                catch (Exception e) {
+                    newAgents.put(new Point(p.x, p.y), DirectionType.EAST);
+                }
             }
         }
 
@@ -269,6 +339,11 @@ public class Controller extends chemotaxis.sim.Controller {
     private boolean checkIfAgentExists(Point placement, Point targetAgent, ArrayList<Point> locations) {
         ArrayList<Point> pointsToCheck = new ArrayList<>();
         pointsToCheck.add(placement);
+        /*
+        System.out.println("check if agent exists");
+        System.out.println(targetAgent);
+        System.out.println(placement);
+        */
         if (targetAgent.x + 1 == placement.x) {
             pointsToCheck.add(new Point(placement.x, placement.y - 1));
             pointsToCheck.add(new Point(placement.x, placement.y + 1));
@@ -288,6 +363,12 @@ public class Controller extends chemotaxis.sim.Controller {
             pointsToCheck.add(new Point(placement.x, placement.y + 1));
             pointsToCheck.add(new Point(placement.x + 1, placement.y));
             pointsToCheck.add(new Point(placement.x - 1, placement.y));
+        }
+
+        for (Point p: pointsToCheck) {
+            if (locations.contains(p)) {
+                return true;
+            }
         }
         return false;
     }

@@ -101,7 +101,11 @@ public class Agent extends chemotaxis.sim.Agent {
                 possibledirections.add(DirectionType.NORTH);
             }
 
+<<<<<<< Updated upstream
             System.out.println(possibledirections);
+=======
+            possibledirections.add(DirectionType.CURRENT);
+>>>>>>> Stashed changes
 
             int position = Math.abs(randomNum % possibledirections.size());
             move.directionType = possibledirections.get(position);
