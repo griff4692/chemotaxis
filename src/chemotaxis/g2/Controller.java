@@ -867,7 +867,7 @@ public class Controller extends chemotaxis.sim.Controller {
 					} else {
 						if (this.spawnFreq > 2 ) {
 							for (int i=0; i<locations.size(); i++) {
-								if (locations.get(i).equals(new Point(1,1))) {
+								if (locations.get(i).equals(this.start)) {
 									continue;
 								}
 								if (this.agents.contains(locations.get(i))) {
