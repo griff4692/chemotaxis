@@ -865,8 +865,11 @@ public class Controller extends chemotaxis.sim.Controller {
 						chemicalPlacement.location = next;
 						chemicalPlacement.chemicals = chemicals;
 					} else {
-						if (this.spawnFreq > 2) {
+						if (this.spawnFreq > 2 ) {
 							for (int i=0; i<locations.size(); i++) {
+								if (locations.get(i).equals(new Point(1,1))) {
+									continue;
+								}
 								if (this.agents.contains(locations.get(i))) {
 									Point next = nextLocation(locations.get(i), this.finalPolicy[locations.get(i).x-1][locations.get(i).y-1]);
 									if (cellOccupied(next, locations) || locations.get(i).equals(new Point(1,1))) {
