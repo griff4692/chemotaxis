@@ -110,6 +110,9 @@ public class Controller extends chemotaxis.sim.Controller {
             int beforeIndex = beforeNode.getIndex();
             ArrayList<Point> expectPath = beforeNode.getPath();
 
+            if (expectPath.size() == 0)
+                continue;
+
             // if currentLocation not equal to start, we should compute the before direction
             if (location.x != start.x - 1 || location.y != start.y - 1) {
                 Point previousLocation = expectPath.get(beforeIndex);
