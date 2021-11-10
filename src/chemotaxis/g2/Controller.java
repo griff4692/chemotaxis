@@ -816,7 +816,7 @@ public class Controller extends chemotaxis.sim.Controller {
 			//this.agentsStack.addAll(agentsAtCorner(locations));
 			this.agentsStack = agentsAtCorner(locations);
 			if (agentsStack.size() == 0) {
-				return chemicalPlacement;
+				return null;
 			} else {
 				Point agent = closestToTarget(agentsStack);
 				agentsStack.remove(closestToTarget(agentsStack));
@@ -825,34 +825,15 @@ public class Controller extends chemotaxis.sim.Controller {
 				Point next;
 				if (inPath(agent)) {
 					next = nextCell(agent);
-					if (cellOccupied(next, locations)) {
+					while (cellOccupied(next, locations)) {
 						next = nextCell(next);
 					}
 				} else {
-					int closestPathPointId = closestPathPoint(agent);
-					next = this.shortestPath.get(closestPathPointId);
-					int xDelta = next.x - agent.x;
-					int yDelta = next.y - agent.y;
-					if (xDelta < 0) {
-						xDelta = -1;
-					} else if (xDelta > 0) {
-						xDelta = 1;
-					}
-					if (yDelta < 0) {
-						yDelta = -1;
-					} else if (yDelta > 0) {
-						yDelta = 1;
-					}
-					newX = agent.x + xDelta;
-					newY = agent.y + yDelta;
-					while (cellOccupied(new Point(newX, newY), locations)) {
-						newX = agent.x + xDelta;
-						newY = agent.y + yDelta;
-					}
-					next = new Point(newX, newY);
-
+					next = nextLocation(agent, this.finalPolicy[(agent.x-1)][(agent.y-1)]);
+					//while (cellOccupied(next, locations)) {
+					//	next = nextLocation(next, this.finalPolicy[(next.x-1)][(next.y-1)]);
+					//}
 				}
-
 				List<ChemicalType> chemicals = new ArrayList<>();
 				chemicals.add(ChemicalType.BLUE);
 
@@ -884,8 +865,11 @@ public class Controller extends chemotaxis.sim.Controller {
 						chemicalPlacement.location = next;
 						chemicalPlacement.chemicals = chemicals;
 					} else {
-						if (this.spawnFreq > 2) {
+						if (this.spawnFreq > 2 ) {
 							for (int i=0; i<locations.size(); i++) {
+								if (locations.get(i).equals(this.start)) {
+									continue;
+								}
 								if (this.agents.contains(locations.get(i))) {
 									Point next = nextLocation(locations.get(i), this.finalPolicy[locations.get(i).x-1][locations.get(i).y-1]);
 									if (cellOccupied(next, locations) || locations.get(i).equals(new Point(1,1))) {
@@ -925,6 +909,9 @@ public class Controller extends chemotaxis.sim.Controller {
 		this.agents = new HashSet<Point>();
 		for (int i=0; i<locations.size(); i++) {
 			this.agents.add(locations.get(i));
+		}
+		if (chemicalPlacement.location.x < 1 || chemicalPlacement.location.x > this.size|| chemicalPlacement.location.y > this.size || chemicalPlacement.location.y < 1){
+			return null;
 		}
 		return chemicalPlacement;
 	}
