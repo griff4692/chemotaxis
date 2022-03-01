@@ -1,5 +1,5 @@
 
-# Project 2: Chemotaxis
+# Project 1: Chemotaxis Revisited
 
 ## Course Summary
 
