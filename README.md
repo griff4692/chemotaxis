@@ -222,7 +222,3 @@ Classes that are used by the simulator include:
 
 ## Ed
 If you have any questions about the project, please post them in [Ed](https://edstem.org/us/courses/12432/discussion/)
-
-
-## Disclaimer
-This project belongs to Department of Computer Science, Columbia University. It may be freely used for educational purposes with proper attribution.
