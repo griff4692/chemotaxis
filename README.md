@@ -213,4 +213,4 @@ If you have any questions about the project, please post them in [Ed](https://ed
 
 
 ## Disclaimer
-This project belongs to Columbia University. It may be freely used for educational purposes.
+This project belongs to Department of Computer Science, Columbia University. It may be freely used for educational purposes with proper attribution.
